@@ -1,7 +1,7 @@
 // Manifeste d'images : seules ces images sont demandées. Repli emoji si absente.
 const IDS = ['graine', 'pousse', 'fleur', 'fruit', 'oeuf', 'chenille', 'chrysalide', 'papillon'];
-// Images réellement présentes dans assets/img (vide tant que la génération RunningHub est en attente).
-const DISPONIBLES = [];
+// Images réellement présentes dans assets/img (les 8 cartes sont présentes).
+const DISPONIBLES = IDS;
 export const IMAGES = Object.fromEntries(DISPONIBLES.map((id) => [id, `./assets/img/carte-${id}.png`]));
 export const FALLBACK = {
   graine: { emoji: '🌰', color: '#d9b38c' },
