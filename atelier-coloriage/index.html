@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Atelier Coloriage</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <section id="screen-accueil" class="screen">
+      <div class="title-art" id="title-art"></div>
+      <h1>🎨 Atelier Coloriage</h1>
+      <div class="menu">
+        <button class="big" data-go="choix"><span class="ico">🖍️</span><span>Coloriage</span></button>
+        <button class="big" data-go="libre"><span class="ico">✏️</span><span>Dessin libre</span></button>
+        <button class="big" data-go="galerie"><span class="ico">🖼️</span><span>Galerie</span></button>
+      </div>
+      <button class="round speak" data-speak="accueil" aria-label="Lire à voix haute">🔊</button>
+    </section>
+
+    <section id="screen-choix" class="screen hidden">
+      <header class="topbar">
+        <button class="round" data-go="accueil" aria-label="Accueil">🏠</button>
+        <h1>Choisis un dessin</h1>
+        <button class="round speak" data-speak="choix" aria-label="Lire à voix haute">🔊</button>
+      </header>
+      <div id="choix-list"></div>
+    </section>
+
+    <section id="screen-atelier" class="screen hidden">
+      <header class="topbar" id="atelier-topbar">
+        <button class="round" data-action="back" aria-label="Retour">⬅️</button>
+        <button class="round" data-action="undo" aria-label="Annuler">↩️</button>
+        <button class="round" data-action="redo" aria-label="Refaire">↪️</button>
+        <button class="pill clear" data-action="clear" aria-label="Tout effacer"><span>🗑️</span><span class="lbl">Effacer</span></button>
+        <span class="spacer"></span>
+        <button class="round speak" data-action="speak" aria-label="Lire à voix haute">🔊</button>
+        <button class="pill" data-action="export"><span>💾</span> Image</button>
+        <button class="pill hang" data-action="hang"><span>🖼️</span> Accrocher</button>
+      </header>
+      <div class="middle">
+        <div id="tools"></div>
+        <div id="stage"></div>
+      </div>
+      <div id="palette"></div>
+    </section>
+
+    <section id="screen-galerie" class="screen hidden">
+      <div id="gallery-host"></div>
+      <button class="round gal-home" data-go="accueil" aria-label="Accueil">🏠</button>
+      <button class="round gal-prev" data-turn="-1" aria-label="Précédent">◀</button>
+      <button class="round gal-next" data-turn="1" aria-label="Suivant">▶</button>
+      <button id="btn-edit" class="pill gal-edit hidden" data-edit="1"><span>✏️</span> Modifier</button>
+      <button class="round gal-new" data-go="choix" aria-label="Colorier">🖍️</button>
+    </section>
+
+    <div id="toast" role="status"></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

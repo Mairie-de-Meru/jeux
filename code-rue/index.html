@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Code de la Rue</title>
+  <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%A6%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="bg"></div>
+  <canvas id="c"></canvas>
+
+  <div id="ui">
+    <section id="home" class="screen">
+      <img id="mascotte" class="hidden" alt="">
+      <h1 id="titre">🚦 Code de la Rue</h1>
+      <button id="btn-play" class="big green">▶ Jouer</button>
+      <div id="levels"></div>
+      <button id="btn-voice" class="round" aria-label="Lire à voix haute">🔊</button>
+    </section>
+
+    <div id="hud" class="hidden">
+      <button id="btn-home" class="round" aria-label="Accueil">🏠</button>
+      <div id="hud-level"></div>
+      <div id="hud-stars">⭐ 0</div>
+      <button id="btn-speak" class="round" aria-label="Écouter la consigne">🔊</button>
+    </div>
+
+    <div id="bubble" class="hidden"></div>
+    <div id="hint" class="hidden">✋ Attends…</div>
+    <div id="star-layer"></div>
+
+    <div id="bottom" class="hidden">
+      <div id="act-choose" class="row hidden"></div>
+      <div id="act-move" class="row">
+        <button id="btn-left" class="act"><span class="e">👀⬅</span><span class="l">Gauche</span></button>
+        <button id="btn-walk" class="act green"><span class="e">🚶</span><span class="l">Marcher</span></button>
+        <button id="btn-run" class="act orange"><span class="e">🏃</span><span class="l">Courir</span></button>
+        <button id="btn-right" class="act"><span class="e">➡👀</span><span class="l">Droite</span></button>
+      </div>
+    </div>
+
+    <section id="levelend" class="screen hidden">
+      <h2>Bravo !</h2>
+      <div id="end-stars"></div>
+      <div class="row">
+        <button id="btn-next" class="big green">Suivant ▶</button>
+        <button id="btn-retry" class="big">↻ Rejouer</button>
+        <button id="btn-end-home" class="big blue">🏠 Accueil</button>
+      </div>
+    </section>
+
+    <section id="diploma" class="screen hidden">
+      <div class="paper">
+        <div class="deco">🎓</div>
+        <h2>Diplôme du piéton</h2>
+        <p>Tu sais traverser la rue en sécurité !</p>
+        <div id="diploma-stars"></div>
+      </div>
+      <div class="row">
+        <button id="btn-replay" class="big green">↻ Rejouer</button>
+        <button id="btn-diploma-home" class="big blue">🏠 Accueil</button>
+      </div>
+    </section>
+
+    <pre id="debug" class="hidden"></pre>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

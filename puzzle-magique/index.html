@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Puzzle Magique</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A9%3C/text%3E%3C/svg%3E">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root { --ink: #3b2f63; --btn: #ffffff; --accent: #ff7eb6; --accent2: #ffb347; --ok: #4cd97b; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif; color: var(--ink); touch-action: manipulation; user-select: none; }
+  body { background: linear-gradient(160deg, #bde6ff 0%, #e4d4ff 55%, #ffd6ec 100%); }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; visibility: hidden; }
+  body.show-canvas #c { visibility: visible; }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; padding: 18px; gap: 16px; }
+  .screen.active { display: flex; }
+  .screen.overlay { pointer-events: none; padding: 12px; }
+  .screen.overlay > * { pointer-events: auto; }
+  h1, h2 { margin: 0; text-align: center; text-shadow: 0 3px 0 rgba(255,255,255,0.7); }
+  h1 { font-size: clamp(40px, 8vw, 84px); }
+  h2 { font-size: clamp(26px, 4.5vw, 44px); }
+  button { font: inherit; color: var(--ink); background: var(--btn); border: 0; border-radius: 22px; min-width: 64px; min-height: 64px; padding: 8px 22px; font-size: 28px; font-weight: 700; box-shadow: 0 6px 0 rgba(59,47,99,0.25); cursor: pointer; transition: transform .08s; }
+  button:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(59,47,99,0.25); }
+  button.big { font-size: 38px; min-height: 92px; padding: 10px 40px; }
+  button.go { background: linear-gradient(#ffd36b, #ff9a3c); }
+  button.pink { background: linear-gradient(#ffb3d6, #ff7eb6); }
+  button.round { border-radius: 50%; width: 68px; height: 68px; padding: 0; font-size: 32px; }
+  button[disabled] { opacity: 0.45; cursor: default; }
+  .bar { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .grow { flex: 1; }
+  #s-accueil { justify-content: center; background-size: cover; background-position: center; }
+  #s-accueil .row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+  #s-accueil .title-card { background: rgba(255,255,255,0.72); border-radius: 36px; padding: 18px 36px; text-align: center; }
+  .grid { display: grid; gap: 18px; width: min(1000px, 100%); justify-content: center; }
+  #levels { grid-template-columns: repeat(auto-fit, minmax(150px, 180px)); }
+  #images, #gallery { grid-template-columns: repeat(auto-fit, minmax(170px, 230px)); overflow: auto; padding: 6px; flex: 1; min-height: 0; width: min(1000px, 100%); align-content: start; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+  #images { overflow-y: auto; }
+  .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .cat { min-height: 84px; min-width: 96px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 14px; font-size: 20px; }
+  .cat .ic { font-size: 36px; line-height: 1; }
+  .cat small { font-size: 16px; }
+  .cat.on { background: linear-gradient(#ffd36b, #ff9a3c); }
+  .lvl { position: relative; min-height: 150px; font-size: 54px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .lvl small { font-size: 22px; }
+  .lvl .st { font-size: 26px; letter-spacing: 2px; }
+  .thumb { padding: 8px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 22px; position: relative; }
+  .thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 16px; display: block; pointer-events: none; }
+  .thumb .badge { position: absolute; top: 4px; right: 8px; font-size: 26px; }
+  .chip { white-space: nowrap; background: rgba(255,255,255,0.9); border-radius: 22px; padding: 10px 22px; font-size: 28px; font-weight: 700; min-height: 64px; display: flex; align-items: center; box-shadow: 0 4px 0 rgba(59,47,99,0.18); }
+  #s-fin { justify-content: flex-end; }
+  #s-fin .panel { background: rgba(255,255,255,0.88); border-radius: 36px; padding: 14px 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #fin-stars { font-size: 56px; letter-spacing: 6px; }
+  #s-vue { justify-content: flex-start; align-items: flex-start; }
+  #loader { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.55); font-size: 96px; }
+  #loader span { display: inline-block; animation: spin 1.2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hidden { display: none !important; }
+  .empty { font-size: 28px; background: rgba(255,255,255,0.8); border-radius: 24px; padding: 24px; text-align: center; }
+  @media (max-width: 560px) { .bar { gap: 6px; } button.round { width: 64px; height: 64px; flex: 0 0 64px; font-size: 28px; } .chip { padding: 8px 12px; font-size: 24px; min-width: 0; } .bar .chip { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; } .bar h2 { min-width: 0; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } button { font-size: 24px; } button.big { font-size: 30px; padding: 10px 24px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="loader" class="hidden" aria-label="Chargement"><span>🧩</span></div>
+
+<section id="s-accueil" class="screen active">
+  <div class="title-card">
+    <h1>🧩 Puzzle Magique</h1>
+  </div>
+  <div class="row">
+    <button class="big go" data-go="paliers">▶ Jouer</button>
+    <button class="big pink" data-go="galerie">🖼️ Galerie</button>
+  </div>
+  <button class="round" data-speak aria-label="Lire à voix haute">🔊</button>
+</section>
+
+<section id="s-paliers" class="screen">
+  <div class="bar"><button class="round" data-go="accueil" aria-label="Retour">⬅</button><h2 class="grow">Combien de pièces ?</h2><button class="round" data-speak aria-label="Lire à voix haute">🔊</button></div>
+  <div id="levels" class="grid"></div>
+  <button id="rot-toggle" aria-pressed="true">↻ Tourner les pièces : oui</button>
+</section>
+
+<section id="s-images" class="screen">
+  <div class="bar"><button class="round" data-go="paliers" aria-label="Retour">⬅</button><h2 class="grow">Choisis une image</h2><button class="round" data-speak aria-label="Lire à voix haute">🔊</button></div>
+  <div id="cats" class="tabs"></div>
+  <div id="images" class="grid"></div>
+</section>
+
+<section id="s-jeu" class="screen overlay">
+  <div class="bar">
+    <button class="round" id="btn-quit" aria-label="Retour">⬅</button>
+    <div class="chip" id="hud-count">0 / 0</div>
+    <div class="grow"></div>
+    <button class="round" data-speak aria-label="Lire à voix haute">🔊</button>
+    <button class="round go" id="btn-hint" aria-label="Indice">💡</button>
+  </div>
+  <div class="grow"></div>
+  <div class="chip hidden" id="hud-msg"></div>
+</section>
+
+<section id="s-fin" class="screen overlay">
+  <div class="panel">
+    <h2>Bravo !</h2>
+    <div id="fin-stars">⭐⭐⭐</div>
+    <div class="row" style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center">
+      <button class="big pink" id="btn-gallery">🖼️ Galerie</button>
+      <button class="big go" id="btn-again">🔁 Encore</button>
+    </div>
+  </div>
+</section>
+
+<section id="s-galerie" class="screen">
+  <div class="bar"><button class="round" data-go="accueil" aria-label="Retour">⬅</button><h2 class="grow">Ma galerie</h2><button class="round" data-speak aria-label="Lire à voix haute">🔊</button></div>
+  <div id="gallery" class="grid"></div>
+</section>
+
+<section id="s-vue" class="screen overlay">
+  <button class="round" id="btn-vue-back" aria-label="Retour à la galerie">⬅</button>
+</section>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#6ec6ff">
+  <title>Ferme des Sons Anglais</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="stage"></div>
+
+    <div id="hud" hidden>
+      <button id="btn-home" class="round" aria-label="Accueil">🏠</button>
+      <div id="prompt">
+        <span id="prompt-text"></span>
+        <button id="btn-repeat" class="round small" aria-label="Répéter">🔊</button>
+      </div>
+      <div id="pips" aria-label="Progression"></div>
+    </div>
+    <div id="footer" hidden>
+      <div id="feedback"></div>
+      <div id="pager" hidden>
+        <button id="btn-prev" class="round pg" aria-label="Page précédente">◀</button>
+        <span id="pager-label"></span>
+        <button id="btn-next-page" class="round pg" aria-label="Page suivante">▶</button>
+      </div>
+    </div>
+
+    <section id="home">
+      <div class="panel">
+        <div id="title-wrap"></div>
+        <p class="sub">Touche la bonne réponse pour apprendre l'anglais !
+        </p>
+        <div id="themes" class="row"></div>
+        <div id="levels" class="row"></div>
+        <div class="row">
+          <button id="btn-play" class="big green">▶ Jouer</button>
+          <button id="btn-listen" class="big blue">🔊 Écoute libre</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="done" hidden>
+      <div class="panel">
+        <h2>Bravo !</h2>
+        <div id="done-stars"></div>
+        <div class="row">
+          <button id="btn-next" class="big green">▶ Suite</button>
+          <button id="btn-replay" class="big blue">↻ Rejouer</button>
+          <button id="btn-done-home" class="big orange">🏠 Accueil</button>
+        </div>
+      </div>
+    </section>
+
+    <canvas id="confetti"></canvas>
+    <div id="debug" hidden></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

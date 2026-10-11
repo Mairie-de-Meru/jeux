@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tri Recyclage</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="gauge" aria-label="Jauge de la planète"><span class="g-icon">🌍</span><div class="g-bar"><div id="gauge-fill"></div></div></div>
+  <div id="count">0 / 0</div>
+  <button id="btn-voice" class="round" aria-label="Lire à voix haute">🔊</button>
+</div>
+<div id="hint" class="hidden"></div>
+
+<section id="home" class="overlay">
+  <div class="panel">
+    <div class="big-emoji">🌍♻️</div>
+    <h1>Tri Recyclage</h1>
+    <p class="sub">Aide la planète à sourire !</p>
+    <button id="btn-play" class="btn">▶ Jouer</button>
+    <button id="btn-voice-home" class="round" aria-label="Lire à voix haute">🔊</button>
+  </div>
+</section>
+
+<section id="fiche" class="overlay hidden">
+  <div class="panel card">
+    <div id="fiche-thumb" class="thumb"></div>
+    <div id="fiche-bin" class="chip"></div>
+    <p id="fiche-text"></p>
+    <button id="btn-ok" class="btn">Compris</button>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-planet">🌍😊</div>
+    <h2 id="end-title">Bravo !</h2>
+    <div id="end-stars"></div>
+    <button id="btn-next" class="btn">Suivant ▶</button>
+  </div>
+</section>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

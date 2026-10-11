@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Atelier Couleurs</title>
+<link rel="icon" type="image/png" href="./assets/img/favicon.png">
+<link rel="apple-touch-icon" href="./assets/img/apple-touch-icon.png">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+    font-family: "Trebuchet MS", "Arial Rounded MT Bold", system-ui, sans-serif; color: #3a2d52; }
+  body { background: linear-gradient(180deg, #bfe6ff 0%, #fff0f6 55%, #ffe9c9 100%); }
+  canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #hud button, #hud .palette { pointer-events: auto; }
+  .hidden { display: none !important; }
+
+  button { font: inherit; border: 0; cursor: pointer; background: #fff; color: #3a2d52; border-radius: 28px;
+    box-shadow: 0 4px 0 rgba(58,45,82,.25), 0 6px 14px rgba(58,45,82,.18); transition: transform .08s; }
+  button:active { transform: translateY(3px) scale(.97); box-shadow: 0 1px 0 rgba(58,45,82,.25); }
+  .rond { width: 72px; height: 72px; min-width: 64px; min-height: 64px; border-radius: 50%; font-size: 36px; line-height: 1; padding: 0; }
+
+  #top { position: absolute; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: calc(10px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 30px calc(14px + env(safe-area-inset-left)); }
+  #cible { display: flex; align-items: center; gap: 10px; flex: 0 1 auto; min-width: 0; }
+  #pastille { width: 76px; height: 76px; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 4px 12px rgba(58,45,82,.3); background: #eee; }
+  #cibleNom { font-size: 26px; font-weight: 800; text-shadow: 0 2px 0 #fff; }
+  #jauge { flex: 1 1 200px; min-width: 0; position: relative; display: flex; align-items: center; gap: 10px; }
+  #jaugePiste { flex: 1; height: 28px; background: rgba(255,255,255,.85); border-radius: 14px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(58,45,82,.2); }
+  #jaugeRemplie { height: 100%; width: 0%; border-radius: 14px; background: linear-gradient(90deg, #ffd34d, #ff8fb1); transition: width .3s ease-out; }
+  #jaugeEmoji { font-size: 44px; line-height: 1; width: 52px; text-align: center; }
+  #jaugeTexte { position: absolute; top: 100%; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 800; color: #e0508b; text-shadow: 0 2px 0 #fff; pointer-events: none; }
+  #actions { display: flex; gap: 8px; margin-left: auto; }
+  #actions button.pulse { animation: pulse .6s ease-in-out 3; }
+  @keyframes pulse { 50% { transform: scale(1.25); background: #fff3b0; } }
+
+  #message { position: absolute; top: 112px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 30px; padding: 12px 26px;
+    font-size: 28px; font-weight: 800; box-shadow: 0 4px 14px rgba(58,45,82,.25); transition: opacity .3s; max-width: 90vw; text-align: center; pointer-events: none; }
+
+  .palette { position: absolute; left: 0; right: 0; bottom: 0; min-height: 110px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: rgba(255,255,255,.7); backdrop-filter: blur(4px); }
+  #etoiles { font-size: 34px; font-weight: 800; white-space: nowrap; min-width: 92px; }
+  #swatches { flex: 1; display: flex; gap: 12px; overflow-x: auto; align-items: center; padding: 14px 12px; }
+  .sw { flex: 0 0 auto; width: 68px; height: 68px; border-radius: 50%; border: 5px solid #fff; box-shadow: 0 3px 8px rgba(58,45,82,.35); padding: 0; }
+  .sw.sel { outline: 6px solid #ff8fb1; transform: scale(1.12); }
+  .sw.arrive { animation: arrive .7s ease-out; }
+  @keyframes arrive { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  #swatches:empty::after { content: "Tes couleurs seront ici"; font-size: 22px; opacity: .6; }
+
+  .vole { position: fixed; width: 76px; height: 76px; border-radius: 50%; border: 6px solid #fff; pointer-events: none; z-index: 5;
+    transition: transform .8s cubic-bezier(.5,-0.3,.4,1), opacity .8s; }
+
+  .grand { padding: 18px 44px; font-size: 40px; font-weight: 800; min-height: 96px; }
+  #peindreBtn { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); background: #ffd34d; animation: rebond 1s ease-in-out infinite; }
+  @keyframes rebond { 50% { transform: translate(-50%, -50%) scale(1.1); } }
+  #retourBtn { position: absolute; right: 16px; top: 16px; background: #8be08b; }
+
+  .ecran { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+    background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.75), rgba(255,220,240,.9)); pointer-events: auto; text-align: center; padding: 20px; }
+  #titre { font-size: min(11vw, 84px); font-weight: 900; margin: 0; line-height: 1.05;
+    background: linear-gradient(90deg, #e44533, #f9b233, #7ed957, #279de0, #9b6bff); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 0 #fff); }
+  #titreImg { max-width: 80vw; max-height: 38vh; border-radius: 28px; box-shadow: 0 6px 18px rgba(58,45,82,.3); }
+  .peintre { width: 120px; height: 120px; object-fit: contain; }
+  #message { display: flex; align-items: center; gap: 12px; }
+  #message img { width: 64px; height: 64px; object-fit: contain; }
+  .goutte { font-size: 72px; }
+  #jouerBtn { background: #7ed957; font-size: 56px; min-height: 130px; padding: 20px 70px; }
+  @media (max-width: 640px) {
+    #pastille { width: 64px; height: 64px; border-width: 5px; }
+    #cibleNom { font-size: 22px; }
+    #cible { flex: 1 1 auto; }
+    #jauge { flex: 1 1 100%; order: 3; }
+    .rond { width: 64px; height: 64px; font-size: 32px; }
+    #message { font-size: 22px; padding: 8px 18px; }
+    .grand { padding: 14px 26px; font-size: 30px; min-height: 80px; }
+    #jouerBtn { font-size: 42px; padding: 16px 40px; min-height: 100px; }
+    #retourBtn { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); }
+    #etoiles { font-size: 28px; min-width: 76px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

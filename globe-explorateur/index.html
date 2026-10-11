@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Globe Explorateur</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  } }
+  </script>
+</head>
+<body class="mode-accueil">
+  <div id="stage"><canvas id="gl"></canvas></div>
+  <canvas id="confetti"></canvas>
+
+  <header id="hud" hidden>
+    <button id="btn-home" class="gros" aria-label="Accueil">🏠</button>
+    <div id="bandeau">
+      <span id="mission-texte"></span>
+      <span id="indice"></span>
+    </div>
+    <button id="btn-ecouter" class="gros" aria-label="Écouter la consigne">🔊</button>
+    <button id="btn-voix" class="gros" aria-label="Voix automatique">🗣️</button>
+    <div id="etoiles" aria-label="Étoiles">⭐ <b id="nb-etoiles">0</b></div>
+  </header>
+  <button id="btn-album" class="gros" aria-label="Mon album">📖</button>
+
+  <div id="zoom" aria-label="Zoom">
+    <button id="zoom-plus" class="gros" aria-label="Rapprocher">➕</button>
+    <button id="zoom-moins" class="gros" aria-label="Éloigner">➖</button>
+  </div>
+
+  <div id="flags" hidden></div>
+  <div id="pop" aria-hidden="true"></div>
+
+  <section id="accueil" class="ecran">
+    <div class="carte">
+      <img id="titre-img" alt="" hidden>
+      <h1 id="titre-txt">Globe<br>Explorateur</h1>
+      <button id="btn-jouer" class="gros enorme">▶ Jouer</button>
+      <div id="paliers"></div>
+    </div>
+  </section>
+
+  <section id="fin" class="ecran" hidden>
+    <div class="carte">
+      <h2 id="fin-titre"></h2>
+      <p id="fin-texte"></p>
+      <div id="fin-etoiles"></div>
+      <button id="fin-suivant" class="gros enorme"></button>
+      <button id="fin-accueil" class="gros">🏠 Accueil</button>
+    </div>
+  </section>
+
+  <section id="album" class="ecran" hidden>
+    <div class="carte large">
+      <h2>Mon album <span id="album-compte"></span></h2>
+      <div id="album-grille"></div>
+      <button id="album-fermer" class="gros enorme">✔ Fermer</button>
+    </div>
+  </section>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

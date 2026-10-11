@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Orchestre Rythmes</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%81%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="zone3d"><canvas id="canvas"></canvas></div>
+<div id="atelier" class="cache" aria-label="Atelier">
+  <div class="atelier-barre">
+    <button id="at-play" class="gros rond" aria-label="Écouter">▶</button>
+    <button id="at-vider" class="gros rond" aria-label="Vider">🗑</button>
+  </div>
+  <div class="atelier-defile"><div id="at-grille"></div></div>
+</div>
+
+<div id="ui">
+  <section id="ecran-accueil" class="ecran">
+    <h1>Orchestre Rythmes</h1>
+    <button id="btn-jouer" class="geant" aria-label="Jouer">▶</button>
+    <div id="accueil-etoiles" class="etoiles-total"></div>
+    <button id="btn-voix-accueil" class="gros rond" aria-label="Lire la consigne">🔊</button>
+  </section>
+
+  <section id="ecran-mode" class="ecran cache">
+    <h2>Choisis un jeu</h2>
+    <div class="cartes">
+      <button class="carte" data-mode="echo"><span class="carte-img" data-img="mode-echo">🎺</span><span class="carte-nom">Écho</span></button>
+      <button class="carte" data-mode="rythme"><span class="carte-img" data-img="mode-rythme">🥁</span><span class="carte-nom">Rythme</span></button>
+      <button class="carte" data-mode="atelier"><span class="carte-img" data-img="mode-atelier">🎹</span><span class="carte-nom">Atelier</span></button>
+    </div>
+    <button class="gros rond bouton-maison" data-action="maison" aria-label="Maison">🏠</button>
+  </section>
+
+  <section id="ecran-palier" class="ecran cache">
+    <h2>Choisis ton niveau</h2>
+    <div id="paliers" class="paliers"></div>
+    <button class="gros rond bouton-retour" data-action="modes" aria-label="Retour">⬅</button>
+  </section>
+
+  <div id="hud" class="cache">
+    <button class="gros rond" data-action="maison" aria-label="Maison">🏠</button>
+    <div id="hud-centre">
+      <div id="bulle" class="bulle"></div>
+      <div id="pips" class="pips"></div>
+    </div>
+    <button id="btn-voix" class="gros rond" aria-label="Lire la consigne">🔊</button>
+  </div>
+  <div id="debug" class="cache"></div>
+
+  <section id="ecran-fin" class="ecran cache">
+    <h2 id="fin-titre">Bravo !</h2>
+    <div id="fin-etoiles" class="fin-etoiles"></div>
+    <div class="fin-boutons">
+      <button id="btn-encore" class="gros" aria-label="Encore">↻ Encore</button>
+      <button id="btn-suivant" class="gros" aria-label="Suivant">➡ Suivant</button>
+      <button class="gros" data-action="maison" aria-label="Maison">🏠</button>
+    </div>
+  </section>
+  <canvas id="confettis"></canvas>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

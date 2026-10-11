@@ -1,0 +1,10 @@
+{
+  "images": {
+    "titre": "assets/img/titre.png",
+    "fond": "assets/img/fond.png",
+    "icone": "assets/img/icone.png",
+    "mode-echo": "assets/img/mode-echo.png",
+    "mode-rythme": "assets/img/mode-rythme.png",
+    "mode-atelier": "assets/img/mode-atelier.png"
+  }
+}

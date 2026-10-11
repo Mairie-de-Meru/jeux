@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Jardin des Saisons</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body data-screen="home">
+<canvas id="view"></canvas>
+<canvas id="confetti"></canvas>
+
+<div id="hud">
+  <button id="btnHome" class="big round" aria-label="Accueil">🏠</button>
+  <div id="wheel"></div>
+  <button id="btnSpeak" class="big round" aria-label="Lire à voix haute">🔊</button>
+</div>
+<div id="prompt" class="pill"></div>
+<div id="toast"></div>
+
+<div id="home" class="layer">
+  <div class="panel">
+    <h1>Jardin des Saisons</h1>
+    <div class="row" id="acts"></div>
+  </div>
+</div>
+
+<div id="levels" class="layer">
+  <div class="panel">
+    <h2 id="levelsTitle"></h2>
+    <div class="row" id="levelBtns"></div>
+    <button id="btnLevelsBack" class="big round" aria-label="Retour">⬅️</button>
+  </div>
+</div>
+
+<div id="dock-plante" class="dock">
+  <div id="needs"></div>
+  <div class="row">
+    <button id="btnWater" class="big act-btn">💧</button>
+    <button id="btnSun" class="big act-btn">☀️</button>
+  </div>
+</div>
+<div id="dock-cycle" class="dock">
+  <div id="slots" class="row"></div>
+  <div id="hand" class="row"></div>
+</div>
+<div id="dock-saison" class="dock">
+  <div id="proposals" class="row"></div>
+</div>
+
+<div id="end" class="layer">
+  <div class="panel">
+    <div class="stars" id="endStars"></div>
+    <div class="win" id="endText"></div>
+    <div class="row">
+      <button id="btnAgain" class="big round" aria-label="Rejouer">🔄</button>
+      <button id="btnEndLevels" class="big go" aria-label="Continuer">➡️</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
