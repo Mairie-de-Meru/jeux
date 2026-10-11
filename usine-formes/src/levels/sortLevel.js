@@ -8,6 +8,7 @@ import { ease, tweens, wait, squash, popIn, shrinkOut, wiggle, flyTo } from '../
 
 const BELT_Z = -3.2, BELT_TOP = 0.5, X0 = -7.6, X_END = 8.2, SPACING = 2.5;
 const BIN_Z = 2.4, BIN_GAP = 3.6;
+const TOUCH_TOL = 44;
 const BRAVOS = ['Bravo !', 'Super !', 'Bien joué !', 'Génial !'];
 
 export function createSortLevel(ctx, level, seed) {
@@ -202,8 +203,16 @@ export function createSortLevel(ctx, level, seed) {
     const meshes = [];
     for (const it of items) if (it.state === 'belt') meshes.push(it.mesh);
     const hit = input.pick(meshes, x, y);
-    if (!hit) return null;
-    return items.find((it) => it.mesh === hit.object) || null;
+    if (hit) return items.find((it) => it.mesh === hit.object) || null;
+    // Repli tactile : forme du tapis la plus proche du doigt (les solides sont petits en portrait).
+    let best = null, bd = TOUCH_TOL;
+    for (const it of items) {
+      if (it.state !== 'belt') continue;
+      const p = input.project(it.holder.position);
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (d < bd) { bd = d; best = it; }
+    }
+    return best;
   }
 
   input.setHandler({

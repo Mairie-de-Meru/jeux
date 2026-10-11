@@ -5,7 +5,7 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { height: 100%; margin: 0; }
+html, body { height: 100vh; height: 100dvh; margin: 0; }
 body {
   color: var(--ink);
   background: linear-gradient(160deg, #ffd6e8 0%, #cfe3ff 55%, #d6f5e3 100%);
@@ -14,10 +14,10 @@ body {
 }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action: manipulation; }
 button:active { transform: scale(0.94); }
-.view { position: fixed; inset: 0; }
+.view { position: fixed; inset: 0; height: 100vh; height: 100dvh; }
 
 /* Bibliothèque */
-#library { overflow-y: auto; padding: 24px; text-align: center; }
+#library { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px; text-align: center; }
 #library h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin: 8px 0 24px; }
 #shelf { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
 .cover-card {
@@ -108,3 +108,47 @@ button:active { transform: scale(0.94); }
 #library h1 { animation: wiggle 4s ease-in-out infinite; }
 @keyframes wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-3deg) scale(1.05); } 92% { transform: rotate(3deg) scale(1.05); } }
 @media (prefers-reduced-motion: reduce) { .cover-card, #library h1 { animation: none; } }
+
+/* Téléphones */
+@media (max-width: 480px) {
+  #library { padding: 10px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+  #library h1 { font-size: 1.7rem; margin: 2px 0 10px; }
+  #shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; justify-items: center; }
+  .cover-card { width: 100%; max-width: 200px; padding: 8px; gap: 6px; border-radius: 22px; }
+  .cover-art { aspect-ratio: 3 / 2; border-radius: 16px; font-size: 3rem; }
+  .cover-title { font-size: 0.9rem; padding: 6px 8px; border-radius: 14px; }
+  .round-btn { width: 56px; height: 56px; font-size: 1.5rem; }
+  .mode-btn { min-height: 56px; padding: 0 14px; font-size: 1rem; }
+  .big-btn { min-height: 60px; font-size: 1.3rem; padding: 0 22px; }
+  #ask { bottom: calc(150px + env(safe-area-inset-bottom)); max-width: 94vw; white-space: nowrap; font-size: 1.15rem; }
+  .fb { inset: 0 0 140px; }
+  #bar { gap: 8px; }
+  #quiz { padding: 10px; place-items: start center; }
+  .quiz-card { padding: 14px; gap: 10px; border-radius: 26px; }
+  #qText { font-size: 1.5rem; }
+  .choice { min-height: 64px; font-size: 1.3rem; border-radius: 22px; }
+  .choice .emoji { font-size: 2rem; }
+  #qStars { font-size: 2.4rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #library { padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left)); display: flex; flex-direction: column; justify-content: center; }
+  #library h1 { font-size: 1.4rem; margin: 0 0 6px; }
+  #shelf { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; justify-content: flex-start; gap: 12px; padding: 4px 4px 12px; -webkit-overflow-scrolling: touch; }
+  .cover-card { flex: 0 0 auto; width: 150px; padding: 8px; gap: 6px; border-radius: 22px; }
+  .cover-art { aspect-ratio: 1 / 1; border-radius: 16px; font-size: 3rem; }
+  .cover-title { font-size: 0.85rem; padding: 6px 8px; border-radius: 14px; }
+  .round-btn { width: 56px; height: 56px; font-size: 1.5rem; }
+  .mode-btn { min-height: 56px; padding: 0 16px; font-size: 1rem; }
+  .big-btn { min-height: 56px; font-size: 1.2rem; padding: 0 22px; }
+  #bar { padding: 6px 12px calc(6px + env(safe-area-inset-bottom)); }
+  #ask { bottom: 76px; }
+  .fb { inset: 0 0 76px; }
+  #quiz { padding: 8px; place-items: start center; }
+  .quiz-card { padding: 10px 16px; gap: 6px; border-radius: 22px; width: min(760px, 100%); }
+  #qText { font-size: 1.3rem; }
+  #qChoices { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .choice { flex: 1 1 30%; min-height: 56px; font-size: 1.1rem; border-radius: 18px; }
+  .choice .emoji { font-size: 1.6rem; }
+  #qMsg { min-height: 1.2em; font-size: 1.1rem; }
+  #qStars { font-size: 2rem; min-height: 1em; }
+}

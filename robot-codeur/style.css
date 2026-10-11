@@ -9,10 +9,10 @@
   --purple: #8e6bff;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif; color: var(--ink); background: #bfe8ff; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100%; height: 100dvh; overflow: hidden; font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif; color: var(--ink); background: #bfe8ff; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 #app { position: fixed; inset: 0; }
-.screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+.screen { position: absolute; inset: 0; height: 100dvh; display: none; flex-direction: column; }
 .screen.active { display: flex; }
 
 /* ---- barre du haut ---- */
@@ -64,7 +64,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 
 /* ---- grille de niveaux ---- */
 #screen-levels { background: linear-gradient(180deg, #7fd4ff, #d6f5ff 70%, #bdf2b0); }
-.level-grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 18px; padding: 16px 24px 28px; align-content: center; justify-items: center; max-width: 760px; width: 100%; margin: 0 auto; overflow-y: auto; }
+.level-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 18px; padding: 16px 24px 28px; align-content: safe center; justify-items: center; max-width: 760px; width: 100%; margin: 0 auto; overflow-y: auto; }
 .level-btn { width: 112px; height: 112px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; box-shadow: 0 7px 0 #0002, 0 10px 18px #0002; transition: transform .1s; }
 .level-btn:active:not(:disabled) { transform: translateY(4px); }
 .level-btn.done { background: #fff6c2; }
@@ -174,3 +174,24 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; }
 .surprise-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #5b3fd0; }
 /* titre lisible sur le décor qui passe sous l'en-tête */
 #screen-game .bar h2 { text-shadow: 0 0 6px #fff, 0 0 12px #fff, 0 2px 0 #fff; }
+
+/* téléphone : l'écran des niveaux tient sans masquer le niveau 1 */
+@media (max-width: 480px) {
+  .level-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px 12px 12px; }
+  .level-btn { width: 72px; height: 72px; }
+  .level-num { font-size: 26px; }
+  .level-stars { font-size: 11px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .level-grid { grid-template-columns: repeat(8, 1fr); gap: 8px; padding: 6px 16px; }
+  .level-btn { width: 64px; height: 64px; box-shadow: 0 4px 0 #0002; }
+  .level-num { font-size: 22px; }
+  .level-stars { font-size: 9px; }
+  .surprise-row { padding: 4px 8px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .surprise-row { padding: 2px 8px calc(4px + env(safe-area-inset-bottom)); gap: 10px; }
+  .surprise-btn { min-width: 56px; height: 52px; font-size: 1.6rem; border-radius: 18px; }
+  .surprise-label { font-size: 1rem; }
+}
+@media (max-width: 480px) { .surprise-row { padding: 4px 8px calc(12px + env(safe-area-inset-bottom)); } .surprise-btn { height: 60px; } }

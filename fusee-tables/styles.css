@@ -8,7 +8,7 @@
   color: var(--ink);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100vh; height: 100dvh; overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 body { background: #5fb4ff; }
 canvas#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
@@ -93,3 +93,57 @@ button:active { transform: scale(0.94); }
   #screen-planet { justify-content: flex-end; }
 }
 @media (max-height: 700px) { :root { --btn: 64px; } }
+
+/* Téléphones : tailles des points calculées selon la grille (--r lignes, --c colonnes) */
+@media (max-width: 480px) and (orientation: portrait) {
+  :root { --btn: 56px; }
+  .round, .round.small { width: 52px; height: 52px; font-size: 26px; }
+  .topbar { gap: 6px; min-width: 0; }
+  .portholes { gap: 6px; padding: 6px 12px; min-width: 0; }
+  .porthole { width: 26px; height: 26px; border-width: 3px; }
+  #screen-game { height: 68%; padding: 8px 10px max(8px, env(safe-area-inset-bottom)); gap: 6px; }
+  .play { gap: 6px 8px; }
+  .question { padding: 2px 12px; border-radius: 22px; }
+  .operation { font-size: 40px; }
+  .message { font-size: 18px; }
+  .dots { --dot: clamp(8px, min(24px, calc((68dvh - 250px) / var(--r, 6) - 4px), calc((100vw - 170px) / var(--c, 6) - 4px)), 24px); }
+  .gridzone { padding: 6px 8px; border-radius: 22px; }
+  .gridinfo { gap: 8px; }
+  .count { font-size: 28px; }
+  .skip { font-size: 18px; }
+  .answers { gap: 8px; }
+  .choice { min-width: 96px; height: 60px; font-size: 36px; border-radius: 22px; }
+  #screen-title { padding: 12px; gap: 10px; }
+  #screen-title h1 { font-size: 30px; padding: 6px 14px; }
+  .levels { gap: 10px; }
+  .big { min-height: 64px; font-size: 24px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --btn: 52px; }
+  .round, .round.small { width: 48px; height: 48px; font-size: 24px; }
+  #screen-game { width: 62%; padding: 8px max(12px, env(safe-area-inset-right)) 8px 8px; gap: 6px; }
+  .topbar { gap: 8px; min-width: 0; }
+  .portholes { gap: 6px; padding: 6px 12px; min-width: 0; }
+  .porthole { width: 26px; height: 26px; border-width: 3px; }
+  .play { gap: 6px 8px; }
+  .question { padding: 0 12px; border-radius: 20px; }
+  .operation { font-size: 36px; }
+  .message { font-size: 16px; min-height: 1.2em; }
+  .gridzone { display: grid; grid-template-columns: auto auto; grid-template-areas: "dots info" "skip skip"; align-items: center; justify-items: center; gap: 2px 8px; padding: 6px 10px; border-radius: 20px; }
+  .dots { grid-area: dots; --dot: clamp(8px, min(24px, calc((100dvh - 172px) / var(--r, 6) - 4px), calc((62vw - 228px) / var(--c, 6) - 4px)), 24px); }
+  .gridinfo { grid-area: info; flex-direction: column; gap: 4px; }
+  .skip { grid-area: skip; font-size: 16px; min-height: 1.2em; }
+  .count { font-size: 26px; }
+  .answers { gap: 8px; }
+  .choice { min-width: 96px; height: 60px; font-size: 34px; border-radius: 20px; }
+  #screen-title { padding: 8px; gap: 8px; }
+  #screen-title h1 { font-size: 26px; padding: 4px 16px; }
+  .levels { flex-direction: row; width: min(640px, 92vw); gap: 8px; }
+  .levels .big { flex: 1; min-height: 64px; font-size: 20px; padding: 6px 8px; }
+  .big small { font-size: 15px; }
+  .planets-row { min-height: 28px; padding: 4px 10px; }
+  .pastille { width: 22px; height: 22px; }
+  #btn-parents { right: max(12px, env(safe-area-inset-right)); bottom: 8px; }
+  .parents { max-height: 96dvh; overflow-y: auto; padding: 10px; gap: 8px; }
+  .table-pick button { height: 56px; font-size: 28px; }
+}

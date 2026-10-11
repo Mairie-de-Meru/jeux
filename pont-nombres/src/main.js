@@ -221,9 +221,14 @@ const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 world.renderer.domElement.addEventListener('pointerdown', (e) => {
   audio.unlock();
-  ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  // Coordonnées relatives au canvas (et non à la fenêtre), valables après redimensionnement.
+  const r = world.renderer.domElement.getBoundingClientRect();
+  const px = e.clientX - r.left, py = e.clientY - r.top;
+  ndc.set((px / r.width) * 2 - 1, -(py / r.height) * 2 + 1);
   raycaster.setFromCamera(ndc, world.camera);
-  removeAt(bridge.pick(raycaster));
+  let i = bridge.pick(raycaster);
+  if (i < 0) i = bridge.pickNear(world.camera, px, py, r.width, r.height);
+  removeAt(i);
 });
 
 window.__game = {

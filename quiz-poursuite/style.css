@@ -1,9 +1,9 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff; }
+html, body { margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #8fd3ff; }
 body { font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif; color: #23284a; user-select: none; -webkit-user-select: none; touch-action: none; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action: manipulation; }
 [hidden] { display: none !important; }
-#app { position: fixed; inset: 0; }
+#app { position: fixed; inset: 0; height: 100vh; height: 100dvh; }
 #stage { position: absolute; inset: 0; }
 #stage canvas { width: 100%; height: 100%; touch-action: none; }
 
@@ -31,7 +31,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action
 .dir-btn:active { transform: translateY(3px); }
 
 .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(120, 190, 255, .55); background-size: cover; background-position: center; z-index: 10; overflow: auto; padding: 12px; touch-action: pan-y; }
-.panel { background: rgba(255,255,255,.92); border-radius: 32px; padding: 20px 24px; width: min(94vw, 560px); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 100%; overflow: auto; }
+.panel { background: rgba(255,255,255,.92); border-radius: 32px; padding: 20px 24px; width: min(94vw, 560px); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .panel h1 { margin: 4px 0 8px; font-size: clamp(32px, 7vw, 48px); color: #b25cff; }
 #logo { width: 96px; height: 96px; border-radius: 24px; object-fit: cover; }
 .lbl { margin: 10px 0 6px; font-size: 20px; font-weight: 700; }
@@ -79,3 +79,43 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action
 
 .choice.pick { outline: 5px solid #ffb020; transform: scale(1.04); }
 .choice:disabled:not(.good):not(.soft):not(.dim) { opacity: 1; }
+
+.overlay { padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+#players-rows { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+@media (max-width: 480px) {
+  .panel { width: 98vw; padding: 10px 10px; border-radius: 24px; }
+  .panel h1 { font-size: 28px; margin: 0 0 4px; }
+  #logo { width: 56px; height: 56px; border-radius: 16px; }
+  .lbl { margin: 6px 0 4px; font-size: 16px; }
+  .row { gap: 6px; flex-wrap: wrap; }
+  .opt { min-width: 56px; min-height: 52px; font-size: 22px; padding: 4px 10px; border-radius: 16px; }
+  .opt.wide { font-size: 17px; }
+  .avbtn { width: 56px; height: 56px; }
+  .lvbtn { min-height: 56px; font-size: 18px; padding: 4px 14px; }
+  .big-btn { min-height: 60px; font-size: 24px; padding: 8px 22px; }
+  #sound-btn { width: 52px; height: 52px; font-size: 24px; }
+  #hud { right: 64px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay { padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left)); }
+  #setup .panel { width: min(96vw, 760px); padding: 6px 14px; border-radius: 22px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; align-content: center; }
+  #setup .panel > h1 { grid-column: 1 / -1; grid-row: 1; font-size: 22px; margin: 0; }
+  #setup #logo { display: none; }
+  #setup .lbl { margin: 2px 0; font-size: 14px; }
+  #setup .lbl:nth-of-type(1) { grid-column: 1; grid-row: 2; }
+  #setup #count-btns { grid-column: 1; grid-row: 3; }
+  #setup #players-rows { grid-column: 1; grid-row: 4 / span 2; justify-content: flex-start; }
+  #setup .lbl:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+  #setup #bot-btns { grid-column: 2; grid-row: 3; }
+  #setup .lbl:nth-of-type(3) { grid-column: 2; grid-row: 4; }
+  #setup #len-btns { grid-column: 2; grid-row: 5; }
+  #setup #play-btn { grid-column: 1 / -1; grid-row: 6; justify-self: center; margin-top: 4px; }
+  .row { gap: 6px; flex-wrap: nowrap; }
+  .opt { min-width: 52px; min-height: 48px; font-size: 20px; padding: 2px 10px; border-radius: 16px; }
+  .opt.wide { font-size: 16px; }
+  .avbtn { width: 48px; height: 48px; }
+  .lvbtn { min-height: 48px; font-size: 16px; padding: 2px 14px; }
+  .big-btn { min-height: 52px; font-size: 22px; padding: 4px 24px; }
+  #sound-btn { width: 52px; height: 52px; font-size: 24px; }
+  #hud { right: 64px; }
+}

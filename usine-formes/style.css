@@ -50,3 +50,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff;
 .end .stars-big { font-size: clamp(60px, 14vw, 120px); letter-spacing: 6px; }
 .end .row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
 .end { background: rgba(120, 200, 255, .55); }
+
+/* Téléphone : HUD compact, points de progression sur une seule ligne */
+@media (max-width: 480px) {
+  .hud { gap: 8px; padding: 8px 10px; padding-top: max(8px, env(safe-area-inset-top)); flex-wrap: wrap; }
+  .hud .titre { font-size: 20px; flex: 1 1 auto; min-width: 0; }
+  .hud .dots { order: 5; flex: 1 0 100%; flex-wrap: nowrap; gap: 4px; }
+  .dot { width: 14px; height: 14px; border-width: 2px; flex: 0 1 14px; min-width: 6px; }
+  .bubble { top: 112px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .hud { padding: 6px 12px; gap: 10px; }
+  .hud .titre { font-size: 22px; }
+  .dot { width: 16px; height: 16px; border-width: 2px; }
+  .bubble { top: 56px; padding: 6px 16px; font-size: 18px; max-width: 80vw; border-radius: 20px; }
+}

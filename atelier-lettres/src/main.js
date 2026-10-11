@@ -55,7 +55,7 @@ function stopCurrent() {
 
 // Décor : rangée de tuiles tout en haut de l'écran (position et taille en pixels, donc identique en paysage et en portrait).
 const DECOR_TOP = 14;
-const DECOR_PX = (w) => Math.max(40, Math.min(72, w / 8));
+const DECOR_PX = (w) => Math.max(40, Math.min(72, w / 8, innerHeight / 8));
 function decor() {
   const tiles = [];
   'ABCabc'.split('').forEach((ch, k) => {

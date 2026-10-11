@@ -16,7 +16,7 @@
 </script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  html, body { margin: 0; height: 100%; height: 100dvh; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
     font-family: "Trebuchet MS", "Arial Rounded MT Bold", system-ui, sans-serif; color: #3a2d52; }
   body { background: linear-gradient(180deg, #bfe6ff 0%, #fff0f6 55%, #ffe9c9 100%); }
   canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
@@ -63,7 +63,7 @@
   @keyframes rebond { 50% { transform: translate(-50%, -50%) scale(1.1); } }
   #retourBtn { position: absolute; right: 16px; top: 16px; background: #8be08b; }
 
-  .ecran { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  .ecran { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 28px; overflow-y: auto; -webkit-overflow-scrolling: touch;
     background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.75), rgba(255,220,240,.9)); pointer-events: auto; text-align: center; padding: 20px; }
   #titre { font-size: min(11vw, 84px); font-weight: 900; margin: 0; line-height: 1.05;
     background: linear-gradient(90deg, #e44533, #f9b233, #7ed957, #279de0, #9b6bff); -webkit-background-clip: text; background-clip: text; color: transparent;
@@ -85,6 +85,17 @@
     #jouerBtn { font-size: 42px; padding: 16px 40px; min-height: 100px; }
     #retourBtn { right: calc(12px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); }
     #etoiles { font-size: 28px; min-width: 76px; }
+  }
+  @media (max-width: 640px) { .ecran { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); gap: 14px; } #titreImg { max-height: 26dvh; } .peintre { width: 88px; height: 88px; } }
+  @media (max-height: 500px) and (orientation: landscape) {
+    .ecran { gap: 6px; padding: 6px 12px; }
+    #titreImg { max-height: 30dvh; border-radius: 18px; }
+    #titre { font-size: 40px; }
+    .peintre { width: 56px; height: 56px; }
+    .goutte { font-size: 44px; }
+    #jouerBtn { font-size: 34px; min-height: 68px; padding: 8px 44px; }
+    #lireAccueil { position: absolute; right: calc(12px + env(safe-area-inset-right)); top: 8px; }
+    #fin h1 { font-size: 36px !important; } #etoilesFin { font-size: 32px !important; }
   }
 </style>
 </head>

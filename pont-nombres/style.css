@@ -6,7 +6,7 @@
   font-family: ui-rounded, "Nunito", "Trebuchet MS", system-ui, sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe6ff; color: var(--ink); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100%; height: 100dvh; overflow: hidden; background: #bfe6ff; color: var(--ink); touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 [hidden] { display: none !important; }
 button { font: inherit; cursor: pointer; border: 0; color: var(--ink); touch-action: manipulation; }
@@ -36,7 +36,7 @@ button { font: inherit; cursor: pointer; border: 0; color: var(--ink); touch-act
 #result .st.off { filter: grayscale(1) opacity(0.35); }
 @keyframes pop { from { transform: scale(0) rotate(-40deg); } to { transform: scale(1) rotate(0); } }
 
-#bottom { position: fixed; inset: auto 0 0 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; background: linear-gradient(transparent, rgba(255,255,255,0.55) 25%); }
+#bottom { pointer-events: none; position: fixed; inset: auto 0 0 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 8px; background: linear-gradient(transparent, rgba(255,255,255,0.55) 25%); }
 #ways { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .way { display: flex; gap: 2px; background: var(--panel); padding: 5px 8px; border-radius: 12px; align-items: center; }
 .way b { margin-right: 4px; }
@@ -66,4 +66,24 @@ button { font: inherit; cursor: pointer; border: 0; color: var(--ink); touch-act
   #goal { padding: 2px 16px 4px; }
   #progress { padding: 3px 10px; }
   .pill { width: 24px; height: 24px; font-size: 13px; }
+}
+
+/* Le panneau du bas ne doit pas intercepter les touches destinées aux briques du pont. */
+#bottom > * { pointer-events: auto; }
+.screen { overflow-y: auto; justify-content: safe center; -webkit-overflow-scrolling: touch; }
+@media (max-width: 480px) {
+  .screen { gap: 16px; padding: 12px; }
+  .big { min-height: 64px; font-size: 30px; padding: 0 32px; }
+  .lvl { width: 72px; height: 72px; }
+  #hud { padding: max(6px, env(safe-area-inset-top)) 8px 4px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #bottom { flex-direction: row; justify-content: center; align-items: center; gap: 12px; padding: 4px 12px calc(6px + env(safe-area-inset-bottom)); }
+  #tray { flex: 1 1 auto; min-height: 0; flex-wrap: nowrap; gap: 6px; }
+  .brick { height: 56px; min-width: 56px; font-size: 22px; }
+  .act { width: 56px; height: 56px; font-size: 26px; }
+  .act.go { width: 76px; }
+  #actions { gap: 8px; flex: none; }
+  .screen { gap: 10px; padding: 8px 12px; }
+  .big { min-height: 60px; font-size: 30px; }
 }

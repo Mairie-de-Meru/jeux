@@ -5,7 +5,7 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
-html, body { margin: 0; height: 100%; overflow: hidden; color: var(--ink); user-select: none; -webkit-user-select: none; }
+html, body { margin: 0; height: 100vh; height: 100dvh; overflow: hidden; color: var(--ink); user-select: none; -webkit-user-select: none; }
 body { background: #7ec8f5; }
 
 #bg {
@@ -132,4 +132,58 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; pointer-even
 @media (max-height: 640px) {
   #fiche { width: 150px; } #fiche-view { width: 134px; height: 134px; } #fiche-head { height: 36px; font-size: 18px; }
   .big-buttons .big { min-height: 96px; }
+}
+
+@media (max-width: 480px) {
+  :root { --btn: 56px; }
+  .tool { min-width: 48px; min-height: 48px; font-size: 28px; }
+  #tools { gap: 6px; left: max(8px, env(safe-area-inset-left)); top: 8px; }
+  #screen-title { gap: 20px; padding: 12px; }
+  #screen-title h1 { font-size: 38px; }
+  .big-buttons .big { min-height: 96px; font-size: 34px; }
+  .card { width: 150px; padding: 8px; }
+  .card .pic { width: 130px; height: 110px; font-size: 60px; }
+  .card b { font-size: 20px; }
+  .card .stars { font-size: 28px; }
+  #cards { gap: 12px; }
+  #screen-pick h2 { font-size: 30px; }
+  #bottom { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .piece { width: 64px; height: 64px; }
+  .swatch { width: 48px; height: 48px; min-width: 48px; }
+  #btn-finish { bottom: 170px; min-height: 60px; font-size: 24px; padding: 0 18px; }
+  #bubble { font-size: 20px; padding: 8px 14px; max-width: 70vw; }
+  .panel { padding: 16px; } .star { font-size: 64px; } .panel p { font-size: 22px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --btn: 52px; }
+  .tool { min-width: 48px; min-height: 48px; font-size: 26px; border-radius: 16px; }
+  #tools { flex-direction: row; flex-wrap: wrap; width: calc(var(--btn) * 2 + 6px); gap: 6px; left: max(8px, env(safe-area-inset-left)); top: 8px; }
+  #fiche { top: 6px; right: max(8px, env(safe-area-inset-right)); width: 124px; padding: 0; }
+  #fiche-head { height: 30px; font-size: 14px; margin-bottom: 6px; }
+  #fiche-pic, #fiche-pic img { width: 30px; height: 30px; font-size: 22px; }
+  #fiche-view { width: 108px; height: 108px; outline-width: 4px; }
+  #zoom { top: auto; bottom: 8px; right: max(8px, env(safe-area-inset-right)); transform: none; flex-direction: column; gap: 6px; }
+  #btn-finish { bottom: 124px; right: max(10px, env(safe-area-inset-right)); min-height: 56px; min-width: 100px; font-size: 22px; padding: 0 16px; }
+  #bottom { flex-direction: row; align-items: center; gap: 8px; bottom: 6px; padding: 4px 8px; border-radius: 22px;
+    width: calc(100vw - 2 * (var(--btn) * 2 + 24px)); max-width: none; }
+  #palette { flex: 1 1 auto; min-width: 0; padding: 3px; }
+  #colors { flex: 0 0 auto; width: 206px; flex-wrap: wrap; overflow: visible; padding: 3px; gap: 6px; justify-content: center; }
+  .piece { width: 58px; height: 58px; border-radius: 14px; font-size: 11px; gap: 0; }
+  .piece .slot { height: 38px; }
+  .swatch { width: 44px; height: 44px; min-width: 44px; border-width: 3px; }
+  #bubble { top: 6px; font-size: 18px; padding: 6px 14px; max-width: 46vw; }
+  #piece-actions .tool { width: 56px; height: 56px; font-size: 30px; }
+  #piece-actions .tool.small { width: 48px; height: 48px; }
+  #screen-title { gap: 12px; }
+  #screen-title h1 { font-size: 36px; }
+  .big-buttons { gap: 16px; }
+  .big-buttons .big { min-height: 80px; font-size: 32px; min-width: 200px; }
+  #screen-pick { padding-top: 8px; gap: 6px; }
+  #screen-pick h2 { font-size: 28px; margin: 0; }
+  #cards { gap: 10px; padding: 6px; }
+  .card { width: 140px; padding: 6px; gap: 2px; border-radius: 20px; }
+  .card .pic { width: 120px; height: 80px; font-size: 48px; }
+  .card b { font-size: 18px; } .card .stars { font-size: 22px; }
+  .panel { padding: 12px 20px; } .star { font-size: 52px; } .panel p { font-size: 20px; margin: 4px 0 10px; }
+  .panel .big { min-height: 56px; font-size: 22px; min-width: 90px; padding: 0 16px; }
 }

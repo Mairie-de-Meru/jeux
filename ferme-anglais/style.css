@@ -1,7 +1,7 @@
 :root { --top: 96px; --bottom: 76px; font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: #bfeaff; user-select: none; -webkit-user-select: none; touch-action: none; }
-#app { position: fixed; inset: 0; }
+html, body { margin: 0; height: 100%; height: 100dvh; overflow: hidden; background: #bfeaff; user-select: none; -webkit-user-select: none; touch-action: none; }
+#app { position: fixed; inset: 0; height: 100dvh; }
 #stage { position: absolute; inset: 0; }
 #stage canvas { display: block; width: 100%; height: 100%; }
 [hidden] { display: none !important; }
@@ -54,3 +54,32 @@ body.listen { --bottom: 150px; }
   #pips { font-size: 20px; padding: 6px 8px; }
 }
 #home { touch-action: pan-y; }
+
+/* Responsive téléphone : accueil sans défilement quand possible */
+#home .panel { margin: auto; }
+#home, #done { -webkit-overflow-scrolling: touch; padding-top: max(16px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+@media (max-width: 480px) {
+  #home, #done { padding: 8px; }
+  #home .panel { gap: 8px; padding: 12px; border-radius: 24px; }
+  .panel img.title { max-height: 14dvh; }
+  .sub { font-size: 16px; }
+  #themes { gap: 8px; }
+  .theme { width: 72px; height: 72px; font-size: 13px; border-width: 3px; border-radius: 18px; }
+  .theme .ico { font-size: 30px; }
+  .theme img { height: 44px; }
+  #levels { gap: 8px; }
+  .lvl { min-width: 48px; height: 48px; font-size: 22px; border-width: 3px; }
+  .big { min-height: 56px; font-size: 20px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  #home, #done { padding: 6px 12px; }
+  #home .panel { gap: 6px; padding: 8px 16px; max-width: 900px; border-radius: 20px; }
+  .panel img.title { max-height: 16dvh; }
+  .sub { font-size: 14px; }
+  #themes, #levels { gap: 8px; flex-wrap: nowrap; }
+  .theme { width: 76px; height: 76px; font-size: 13px; border-width: 3px; border-radius: 16px; }
+  .theme .ico { font-size: 30px; }
+  .theme img { height: 46px; }
+  .lvl { min-width: 48px; height: 48px; font-size: 22px; border-width: 3px; }
+  .big { min-height: 52px; font-size: 20px; }
+}

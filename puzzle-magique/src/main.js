@@ -394,6 +394,20 @@ window.__puzzle = {
   },
   // Synchrone si l'image est déjà chargée ; sinon renvoie une Promise (attend l'image, 8 s maximum).
   start(level = 0, imageIdx = 0) { const id = IMAGES[((imageIdx % IMAGES.length) + IMAGES.length) % IMAGES.length].id; return isLoaded(id) ? startGame(level, imageIdx) : launch(id, () => startGame(level, imageIdx)); },
+  // Position écran (px CSS) du centre de chaque pièce libre et de sa case cible (débogage / tests tactiles).
+  screenPoints() {
+    if (!session) return [];
+    const r = canvas.getBoundingClientRect();
+    const px = (x, y) => {
+      const v = session.meshes[0].position.clone().set(x, y, 0);
+      sc.world.localToWorld(v); v.project(sc.camera);
+      return { x: Math.round(r.left + ((v.x + 1) / 2) * r.width), y: Math.round(r.top + ((1 - v.y) / 2) * r.height) };
+    };
+    return session.game.pieces.map((p, id) => {
+      const m = session.meshes[id];
+      return { id, placed: p.placed, ...px(m.position.x, m.position.y), target: px(p.target[0], p.target[1]) };
+    });
+  },
   placeOne,
   solveAll,
   hint,

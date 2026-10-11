@@ -41,6 +41,7 @@
   #levels { grid-template-columns: repeat(auto-fit, minmax(150px, 180px)); }
   #images, #gallery { grid-template-columns: repeat(auto-fit, minmax(170px, 230px)); overflow: auto; padding: 6px; flex: 1; min-height: 0; width: min(1000px, 100%); align-content: start; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
   #images { overflow-y: auto; }
+  #images, #gallery { grid-auto-rows: max-content; }
   .tabs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .cat { min-height: 84px; min-width: 96px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 14px; font-size: 20px; }
   .cat .ic { font-size: 36px; line-height: 1; }
@@ -60,9 +61,13 @@
   #loader { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.55); font-size: 96px; }
   #loader span { display: inline-block; animation: spin 1.2s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  .screen { overflow-y: auto; }
+  .screen.overlay { overflow: visible; }
+  @media (max-width: 480px) { .screen { padding: 10px; gap: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); } #levels { grid-template-columns: repeat(3, 1fr); gap: 10px; } .lvl { min-height: 104px; font-size: 40px; } .lvl small { font-size: 18px; } .lvl .st { font-size: 20px; } #images, #gallery { grid-template-columns: repeat(2, 1fr); gap: 10px; } .cat { min-width: 76px; min-height: 68px; font-size: 16px; padding: 4px 8px; } .cat .ic { font-size: 28px; } #s-fin .panel { padding: 12px 16px 16px; } #fin-stars { font-size: 44px; } button.big { min-height: 64px; } }
+  @media (max-height: 500px) and (orientation: landscape) { .screen { padding: 8px 12px; gap: 8px; } h1 { font-size: 36px; } h2 { font-size: 24px; } button.round { width: 56px; height: 56px; min-height: 56px; font-size: 26px; } button.big { min-height: 64px; font-size: 28px; padding: 8px 28px; } #s-accueil .title-card { padding: 10px 24px; } #levels { grid-template-columns: repeat(6, 1fr); gap: 8px; width: 100%; } .lvl { min-height: 92px; font-size: 34px; } .lvl small { font-size: 16px; } .lvl .st { font-size: 18px; } #images, #gallery { grid-template-columns: repeat(4, 1fr); gap: 8px; } .cat { min-height: 56px; min-width: 80px; font-size: 16px; padding: 2px 10px; flex-direction: row; gap: 6px; } .cat .ic { font-size: 26px; } .cat small { font-size: 14px; } .chip { min-height: 48px; font-size: 22px; padding: 6px 14px; } #fin-stars { font-size: 36px; } #s-fin .panel { padding: 8px 20px 12px; gap: 6px; } #rot-toggle { min-height: 48px; font-size: 20px; } }
   .hidden { display: none !important; }
   .empty { font-size: 28px; background: rgba(255,255,255,0.8); border-radius: 24px; padding: 24px; text-align: center; }
-  @media (max-width: 560px) { .bar { gap: 6px; } button.round { width: 64px; height: 64px; flex: 0 0 64px; font-size: 28px; } .chip { padding: 8px 12px; font-size: 24px; min-width: 0; } .bar .chip { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; } .bar h2 { min-width: 0; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } button { font-size: 24px; } button.big { font-size: 30px; padding: 10px 24px; } }
+  @media (max-width: 560px) { .bar { gap: 6px; } button.round { width: 64px; height: 64px; flex: 0 0 64px; font-size: 28px; } .chip { padding: 8px 12px; font-size: 24px; min-width: 0; } .bar .chip { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; } .bar h2 { min-width: 0; font-size: 22px; overflow: visible; white-space: normal; line-height: 1.1; text-align: center; font-size: 20px; } button { font-size: 24px; } button.big { font-size: 30px; padding: 10px 24px; } }
 </style>
 </head>
 <body>

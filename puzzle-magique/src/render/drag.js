@@ -23,12 +23,26 @@ export function createDrag({ canvas, camera, world, getMeshes, onStart, onMove, 
     return world.worldToLocal(out.clone());
   }
 
+  // Repli tactile : pièce libre dont le centre est le plus proche du doigt (tolérance en pixels).
+  const tmp = new THREE.Vector3();
+  function nearestMesh(meshes, e, tol = 36) {
+    const r = canvas.getBoundingClientRect();
+    let best = null, bd = tol;
+    for (const m of meshes) {
+      m.getWorldPosition(tmp).project(camera);
+      const d = Math.hypot(r.left + ((tmp.x + 1) / 2) * r.width - e.clientX, r.top + ((1 - tmp.y) / 2) * r.height - e.clientY);
+      if (d < bd) { bd = d; best = m; }
+    }
+    return best;
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     if (drag) return;
     setRay(e);
-    const hits = ray.intersectObjects(getMeshes(), false);
-    if (!hits.length) return;
-    const mesh = hits[0].object;
+    const meshes = getMeshes();
+    const hits = ray.intersectObjects(meshes, false);
+    const mesh = hits.length ? hits[0].object : nearestMesh(meshes, e);
+    if (!mesh) return;
     // les plans sont exprimés dans le repère monde de la scène (pivot sans rotation pendant le jeu)
     const p = planePoint(e, LIFT_Z + world.position.z);
     if (!p) return;

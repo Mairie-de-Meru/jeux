@@ -125,6 +125,18 @@ export function createBridge(scene) {
     return bricks.findIndex((b) => b.mesh === hits[0].object);
   }
 
+  // Repli tactile : brique la plus proche du doigt (centre projeté), à tol pixels près.
+  const _v = new THREE.Vector3();
+  function pickNear(camera, px, py, width, height, tol = 40) {
+    let best = -1, bestD = tol;
+    bricks.forEach((b, i) => {
+      b.mesh.getWorldPosition(_v).project(camera);
+      const d = Math.hypot((_v.x * 0.5 + 0.5) * width - px, (-_v.y * 0.5 + 0.5) * height - py);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    return best;
+  }
+
   async function bendLast() {
     const b = bricks[bricks.length - 1];
     if (!b) return;
@@ -193,7 +205,7 @@ export function createBridge(scene) {
 
   return {
     get count() { return bricks.length; },
-    setTarget, add, remove, clear, sum, pick, bendLast, unbend,
+    setTarget, add, remove, clear, sum, pick, pickNear, bendLast, unbend,
     showGhosts, clearGhosts, setWarn, wave, update,
   };
 }

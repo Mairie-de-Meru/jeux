@@ -81,6 +81,8 @@ export function createUI(h) {
 
   function buildDots(fact) {
     const wrap = $('dots');
+    wrap.style.setProperty('--r', fact.a);
+    wrap.style.setProperty('--c', fact.b);
     wrap.style.gridTemplateColumns = `repeat(${fact.b}, var(--dot, 24px))`;
     const dots = [];
     for (let r = 0; r < fact.a; r++) {
