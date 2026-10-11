@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Robot Codeur</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <main id="app">
+    <section class="screen active" data-screen="title" id="screen-title">
+      <div class="title-floaters" aria-hidden="true"><span>⭐</span><span>⚙️</span><span>☁️</span><span>🔑</span><span>✨</span><span>☁️</span><span>💎</span></div>
+      <div class="title-box">
+        <img class="logo" data-img="icon.png" alt="" hidden>
+        <div class="title-robot" aria-hidden="true">🤖</div>
+        <h1 aria-label="Robot Codeur"><span class="word w1"><span style="--i:0">R</span><span style="--i:1">o</span><span style="--i:2">b</span><span style="--i:3">o</span><span style="--i:4">t</span></span> <span class="word w2"><span style="--i:0">C</span><span style="--i:1">o</span><span style="--i:2">d</span><span style="--i:3">e</span><span style="--i:4">u</span><span style="--i:5">r</span></span></h1>
+        <button id="btn-play" class="big-btn play-btn">▶ Jouer</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="levels" id="screen-levels">
+      <header class="bar"><button id="btn-levels-home" class="round-btn" aria-label="Accueil">🏠</button><h2>Choisis un niveau</h2></header>
+      <div id="level-grid" class="level-grid"></div>
+      <div class="surprise-row">
+        <span class="surprise-label">🎲 Surprise</span>
+        <button id="btn-surprise-1" class="surprise-btn" aria-label="Surprise facile">🙂</button>
+        <button id="btn-surprise-2" class="surprise-btn" aria-label="Surprise moyenne">😃</button>
+        <button id="btn-surprise-3" class="surprise-btn" aria-label="Surprise difficile">🤩</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="game" id="screen-game">
+      <header class="bar">
+        <button id="btn-home" class="round-btn" aria-label="Menu">🏠</button>
+        <h2 id="level-title"></h2>
+        <button id="btn-view" class="round-btn" aria-label="Vue du robot">👀</button>
+        <button id="btn-voice" class="round-btn" aria-label="Lire la consigne">🔊</button>
+      </header>
+      <div id="stage" class="stage">
+        <div id="hint-bubble" class="bubble" hidden>
+          <span id="hint-text"></span>
+          <button id="btn-retry" class="small-btn" hidden>↺ Réessayer</button>
+        </div>
+        <div id="goal-text" class="goal"></div>
+      </div>
+      <div class="panel">
+        <div class="strip-row">
+          <div id="strip" class="strip"></div>
+          <div id="counter" class="counter" hidden></div>
+        </div>
+        <div class="controls">
+          <div id="palette" class="palette"></div>
+          <div class="actions">
+            <button id="btn-run" class="round-btn play" aria-label="Lancer">▶</button>
+            <button id="btn-reset" class="round-btn" aria-label="Recommencer">↺</button>
+            <button id="btn-clear" class="round-btn" aria-label="Vider">🗑</button>
+          </div>
+        </div>
+      </div>
+      <div id="win" class="win" hidden>
+        <div class="win-box">
+          <div class="win-title">🏆 Bravo !</div>
+          <div id="win-stars" class="win-stars"></div>
+          <div class="win-actions">
+            <button id="btn-replay" class="big-btn alt">🔄 Rejouer</button>
+            <button id="btn-next" class="big-btn">Suivant ➡️</button>
+            <button id="btn-win-menu" class="big-btn alt">🏠</button>
+          </div>
+        </div>
+      </div>
+      <div id="confetti" class="confetti-layer"></div>
+    </section>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

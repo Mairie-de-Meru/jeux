@@ -1,0 +1,26 @@
+{
+  "id": "graine-magique",
+  "titre": "Lila et la graine magique",
+  "couleur": "#2e9d4f",
+  "couverture": "assets/img/graine-magique/couverture.jpg",
+  "pages": [
+    { "texte": "Un matin, le vent pose une petite graine dans le jardin de Lila. Elle est ronde et toute brune. « Que vas-tu devenir, petite graine ? »", "image": "assets/img/graine-magique/p1.jpg" },
+    { "texte": "Lila creuse un trou dans la terre. Elle y pose la graine et la couvre doucement. Puis elle l'arrose avec son arrosoir bleu.", "image": "assets/img/graine-magique/p2.jpg" },
+    { "texte": "Le lendemain, Lila court au jardin. Rien ! Pas une feuille, pas une fleur. « Il faut être patiente », dit Maman.", "image": "assets/img/graine-magique/p3.jpg" },
+    { "texte": "Il pleut, puis le soleil revient. Un matin, Lila crie de joie. Une petite pousse verte sort de la terre !", "image": "assets/img/graine-magique/p4.jpg" },
+    { "texte": "Chaque jour, Lila arrose sa plante et lui chante une chanson. La tige grandit, grandit… Elle devient plus grande que Lila !", "image": "assets/img/graine-magique/p5.jpg" },
+    { "texte": "Un jour, un gros bouton vert pousse tout en haut. Lila attend, le nez en l'air. Que va-t-il se passer ?", "image": "assets/img/graine-magique/p6.jpg" },
+    { "texte": "Le bouton s'ouvre : c'est un tournesol géant, jaune comme le soleil ! Les abeilles et les oiseaux viennent lui dire bonjour.", "image": "assets/img/graine-magique/p7.jpg" },
+    { "texte": "À l'automne, la fleur est pleine de graines. Lila en donne à tous ses amis. Bientôt, il y aura des tournesols partout !", "image": "assets/img/graine-magique/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Qu'est-ce qui a poussé dans le jardin de Lila ?",
+    "choix": [
+      { "texte": "Une carotte", "emoji": "🥕" },
+      { "texte": "Un tournesol", "emoji": "🌻" },
+      { "texte": "Un sapin", "emoji": "🌲" }
+    ],
+    "reponse": 1,
+    "indice": "Il était jaune comme le soleil !"
+  }
+}

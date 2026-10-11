@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jeux éducatifs</title>
+<meta name="description" content="Petits jeux éducatifs en 3D pour les enfants de 5 à 8 ans.">
+<style>
+  :root { --fond:#eef6ff; --carte:#fff; --texte:#1d2a3a; --doux:#5a6b80; --accent:#2f80ed; }
+  @media (prefers-color-scheme: dark) { :root { --fond:#121a24; --carte:#1c2633; --texte:#eef3f8; --doux:#a9b7c6; --accent:#6aa8ff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--fond); color:var(--texte); }
+  header { padding:32px 16px 8px; text-align:center; }
+  h1 { margin:0 0 6px; font-size:clamp(1.8rem,5vw,2.6rem); }
+  header p { margin:0; color:var(--doux); }
+  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; padding:24px 16px 48px; max-width:1200px; margin:0 auto; }
+  .carte { background:var(--carte); border-radius:18px; padding:12px; text-decoration:none; color:inherit; box-shadow:0 4px 14px rgba(0,0,0,.08); transition:transform .15s; }
+  .carte:hover, .carte:focus-visible { transform:translateY(-4px); outline:3px solid var(--accent); }
+  .carte img, .sans-image { width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:12px; display:block; }
+  .sans-image { display:grid; place-items:center; font-size:3rem; font-weight:700; color:#fff; background:var(--accent); }
+  .carte h2 { font-size:1.15rem; margin:10px 4px 4px; }
+  .carte p { font-size:.9rem; color:var(--doux); margin:0 4px 4px; }
+  footer { text-align:center; color:var(--doux); font-size:.85rem; padding:0 16px 32px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Jeux éducatifs</h1>
+  <p>Petits jeux en 3D pour les 5-8 ans, à la souris ou au doigt.</p>
+</header>
+<main>
+      <a class="carte" href="atelier-lettres/">
+        <img src="atelier-lettres/assets/img/title.png" alt="" loading="lazy">
+        <h2>Atelier des Lettres</h2>
+        <p>Écriture des lettres et des premières phrases (GS-CP)</p>
+      </a>
+      <a class="carte" href="brique-batisseur/">
+        <div class="sans-image">B</div>
+        <h2>Brique Bâtisseur</h2>
+        <p>Bac à sable façon Lego</p>
+      </a>
+      <a class="carte" href="detective-phrases/">
+        <img src="detective-phrases/assets/img/titre.png" alt="" loading="lazy">
+        <h2>Détective des Phrases</h2>
+        <p>Français pour 6-8 ans (CP-CE2) : l&#x27;enfant joue un détective qui répare des phrases dans une petite ville 3D</p>
+      </a>
+      <a class="carte" href="fusee-tables/">
+        <div class="sans-image">F</div>
+        <h2>Fusée des Tables</h2>
+        <p>Tables de multiplication (2, 5, 10 puis 3, 4 ; 6-9 en bonus)</p>
+      </a>
+      <a class="carte" href="livre-histoires/">
+        <div class="sans-image">L</div>
+        <h2>Livre d&#x27;Histoires</h2>
+        <p>Application web de lecture pour enfants, façon livre</p>
+      </a>
+      <a class="carte" href="marche-pieces/">
+        <div class="sans-image">M</div>
+        <h2>Marché des Pièces</h2>
+        <p>Monnaie en euros</p>
+      </a>
+      <a class="carte" href="memo-cartes/">
+        <img src="memo-cartes/assets/img/titre.png" alt="" loading="lazy">
+        <h2>Mémo Cartes</h2>
+        <p>Jeu de memory : des cartes 3D posées sur une table se retournent (animation de rotation avec squash &amp; stretch) quand l&#x27;enfant les touche</p>
+      </a>
+      <a class="carte" href="pizzeria-fractions/">
+        <div class="sans-image">P</div>
+        <h2>Pizzeria Fractions</h2>
+        <p>Fractions simples (demi, tiers, quart, puis 2/4, 3/4, 2/3)</p>
+      </a>
+      <a class="carte" href="pont-nombres/">
+        <div class="sans-image">P</div>
+        <h2>Pont des Nombres</h2>
+        <p>Additions</p>
+      </a>
+      <a class="carte" href="quiz-poursuite/">
+        <img src="quiz-poursuite/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Quiz Poursuite</h2>
+        <p>Jeu de culture générale inspiré du Trivial Pursuit, adapté aux 5-8 ans (nom et visuel originaux, pas de marque)</p>
+      </a>
+      <a class="carte" href="robot-codeur/">
+        <div class="sans-image">R</div>
+        <h2>Robot Codeur</h2>
+        <p>Initiation à la programmation</p>
+      </a>
+      <a class="carte" href="tour-equilibre/">
+        <div class="sans-image">T</div>
+        <h2>Tour d&#x27;équilibre</h2>
+        <p>Empilement avec physique cannon-es</p>
+      </a>
+      <a class="carte" href="usine-formes/">
+        <div class="sans-image">U</div>
+        <h2>Usine à Formes</h2>
+        <p>Géométrie 3D</p>
+      </a>
+</main>
+<footer>Mairie de Méru</footer>
+</body>
+</html>

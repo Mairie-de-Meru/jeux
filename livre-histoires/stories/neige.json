@@ -1,0 +1,26 @@
+{
+  "id": "neige",
+  "titre": "Lila et le bonhomme de neige",
+  "couleur": "#4a7fd4",
+  "couverture": "assets/img/neige/couverture.jpg",
+  "pages": [
+    { "texte": "Ce matin, tout est blanc dehors. « De la neige ! » crie Lila. Elle met vite son bonnet rouge.", "image": "assets/img/neige/p1.jpg" },
+    { "texte": "Lila court dans la neige. Ses pattes font des petits trous tout ronds. Crac, crac, fait la neige sous ses pas.", "image": "assets/img/neige/p2.jpg" },
+    { "texte": "Un flocon tombe sur son nez. Il est tout petit et très joli. Il a six branches, comme une étoile.", "image": "assets/img/neige/p3.jpg" },
+    { "texte": "Lila roule une boule de neige. La boule grossit, grossit… Elle devient énorme !", "image": "assets/img/neige/p4.jpg" },
+    { "texte": "Lapinou l'aide à faire la tête. Une carotte pour le nez, deux cailloux pour les yeux. Voilà un bonhomme de neige !", "image": "assets/img/neige/p5.jpg" },
+    { "texte": "Lila lui donne son bonnet rouge. « Comme ça, tu n'auras pas froid ! » Le bonhomme a l'air de sourire.", "image": "assets/img/neige/p6.jpg" },
+    { "texte": "Le lendemain, le soleil brille fort. Le bonhomme devient tout petit. Il fond, goutte après goutte.", "image": "assets/img/neige/p7.jpg" },
+    { "texte": "Lila est un peu triste. Lapinou lui dit : « L'hiver prochain, on en fera un autre ! » Lila sourit et remet son bonnet.", "image": "assets/img/neige/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Que fait le bonhomme de neige quand le soleil brille ?",
+    "choix": [
+      { "texte": "Il danse", "emoji": "💃" },
+      { "texte": "Il fond", "emoji": "💧" },
+      { "texte": "Il s'envole", "emoji": "🎈" }
+    ],
+    "reponse": 1,
+    "indice": "Regarde bien : quand il fait chaud, la neige devient de l'eau."
+  }
+}

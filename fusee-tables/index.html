@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Fusée des Tables</title>
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<canvas id="confetti"></canvas>
+
+<main id="ui">
+  <!-- Écran titre -->
+  <section id="screen-title" class="screen">
+    <h1>Fusée des Tables 🚀</h1>
+    <div class="levels">
+      <button class="big level" data-level="1">Niveau 1<small>2 · 5 · 10</small></button>
+      <button class="big level" data-level="2">Niveau 2<small>3 · 4</small></button>
+      <button class="big level" data-level="3">Niveau 3 ⭐<small>6 · 7 · 8 · 9</small></button>
+    </div>
+    <div id="planets-row" class="planets-row" aria-label="Planètes débloquées"></div>
+    <button id="btn-parents" class="round" aria-label="Parents">👪</button>
+    <div id="parents-panel" class="parents hidden">
+      <p>Choisir une table</p>
+      <div class="table-pick" id="table-pick"></div>
+      <button id="btn-parents-close" class="big small">Fermer</button>
+    </div>
+  </section>
+
+  <!-- Écran de jeu -->
+  <section id="screen-game" class="screen hidden">
+    <header class="topbar">
+      <button id="btn-home" class="round" aria-label="Accueil">🏠</button>
+      <div id="portholes" class="portholes" aria-label="Étages"></div>
+      <button id="btn-speak" class="round" aria-label="Lire à voix haute">🔊</button>
+    </header>
+    <div class="play">
+      <div class="question">
+        <div id="operation" class="operation">3 × 4 = ?</div>
+        <div id="message" class="message">&nbsp;</div>
+      </div>
+      <div class="gridzone">
+        <div id="dots" class="dots"></div>
+        <div class="gridinfo">
+          <span id="count" class="count">0</span>
+          <button id="btn-dots-reset" class="round small" aria-label="Recommencer">↺</button>
+        </div>
+        <div id="skip" class="skip">&nbsp;</div>
+      </div>
+      <div id="answers" class="answers"></div>
+    </div>
+  </section>
+
+  <!-- Compte à rebours -->
+  <div id="countdown" class="countdown hidden"></div>
+
+  <!-- Écran planète -->
+  <section id="screen-planet" class="screen planet hidden">
+    <h2>Nouvelle planète !</h2>
+    <div id="planet-name" class="planet-name"></div>
+    <div id="planet-stars" class="planet-stars"></div>
+    <div class="planet-actions">
+      <button id="btn-again" class="big">Encore ! 🚀</button>
+      <button id="btn-home2" class="round" aria-label="Accueil">🏠</button>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

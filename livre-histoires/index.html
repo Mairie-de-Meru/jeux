@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Livre d'Histoires</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&display=swap">
+  <link rel="stylesheet" href="src/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <main id="library" class="view">
+    <h1>📚 Mes histoires</h1>
+    <div id="shelf"></div>
+  </main>
+
+  <section id="reader" class="view" hidden>
+    <div id="stage"></div>
+    <button id="ask" class="big-btn" type="button" hidden>⭐ Une question !</button>
+    <nav id="bar">
+      <button id="btnHome" class="round-btn" type="button" aria-label="Retour">🏠</button>
+      <button id="btnPrev" class="round-btn" type="button" aria-label="Page précédente">◀</button>
+      <button id="btnRead" class="round-btn" type="button" aria-label="Lire la page">🔊</button>
+      <button id="btnNext" class="round-btn" type="button" aria-label="Page suivante">▶</button>
+      <button id="btnMode" class="mode-btn" type="button">👂 On me lit</button>
+    </nav>
+  </section>
+
+  <section id="quiz" class="view" hidden>
+    <canvas id="confetti"></canvas>
+    <div class="quiz-card">
+      <h2 id="qText"></h2>
+      <button id="qRead" class="round-btn" type="button" aria-label="Lire la question">🔊</button>
+      <div id="qChoices"></div>
+      <p id="qMsg" aria-live="polite"></p>
+      <div id="qStars"></div>
+      <button id="qHome" class="big-btn" type="button" hidden>🏠 Encore une histoire</button>
+    </div>
+  </section>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

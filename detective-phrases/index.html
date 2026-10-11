@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Détective des Phrases</title>
+  <link rel="stylesheet" href="src/ui/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <main id="ui">
+    <section id="ecran-titre" class="ecran">
+      <div class="titre-boite">
+        <img id="titre-detective" class="cache" alt="">
+        <h1>Détective des Phrases</h1>
+        <p class="sous-titre">Répare les phrases de la petite ville !</p>
+        <button id="btn-jouer" class="gros vert">Jouer ▶</button>
+      </div>
+    </section>
+
+    <section id="ecran-ville" class="ecran cache">
+      <h2 class="bandeau">Choisis une enquête</h2>
+      <nav id="ville-boutons" class="ville-boutons" aria-label="Enquêtes"></nav>
+    </section>
+
+    <section id="ecran-paliers" class="ecran cache">
+      <div class="panneau">
+        <h2 id="paliers-titre"></h2>
+        <div id="paliers-liste" class="paliers"></div>
+        <p id="paliers-message" class="message" role="status"></p>
+        <button id="btn-paliers-retour" class="gros gris">⬅ La ville</button>
+      </div>
+    </section>
+
+    <section id="ecran-partie" class="ecran cache">
+      <div class="haut">
+        <div class="barre">
+          <button id="btn-quitter" class="rond gris" aria-label="Retour à la ville">⬅</button>
+          <div id="progression" class="loupes" aria-label="Progression"></div>
+          <button id="btn-voix-auto" class="rond" aria-label="Voix automatique" aria-pressed="true">🔈</button>
+          <button id="btn-lire" class="rond bleu" aria-label="Lire à voix haute">🔊</button>
+        </div>
+        <div class="carte">
+          <p id="consigne" class="consigne"></p>
+          <div id="phrase" class="phrase"></div>
+        </div>
+      </div>
+      <div class="bas">
+        <div id="bulle" class="bulle cache" role="status">
+          <img id="bulle-detective" class="cache" alt="">
+          <span id="bulle-emoji">🕵️</span>
+          <p id="bulle-texte"></p>
+        </div>
+        <div id="choix" class="choix"></div>
+      </div>
+    </section>
+
+    <section id="ecran-fin" class="ecran cache">
+      <div class="panneau">
+        <h2>Bravo, détective !</h2>
+        <p id="fin-etoiles" class="etoiles-fin" aria-live="polite"></p>
+        <p id="fin-texte" class="message"></p>
+        <div class="boutons-fin">
+          <button id="btn-rejouer" class="gros vert">Rejouer</button>
+          <button id="btn-fin-ville" class="gros bleu">La ville</button>
+        </div>
+      </div>
+    </section>
+  </main>
+  <pre id="debug" class="cache"></pre>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

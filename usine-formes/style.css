@@ -1,0 +1,52 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3ff;
+  font-family: ui-rounded, "Nunito", "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  user-select: none; -webkit-user-select: none; color: #2b3150; }
+#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#ui { position: fixed; inset: 0; pointer-events: none; }
+#ui > * { pointer-events: auto; }
+
+.btn { min-width: 64px; min-height: 64px; padding: 10px 22px; border: 0; border-radius: 22px;
+  font: inherit; font-size: 28px; font-weight: 800; color: #fff; background: #3d8bff; cursor: pointer;
+  box-shadow: 0 6px 0 rgba(0,0,0,.22); display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: transform .08s; }
+.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.22); }
+.btn.green { background: #3ccf6e; } .btn.orange { background: #ff9a3c; } .btn.red { background: #ff5a5f; }
+.btn.light { background: #fff; color: #2b3150; }
+.btn.big { font-size: 44px; min-height: 96px; padding: 12px 56px; border-radius: 32px; }
+.btn.shake { animation: shake .45s; }
+@keyframes shake { 20% { transform: translateX(-10px) } 40% { transform: translateX(10px) } 60% { transform: translateX(-8px) } 80% { transform: translateX(6px) } }
+
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  background: linear-gradient(180deg, #7ec8ff, #c9f0ff 60%, #ffe9a8); text-align: center; padding: 20px; }
+.screen.photo { background-size: cover; background-position: center; }
+.screen h1 { margin: 0; font-size: clamp(44px, 9vw, 96px); color: #fff; text-shadow: 0 5px 0 #3d8bff, 0 8px 18px rgba(0,0,0,.25); }
+.screen h2 { margin: 0; font-size: clamp(32px, 6vw, 56px); color: #fff; text-shadow: 0 4px 0 #3d8bff; }
+.logo { width: 140px; height: 140px; border-radius: 30px; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(160px, 260px)); gap: 20px; }
+@media (min-width: 900px) { .cards { grid-template-columns: repeat(4, 220px); } }
+.card { border: 0; border-radius: 30px; background: #fff; padding: 18px 10px; min-height: 190px; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 8px 0 rgba(0,0,0,.2); transition: transform .08s; }
+.card:active { transform: translateY(5px); }
+.card .ico { font-size: 68px; line-height: 1; } .card .mot { font-size: 30px; font-weight: 800; color: #2b3150; }
+.card .stars { font-size: 28px; letter-spacing: 2px; }
+.card.first { outline: 8px solid #ffc928; animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.05); } }
+
+.hud { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 14px; padding: 10px 14px; pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud .titre { font-size: 28px; font-weight: 800; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.25); }
+.hud .dots { flex: 1; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; pointer-events: none; }
+.dot { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.65); border: 3px solid #fff; transition: transform .2s, background .2s; }
+.dot.on { background: #ffc928; transform: scale(1.25); }
+.bubble { position: absolute; top: 92px; left: 50%; transform: translateX(-50%); max-width: min(92vw, 760px);
+  background: #fff; border-radius: 28px; padding: 14px 26px; font-size: clamp(22px, 3.4vw, 32px); font-weight: 800; text-align: center;
+  box-shadow: 0 6px 0 rgba(0,0,0,.18); pointer-events: none; }
+.bubble.pop { animation: bpop .35s; }
+@keyframes bpop { 0% { transform: translateX(-50%) scale(.85); } 60% { transform: translateX(-50%) scale(1.06); } 100% { transform: translateX(-50%) scale(1); } }
+.answers { position: absolute; bottom: 24px; left: 0; right: 0; display: flex; justify-content: center; gap: 24px; pointer-events: none; }
+.answers .btn { pointer-events: auto; font-size: 48px; min-width: 120px; min-height: 96px; }
+.end .stars-big { font-size: clamp(60px, 14vw, 120px); letter-spacing: 6px; }
+.end .row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+.end { background: rgba(120, 200, 255, .55); }

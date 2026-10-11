@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Marché des Pièces</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%99%3C/text%3E%3C/svg%3E">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none;
+    font-family: ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif; color: #2b2b3a;
+    background: linear-gradient(180deg, #8fd3ff 0%, #c9efff 55%, #fff1c9 100%); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  [hidden] { display: none !important; }
+  button { font: inherit; border: 0; cursor: pointer; border-radius: 22px; min-width: 64px; min-height: 64px;
+    background: #fff; color: #2b2b3a; font-size: 30px; padding: 8px 20px; box-shadow: 0 5px 0 rgba(0,0,0,.18);
+    touch-action: manipulation; }
+  button:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  #hud button { pointer-events: auto; }
+  #hud .left { position: absolute; top: 12px; left: 12px; display: flex; gap: 10px; align-items: center; }
+  #hud .right { position: absolute; top: 12px; right: 12px; display: flex; gap: 10px; }
+  #piggyCount { background: #fff; border-radius: 22px; padding: 14px 18px; font-size: 26px; font-weight: 700; box-shadow: 0 5px 0 rgba(0,0,0,.18); }
+  #center { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); text-align: center; width: min(64vw, 720px); }
+  #total { font-size: clamp(48px, 9vw, 92px); font-weight: 800; line-height: 1; color: #2b2b3a;
+    text-shadow: 0 4px 0 #fff, 0 0 18px rgba(255,255,255,.9); }
+  #instruction { margin-top: 6px; display: inline-block; background: rgba(255,255,255,.92); border-radius: 22px; padding: 8px 18px;
+    font-size: clamp(22px, 3.4vw, 34px); font-weight: 700; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+  #dots { margin-top: 8px; display: flex; gap: 10px; justify-content: center; }
+  #dots span { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,.7); border: 3px solid #fff; }
+  #dots span.current { background: #ffc233; transform: scale(1.25); }
+  #dots span.done { background: #3ddc84; }
+  #pay { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: #3ddc84; color: #fff;
+    font-size: 34px; font-weight: 800; min-height: 84px; padding: 10px 26px; box-shadow: 0 6px 0 #1f9d57; }
+  #pay:active { transform: translateY(calc(-50% + 3px)); }
+  #bubble { position: absolute; left: 50%; top: 150px; transform: translate(-50%, 0) scale(.9); max-width: 80vw; text-align: center;
+    background: #fff8e0; border: 4px solid #ffc233; border-radius: 22px; padding: 6px 16px; font-size: clamp(20px, 3vw, 28px);
+    font-weight: 800; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; box-shadow: 0 6px 0 rgba(0,0,0,.15); }
+  #bubble.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  @media (max-width: 700px) {
+    #pay { right: auto; left: 50%; top: auto; bottom: 20px; transform: translateX(-50%); }
+    #pay:active { transform: translateX(-50%) translateY(3px); }
+    #center { width: 92vw; top: 74px; }
+    #bubble { top: 230px; }
+  }
+
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+    background-size: cover; background-position: center; text-align: center; padding: 16px; }
+  #title { background-image: linear-gradient(180deg, #8fd3ff 0%, #c9efff 50%, #ffe9a8 100%); }
+  #end { background: rgba(255, 244, 214, .94); }
+  h1 { margin: 0; font-size: clamp(40px, 8vw, 84px); color: #e8473f; text-shadow: 0 5px 0 #fff; }
+  #levels { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; max-width: 900px; }
+  #levels button { width: 190px; min-height: 150px; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative;
+    border-radius: 30px; font-size: 26px; font-weight: 800; }
+  #levels button .ic { font-size: 54px; line-height: 1.1; }
+  #levels button .ok { position: absolute; top: 8px; right: 14px; color: #1f9d57; font-size: 34px; }
+  #piggyTitle { background: #fff; border-radius: 22px; padding: 12px 22px; font-size: 30px; font-weight: 800; box-shadow: 0 5px 0 rgba(0,0,0,.15); }
+  #endStars { font-size: clamp(40px, 8vw, 72px); }
+  #endBtns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  #endBtns button { font-weight: 800; }
+  .big { font-size: 40px; font-weight: 800; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud" hidden>
+  <div class="left"><button id="btnHome" aria-label="Accueil">🏠</button><div id="piggyCount">🐷 ⭐ 0</div></div>
+  <div id="center">
+    <div id="total">0 €</div>
+    <div id="instruction"></div>
+    <div id="dots"></div>
+  </div>
+  <div class="right"><button id="btnSpeak" aria-label="Lire à voix haute">🔊</button><button id="btnClear" aria-label="Vider le comptoir">🧹</button></div>
+  <button id="pay">✔ Payer</button>
+  <div id="bubble"></div>
+</div>
+
+<div id="title" class="screen">
+  <h1>Marché des Pièces</h1>
+  <div id="levels"></div>
+  <div id="piggyTitle">🐷 ⭐ 0</div>
+</div>
+
+<div id="end" class="screen" hidden>
+  <div class="big">Bravo ! 🎉</div>
+  <div id="endStars"></div>
+  <div id="endBtns">
+    <button id="btnReplay">🔁 Rejouer</button>
+    <button id="btnNext">➡️ Palier suivant</button>
+    <button id="btnEndHome">🏠</button>
+  </div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

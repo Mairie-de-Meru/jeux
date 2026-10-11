@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Brique Bâtisseur</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧱</text></svg>">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="bg"></div>
+  <canvas id="gl"></canvas>
+  <div id="confetti"></div>
+
+  <main id="ui">
+    <section id="screen-title" class="screen">
+      <h1>🧱 Brique Bâtisseur</h1>
+      <div class="big-buttons">
+        <button id="btn-free" class="big green">🧱 Libre</button>
+        <button id="btn-challenge" class="big orange">⭐ Défi</button>
+      </div>
+      <button class="tool corner" id="speak-title" aria-label="Lire">🔊</button>
+    </section>
+
+    <section id="screen-pick" class="screen" hidden>
+      <button class="tool corner-left" id="pick-home" aria-label="Accueil">🏠</button>
+      <button class="tool corner" id="speak-pick" aria-label="Lire">🔊</button>
+      <h2>Choisis un défi</h2>
+      <div id="cards"></div>
+    </section>
+
+    <section id="screen-game" class="screen" hidden>
+      <div id="tools">
+        <button class="tool" id="btn-home" aria-label="Accueil">🏠</button>
+        <button class="tool" id="btn-speak" aria-label="Lire">🔊</button>
+        <button class="tool" id="btn-rotate" aria-label="Tourner">🔄</button>
+        <button class="tool" id="btn-eraser" aria-label="Gomme">🧽</button>
+        <button class="tool" id="btn-undo" aria-label="Annuler">↩️</button>
+        <button class="tool" id="btn-clear" aria-label="Tout effacer">🗑️</button>
+      </div>
+      <div id="bubble"></div>
+      <div id="zoom">
+        <button class="tool" id="btn-zoom-in" aria-label="Rapprocher">➕</button>
+        <button class="tool" id="btn-zoom-out" aria-label="Éloigner">➖</button>
+      </div>
+      <div id="piece-actions" hidden>
+        <button class="tool" id="act-rotate" aria-label="Tourner la pièce">🔄</button>
+        <button class="tool" id="act-delete" aria-label="Enlever la pièce">🗑️</button>
+        <button class="tool small" id="act-close" aria-label="Fermer">✖️</button>
+      </div>
+      <div id="fiche" hidden>
+        <div id="fiche-head"><span id="fiche-pic"></span><b id="fiche-title"></b></div>
+        <div id="fiche-view"></div>
+      </div>
+      <button id="btn-finish" class="big green" hidden>✅ J'ai fini !</button>
+      <div id="bottom">
+        <div id="palette"></div>
+        <div id="colors"></div>
+      </div>
+      <div id="result" hidden>
+        <div class="panel">
+          <div id="res-stars"></div>
+          <p id="res-hint"></p>
+          <div class="row">
+            <button id="res-continue" class="big blue">🔁 Continuer</button>
+            <button id="res-next" class="big green">➡️ Défi suivant</button>
+            <button id="res-home" class="big orange">🏠</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

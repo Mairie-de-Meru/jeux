@@ -1,0 +1,26 @@
+{
+  "id": "cabane",
+  "titre": "Lila et la cabane des amis",
+  "couleur": "#c9762e",
+  "couverture": "assets/img/cabane/couverture.jpg",
+  "pages": [
+    { "texte": "Lila la petite renarde a une grande idée. « Je vais construire une cabane dans la forêt ! » Elle prend une corde et un panier.", "image": "assets/img/cabane/p1.jpg" },
+    { "texte": "Lila ramasse des branches. Mais les grosses branches sont trop lourdes pour elle. « Ouf ! Je n'y arrive pas toute seule. »", "image": "assets/img/cabane/p2.jpg" },
+    { "texte": "Tito la tortue passe par là. « Je suis lent, mais je suis très fort ! » Il pousse les grosses branches avec sa carapace.", "image": "assets/img/cabane/p3.jpg" },
+    { "texte": "Lapinou le lapin arrive en sautant. Il creuse des petits trous très vite. Hop, hop, hop ! Les branches tiennent debout.", "image": "assets/img/cabane/p4.jpg" },
+    { "texte": "L'oiseau Pipo vole au-dessus. Il pose des feuilles sur le toit, une par une. « Comme ça, la pluie ne rentrera pas ! »", "image": "assets/img/cabane/p5.jpg" },
+    { "texte": "Lila attache les branches avec sa corde. Elle fait des nœuds bien serrés. Tout le monde l'aide à tirer.", "image": "assets/img/cabane/p6.jpg" },
+    { "texte": "La cabane est finie ! Elle est un peu penchée, mais elle est solide. Les quatre amis entrent dedans en riant.", "image": "assets/img/cabane/p7.jpg" },
+    { "texte": "Dehors, il commence à pleuvoir. Dedans, les amis sont bien au sec. « Tout seul, c'est dur. Ensemble, c'est facile ! » dit Lila.", "image": "assets/img/cabane/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Comment Lila a-t-elle réussi à construire la cabane ?",
+    "choix": [
+      { "texte": "Toute seule", "emoji": "🦊" },
+      { "texte": "Avec ses amis", "emoji": "🤝" },
+      { "texte": "Avec un robot", "emoji": "🤖" }
+    ],
+    "reponse": 1,
+    "indice": "Souviens-toi : Tito, Lapinou et Pipo sont venus l'aider !"
+  }
+}

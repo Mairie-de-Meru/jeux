@@ -1,0 +1,26 @@
+{
+  "id": "arc-en-ciel",
+  "titre": "Lila et l'arc-en-ciel",
+  "couleur": "#2fa36b",
+  "couverture": "assets/img/arc-en-ciel/couverture.jpg",
+  "pages": [
+    { "texte": "Il pleut depuis le matin. Lila la petite renarde s'ennuie à la maison. Elle colle son nez contre la vitre.", "image": "assets/img/arc-en-ciel/p1.jpg" },
+    { "texte": "Soudain, le soleil sort des nuages. Dans le ciel apparaît un grand pont de toutes les couleurs. « Un arc-en-ciel ! »", "image": "assets/img/arc-en-ciel/p2.jpg" },
+    { "texte": "« Je veux toucher le bout de l'arc-en-ciel ! » dit Lila. Elle met ses bottes et son écharpe jaune, et elle court dehors.", "image": "assets/img/arc-en-ciel/p3.jpg" },
+    { "texte": "Lila saute dans les flaques. Splash ! Elle court jusqu'à la colline. Mais l'arc-en-ciel est toujours plus loin.", "image": "assets/img/arc-en-ciel/p4.jpg" },
+    { "texte": "Sur la colline, Lila rencontre l'oiseau Pipo. « Pipo, tu peux voler jusqu'à l'arc-en-ciel ? » Pipo vole, vole… et revient.", "image": "assets/img/arc-en-ciel/p5.jpg" },
+    { "texte": "« Je n'ai rien pu toucher, dit Pipo. L'arc-en-ciel, c'est de la lumière ! Le soleil brille à travers les gouttes de pluie. »", "image": "assets/img/arc-en-ciel/p6.jpg" },
+    { "texte": "Lila compte les couleurs : rouge, orange, jaune, vert, bleu, violet. « Mon écharpe est jaune, comme l'arc-en-ciel ! »", "image": "assets/img/arc-en-ciel/p7.jpg" },
+    { "texte": "Le soleil sèche les gouttes et l'arc-en-ciel s'efface doucement. Lila n'est pas triste : elle reviendra le voir à la prochaine pluie.", "image": "assets/img/arc-en-ciel/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Que faut-il pour voir un arc-en-ciel ?",
+    "choix": [
+      { "texte": "Le soleil et la pluie", "emoji": "🌦️" },
+      { "texte": "La neige", "emoji": "❄️" },
+      { "texte": "La nuit", "emoji": "🌙" }
+    ],
+    "reponse": 0,
+    "indice": "Pipo l'a dit : le soleil brille à travers les gouttes de pluie !"
+  }
+}

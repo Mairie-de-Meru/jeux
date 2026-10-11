@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Pont des Nombres</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <div id="progress">
+      <div id="pills"></div>
+      <div id="rounds"></div>
+      <div id="total">⭐ <span id="total-n">0</span></div>
+    </div>
+    <div id="goal">
+      <div id="bignum"></div>
+      <div id="dots"></div>
+    </div>
+    <div id="instruction"></div>
+    <div id="bubble"></div>
+    <div id="result"></div>
+  </div>
+
+  <div id="bottom">
+    <div id="ways"></div>
+    <div id="tray"></div>
+    <div id="actions">
+      <button id="btn-clear" class="act" aria-label="Tout effacer">↺</button>
+      <button id="btn-go" class="act go" aria-label="Essayer de traverser">▶</button>
+      <button id="btn-next" class="act go" aria-label="Manche suivante" hidden>➜</button>
+      <button id="btn-speak" class="act" aria-label="Lire la consigne">🔊</button>
+      <button id="btn-auto" class="act" aria-label="Lecture automatique" aria-pressed="false">🗣</button>
+    </div>
+  </div>
+
+  <div id="title" class="screen">
+    <h1>Pont des Nombres</h1>
+    <button id="btn-play" class="big">▶ Jouer</button>
+    <div id="levels">
+      <button class="lvl" data-level="0"><b>1</b><span>+</span></button>
+      <button class="lvl" data-level="1"><b>2</b><span>+</span></button>
+      <button class="lvl" data-level="2"><b>3</b><span>−</span></button>
+      <button class="lvl" data-level="3"><b>4</b><span>2×</span></button>
+    </div>
+  </div>
+
+  <div id="end" class="screen" hidden>
+    <h1>Bravo !</h1>
+    <div id="end-stars"></div>
+    <button id="btn-replay" class="big">↺ Rejouer</button>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

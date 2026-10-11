@@ -1,0 +1,26 @@
+{
+  "id": "lune-perdue",
+  "titre": "Lila et la lune perdue",
+  "couleur": "#3b4cc0",
+  "couverture": "assets/img/lune-perdue/couverture.jpg",
+  "pages": [
+    { "texte": "Ce soir, Lila la petite renarde ne dort pas. Elle regarde par la fenêtre. Mais où est passée la lune ?", "image": "assets/img/lune-perdue/p1.jpg" },
+    { "texte": "Lila met son écharpe jaune et sort sans bruit. Elle cherche partout, le nez dans l'herbe. « Lune, où es-tu ? »", "image": "assets/img/lune-perdue/p2.jpg" },
+    { "texte": "Près de la mare, Lila voit une grosse boule blanche dans l'eau. « Oh non ! La lune est tombée dans la mare ! »", "image": "assets/img/lune-perdue/p3.jpg" },
+    { "texte": "Lila appelle son ami Tito la tortue. Tito arrive tout doucement, comme toujours. « Vite, il faut sortir la lune de l'eau ! »", "image": "assets/img/lune-perdue/p4.jpg" },
+    { "texte": "Ils tendent une longue branche vers la lune. Plouf ! L'eau fait des ronds et la lune se casse en mille morceaux.", "image": "assets/img/lune-perdue/p5.jpg" },
+    { "texte": "« Nous l'avons cassée ! » pleure Lila. Tito réfléchit, puis il sourit. « Attends un peu et regarde bien. »", "image": "assets/img/lune-perdue/p6.jpg" },
+    { "texte": "L'eau redevient lisse comme un miroir. La lune est de nouveau toute ronde. « Maintenant, lève la tête ! » dit Tito.", "image": "assets/img/lune-perdue/p7.jpg" },
+    { "texte": "Là-haut, la vraie lune brille dans le ciel ! Dans la mare, c'était seulement son reflet. Lila rit et rentre faire dodo.", "image": "assets/img/lune-perdue/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Où était vraiment la lune ?",
+    "choix": [
+      { "texte": "Dans le ciel", "emoji": "🌙" },
+      { "texte": "Dans la mare", "emoji": "💧" },
+      { "texte": "Dans la maison", "emoji": "🏠" }
+    ],
+    "reponse": 0,
+    "indice": "Souviens-toi : Tito a dit « lève la tête » !"
+  }
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Quiz Poursuite</title>
+<link id="favicon" rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage"></div>
+  <div id="hud"></div>
+  <div id="toast"></div>
+  <button id="sound-btn" type="button" aria-label="Son">🔊</button>
+
+  <div id="controls" hidden>
+    <button id="roll-btn" class="big-btn go" type="button">🎲 Lancer</button>
+    <div id="dir-btns"></div>
+  </div>
+
+  <div id="card" hidden></div>
+
+  <div id="setup" class="overlay">
+    <div class="panel">
+      <img id="logo" alt="" hidden>
+      <h1>Quiz Poursuite</h1>
+      <p class="lbl">Combien de joueurs ?</p>
+      <div id="count-btns" class="row"></div>
+      <div id="players-rows"></div>
+      <p class="lbl">Robots 🤖</p>
+      <div id="bot-btns" class="row"></div>
+      <p class="lbl">Longueur de la partie</p>
+      <div id="len-btns" class="row"></div>
+      <button id="play-btn" class="big-btn go" type="button">Jouer ▶</button>
+    </div>
+  </div>
+
+  <div id="win" class="overlay" hidden>
+    <div class="panel">
+      <div id="win-av">🏆</div>
+      <h1>Bravo !</h1>
+      <p id="win-text"></p>
+      <button id="again-btn" class="big-btn go" type="button">Rejouer 🔁</button>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

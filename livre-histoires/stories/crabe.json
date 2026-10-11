@@ -1,0 +1,26 @@
+{
+  "id": "crabe",
+  "titre": "Lila et le petit crabe",
+  "couleur": "#2a9fb5",
+  "couverture": "assets/img/crabe/couverture.jpg",
+  "pages": [
+    { "texte": "Aujourd'hui, Lila va à la plage. Le sable est chaud et la mer fait « chhh, chhh ». Elle porte son seau et sa pelle.", "image": "assets/img/crabe/p1.jpg" },
+    { "texte": "Lila construit un château de sable. Il a trois tours et un pont. Pipo pose un coquillage tout en haut.", "image": "assets/img/crabe/p2.jpg" },
+    { "texte": "Soudain, Lila entend un petit bruit. Clic, clic ! Un petit crabe rouge pleure derrière un rocher.", "image": "assets/img/crabe/p3.jpg" },
+    { "texte": "« Je suis perdu, dit le crabe. Je ne trouve plus ma maman. » Lila le met tout doucement dans son seau.", "image": "assets/img/crabe/p4.jpg" },
+    { "texte": "Lila et Pipo cherchent partout. Sous les algues, personne. Derrière les coquillages, personne.", "image": "assets/img/crabe/p5.jpg" },
+    { "texte": "Pipo vole très haut pour mieux voir. « Là-bas, près des rochers ! Je vois des crabes ! »", "image": "assets/img/crabe/p6.jpg" },
+    { "texte": "Maman crabe agite ses pinces. « Mon petit ! » Le petit crabe court vers elle, clic, clic, clic !", "image": "assets/img/crabe/p7.jpg" },
+    { "texte": "Le soir, Lila regarde le soleil se coucher sur la mer. Elle a aidé un nouvel ami. Quelle belle journée !", "image": "assets/img/crabe/p8.jpg" }
+  ],
+  "question": {
+    "texte": "Qui a trouvé la maman du petit crabe ?",
+    "choix": [
+      { "texte": "Pipo l'oiseau", "emoji": "🐦" },
+      { "texte": "Un poisson", "emoji": "🐟" },
+      { "texte": "Un bateau", "emoji": "⛵" }
+    ],
+    "reponse": 0,
+    "indice": "Qui peut voler très haut pour regarder partout ?"
+  }
+}

@@ -1,0 +1,110 @@
+:root {
+  --ink: #2b2438;
+  --paper: #fff8e8;
+  font-family: "Andika", "Comic Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  color: var(--ink);
+  background: linear-gradient(160deg, #ffd6e8 0%, #cfe3ff 55%, #d6f5e3 100%);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action: manipulation; }
+button:active { transform: scale(0.94); }
+.view { position: fixed; inset: 0; }
+
+/* Bibliothèque */
+#library { overflow-y: auto; padding: 24px; text-align: center; }
+#library h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin: 8px 0 24px; }
+#shelf { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; }
+.cover-card {
+  width: min(300px, 80vw); padding: 14px; border-radius: 32px;
+  background: var(--couleur); box-shadow: 0 10px 24px rgba(43, 36, 56, 0.25);
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+}
+.cover-art {
+  width: 100%; aspect-ratio: 3 / 4; border-radius: 22px; overflow: hidden;
+  background: rgba(255, 255, 255, 0.25); display: grid; place-items: center; font-size: 6rem;
+}
+.cover-art img { width: 100%; height: 100%; object-fit: cover; }
+.cover-title {
+  background: var(--paper); border-radius: 22px; padding: 12px 16px;
+  font-size: 1.3rem; font-weight: 700; width: 100%;
+}
+
+/* Lecteur */
+#stage { position: absolute; inset: 0; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+#bar {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; pointer-events: none;
+}
+#bar > * { pointer-events: auto; }
+.round-btn {
+  width: 72px; height: 72px; border-radius: 50%; font-size: 2rem;
+  background: #fff; box-shadow: 0 6px 14px rgba(43, 36, 56, 0.25);
+}
+.round-btn:disabled { opacity: 0.35; }
+.mode-btn {
+  min-height: 72px; padding: 0 22px; border-radius: 36px; font-size: 1.25rem; font-weight: 700;
+  background: #ffd93b; box-shadow: 0 6px 14px rgba(43, 36, 56, 0.25);
+}
+.big-btn {
+  min-height: 72px; padding: 0 32px; border-radius: 36px; font-size: 1.6rem; font-weight: 700;
+  background: #ffd93b; box-shadow: 0 8px 18px rgba(43, 36, 56, 0.3);
+}
+#ask { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: translateX(-50%) scale(1.07); } }
+
+/* Repli HTML/CSS */
+.fb { position: absolute; inset: 0 0 110px; display: flex; gap: 8px; justify-content: center; align-items: center; padding: 12px; transition: opacity 0.25s; }
+.fb.fade { opacity: 0; }
+.fb-page {
+  flex: 0 1 38vh; aspect-ratio: 3 / 4; max-width: 46vw; background: var(--paper);
+  border-radius: 20px; padding: 14px; box-shadow: 0 8px 20px rgba(43, 36, 56, 0.25);
+  display: flex; flex-direction: column; justify-content: center; text-align: center;
+}
+.fb-art { flex: 1; border-radius: 16px; display: grid; place-items: center; font-size: 5rem; overflow: hidden; }
+.fb-art img { width: 100%; height: 100%; object-fit: cover; }
+.fb-text { font-size: clamp(1.1rem, 2.6vh, 1.8rem); line-height: 1.5; margin: 0; }
+.fb-text .hl { background: #ffd93b; border-radius: 8px; padding: 0 4px; }
+
+/* Question */
+#quiz { background: rgba(43, 36, 56, 0.55); display: grid; place-items: center; padding: 16px; overflow-y: auto; }
+#confetti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.quiz-card {
+  position: relative; width: min(680px, 100%); background: var(--paper); border-radius: 36px;
+  padding: 24px; text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center;
+}
+#qText { font-size: clamp(1.8rem, 5vw, 2.6rem); margin: 0; }
+#qChoices { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.choice {
+  min-height: 84px; border-radius: 28px; background: #fff; font-size: 1.6rem; font-weight: 700;
+  box-shadow: 0 6px 14px rgba(43, 36, 56, 0.2); display: flex; gap: 14px; align-items: center; justify-content: center;
+}
+.choice .emoji { font-size: 2.6rem; }
+.choice.shake { animation: shake 0.5s; }
+.choice.good { background: #b8f0c4; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+#qMsg { font-size: 1.4rem; min-height: 2em; margin: 0; }
+#qStars { font-size: 3.4rem; min-height: 1.2em; }
+#qStars span { display: inline-block; animation: pop 0.6s cubic-bezier(0.34, 1.7, 0.5, 1) both; }
+@keyframes pop { from { transform: scale(0) rotate(-40deg); } to { transform: scale(1); } }
+
+/* Bibliothèque animée : les couvertures arrivent en rebondissant puis flottent doucement. */
+.cover-card {
+  animation: cardIn 0.7s cubic-bezier(0.34, 1.6, 0.5, 1) both, float 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.12s), calc(0.7s + var(--i, 0) * 0.4s);
+  transition: transform 0.2s;
+}
+.cover-card:hover { animation-play-state: paused; transform: rotate(-2deg) scale(1.04); }
+.cover-card:active { animation: squish 0.3s; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(60px) scale(0.6) rotate(-6deg); } }
+@keyframes float { 50% { transform: translateY(-8px) rotate(1deg); } }
+@keyframes squish { 40% { transform: scale(1.08, 0.9); } 70% { transform: scale(0.96, 1.05); } }
+#library h1 { animation: wiggle 4s ease-in-out infinite; }
+@keyframes wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-3deg) scale(1.05); } 92% { transform: rotate(3deg) scale(1.05); } }
+@media (prefers-reduced-motion: reduce) { .cover-card, #library h1 { animation: none; } }
