@@ -22,7 +22,6 @@ const DRAWERS = {
     shape(ctx, () => ctx.arc(470, 335, 14, 0, Math.PI * 2), '#222', o);
     shape(ctx, () => ctx.arc(554, 335, 14, 0, Math.PI * 2), '#222', o);
     ctx.beginPath(); ctx.arc(512, 365, 62, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
-    shape(ctx, () => ctx.rect(60, 650, 904, 70), '#2ecc40', o);
   },
   fleur(ctx, o) {
     const cx = 512, cy = 280;
