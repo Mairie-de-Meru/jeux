@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#8fd3f4">
+  <title>Petits Chevaux</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <section id="jeu">
+      <div id="zone3d">
+        <canvas id="c"></canvas>
+        <div id="toast" role="status" aria-live="polite"></div>
+      </div>
+      <div id="hud">
+        <div id="qui"><span id="pastille"></span><span id="quiNom">Toi</span></div>
+        <button id="btnLancer" class="btn orange" type="button">🎲 Lancer</button>
+        <div id="outils">
+          <button id="btnConsigne" class="btn rond" type="button" aria-label="Lire la consigne">🔊</button>
+          <button id="btnMaison" class="btn rond gris" type="button" aria-label="Accueil">🏠</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="accueil" class="ecran">
+      <div class="panneau">
+        <h1>Petits<br>Chevaux</h1>
+        <p class="sous">Fais courir tes chevaux jusqu'à l'étoile !</p>
+        <button id="btnJouer" class="btn vert grand" type="button">▶ Jouer</button>
+        <button id="btnSon" class="btn rond gris" type="button" aria-label="Son">🔊</button>
+      </div>
+    </section>
+
+    <section id="reglages" class="ecran" hidden>
+      <div class="panneau">
+        <h2>Avec qui ?</h2>
+        <div class="choix" id="choixRobots">
+          <button class="btn" type="button" data-v="1" aria-label="1 robot">🐰</button>
+          <button class="btn" type="button" data-v="2" aria-label="2 robots">🐰🦉</button>
+          <button class="btn" type="button" data-v="3" aria-label="3 robots">🐰🦉🐢</button>
+        </div>
+        <h2>Quel niveau ?</h2>
+        <div class="choix" id="choixPalier">
+          <button class="btn" type="button" data-v="1"><span class="ico">🌱</span>Découverte<small>2 chevaux</small></button>
+          <button class="btn" type="button" data-v="2"><span class="ico">🐴</span>Classique<small>4 chevaux</small></button>
+          <button class="btn" type="button" data-v="3"><span class="ico">🏆</span>Champion<small>4 chevaux, on peut renvoyer au pré</small></button>
+        </div>
+        <h2>Les robots</h2>
+        <div class="choix" id="choixDiff">
+          <button class="btn" type="button" data-v="facile">😊 Faciles</button>
+          <button class="btn" type="button" data-v="normal">😎 Malins</button>
+        </div>
+        <div class="actions">
+          <button id="btnRetour" class="btn rond gris" type="button" aria-label="Retour">←</button>
+          <button id="btnCommencer" class="btn vert grand" type="button">▶ Jouer</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="fin" class="ecran" hidden>
+      <div class="panneau">
+        <h2 id="finTitre">Bravo !</h2>
+        <div id="etoiles" aria-hidden="true"></div>
+        <ol id="classement"></ol>
+        <div class="actions">
+          <button id="btnRejouer" class="btn vert" type="button">🔁 Rejouer</button>
+          <button id="btnSuivant" class="btn orange" type="button">➡ Niveau suivant</button>
+          <button id="btnAccueil" class="btn rond gris" type="button" aria-label="Accueil">🏠</button>
+        </div>
+      </div>
+    </section>
+    <div id="confettis" aria-hidden="true"></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

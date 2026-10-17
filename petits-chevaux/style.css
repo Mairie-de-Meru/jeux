@@ -1,0 +1,91 @@
+:root { --rouge:#e53935; --bleu:#1e88e5; --jaune:#fdd835; --vert:#43a047; --orange:#fb8c00; --encre:#243447; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3f4; color: var(--encre);
+  font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif; touch-action: manipulation; }
+#app { position: fixed; inset: 0; height: 100dvh; }
+
+/* ---- partie ---- */
+#jeu { position: absolute; inset: 0; display: flex; flex-direction: column; }
+#zone3d { flex: 1 1 0; min-height: 0; min-width: 0; position: relative; overflow: hidden;
+  background: linear-gradient(#8fd3f4 0%, #cdeccf 65%, #a5d6a7 100%); }
+#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#toast { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); max-width: 92%; z-index: 5;
+  background: rgba(255,255,255,.96); padding: 8px 16px; border-radius: 16px; font-weight: 800;
+  font-size: clamp(15px, 3.6vw, 20px); text-align: center; pointer-events: none; opacity: 0; transition: opacity .25s;
+  box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+#toast.vu { opacity: 1; }
+
+#hud { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: #fff; border-top: 4px solid #ffb74d; }
+#qui { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; font-weight: 800;
+  font-size: clamp(16px, 4vw, 22px); }
+#quiNom { line-height: 1.1; overflow-wrap: anywhere; }
+#pastille { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rouge); border: 3px solid #fff;
+  box-shadow: 0 0 0 3px var(--encre); }
+#pastille.icone, .pastille.icone { background-color: transparent !important; border: 0; box-shadow: none; border-radius: 0;
+  background-size: contain; background-repeat: no-repeat; background-position: center bottom; }
+#pastille.icone { width: 44px; height: 44px; }
+#classement .pastille.icone { width: 40px; height: 40px; border: 0; box-shadow: none; border-radius: 0; }
+.choix .mini { height: 40px; width: 40px; object-fit: contain; vertical-align: middle; }
+#outils { flex: 1 1 0; display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---- boutons ---- */
+.btn { font: inherit; font-weight: 800; font-size: clamp(18px, 4.5vw, 24px); min-height: 56px; min-width: 56px;
+  padding: 8px 18px; border: 0; border-radius: 16px; background: var(--bleu); color: #fff; cursor: pointer;
+  box-shadow: 0 5px 0 rgba(0,0,0,.25); touch-action: manipulation; }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.btn:disabled { opacity: .45; box-shadow: 0 5px 0 rgba(0,0,0,.15); }
+.btn.vert { background: var(--vert); }
+.btn.orange { background: var(--orange); }
+.btn.gris { background: #78909c; }
+.btn.grand { font-size: clamp(22px, 6vw, 32px); min-height: 68px; padding: 10px 34px; }
+.btn.rond { padding: 0; width: 56px; font-size: 26px; }
+#btnLancer { white-space: nowrap; }
+#btnLancer:disabled { background: #b0bec5; opacity: 1; box-shadow: 0 5px 0 rgba(0,0,0,.12); color: #eceff1; }
+#btnLancer:not(:disabled) { animation: pouls 1s ease-in-out infinite; }
+@keyframes pouls { 50% { transform: scale(1.07); } }
+
+/* ---- écrans ---- */
+.ecran { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center;
+  padding: 10px; overflow-y: auto; background: rgba(36, 52, 71, .35); background-size: cover; background-position: center; }
+#accueil { background-image: linear-gradient(rgba(143,211,244,.55), rgba(76,175,80,.5)); }
+.panneau { background: rgba(255,255,255,.95); border-radius: 26px; padding: 18px 20px; width: 100%; max-width: 520px;
+  max-height: 100dvh; overflow-y: auto; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+h1 { margin: 0 0 6px; font-size: clamp(40px, 12vw, 72px); line-height: .95; color: var(--rouge); text-shadow: 3px 3px 0 var(--jaune); }
+h2 { margin: 10px 0 8px; font-size: clamp(20px, 5vw, 26px); }
+.sous { margin: 0 0 14px; font-size: clamp(16px, 4vw, 20px); font-weight: 700; }
+.choix { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.choix .btn { flex: 1 1 100px; min-height: 64px; background: #b0bec5; }
+.choix .btn[aria-pressed="true"] { background: var(--bleu); outline: 4px solid var(--jaune); }
+.choix small { display: block; font-size: 13px; font-weight: 700; line-height: 1.15; margin-top: 2px; }
+.choix .ico { display: block; font-size: 28px; line-height: 1.1; }
+.actions { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+#accueil .btn.rond { margin-left: 10px; vertical-align: middle; }
+#classement { list-style: none; margin: 8px 0 0; padding: 0; text-align: left; }
+#classement li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; min-height: 48px; }
+#classement li.moi { background: #fff9c4; border-radius: 14px; }
+#classement .medaille { font-size: 30px; width: 40px; text-align: center; }
+#classement .pastille { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--encre); }
+#etoiles { font-size: 40px; letter-spacing: 6px; min-height: 48px; }
+#confettis { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+.confetti { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 2px; animation: chute linear forwards; }
+@keyframes chute { to { transform: translateY(110vh) rotate(720deg); } }
+
+/* ---- HUD toujours en bas, compact en paysage bas ---- */
+@media (max-height: 500px) and (orientation: landscape) {
+  .panneau { padding: 8px 14px; border-radius: 18px; }
+  h1 { font-size: 40px; margin: 0; }
+  h2 { margin: 4px 0; font-size: 18px; }
+  .sous { margin: 2px 0 8px; font-size: 15px; }
+  .choix .btn { min-height: 52px; padding: 4px 10px; font-size: 18px; }
+  .choix small { display: block; font-size: 13px; font-weight: 700; line-height: 1.15; margin-top: 2px; }
+.choix .ico { font-size: 20px; display: inline; margin-right: 4px; }
+  .btn.grand { min-height: 56px; font-size: 22px; padding: 6px 24px; }
+  .actions { margin-top: 8px; }
+  #classement li { min-height: 40px; padding: 2px 8px; font-size: 18px; }
+  #etoiles { font-size: 30px; min-height: 36px; }
+  #toast { font-size: 14px; padding: 5px 12px; }
+  #hud { padding: 4px 10px calc(4px + env(safe-area-inset-bottom)); }
+  #hud .btn { min-height: 48px; min-width: 48px; padding: 4px 14px; font-size: 18px; }
+}

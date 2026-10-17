@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jeux éducatifs</title>
-<meta name="description" content="Petits jeux éducatifs en 3D pour les enfants de 5 à 8 ans.">
+<title>Jeux pour enfants</title>
+<meta name="description" content="Petits jeux éducatifs en 3D et jeux de société pour les enfants de 5 à 8 ans.">
 <style>
   :root { --fond:#eef6ff; --carte:#fff; --texte:#1d2a3a; --doux:#5a6b80; --accent:#2f80ed; }
   @media (prefers-color-scheme: dark) { :root { --fond:#121a24; --carte:#1c2633; --texte:#eef3f8; --doux:#a9b7c6; --accent:#6aa8ff; } }
@@ -13,7 +13,11 @@
   header { padding:32px 16px 8px; text-align:center; }
   h1 { margin:0 0 6px; font-size:clamp(1.8rem,5vw,2.6rem); }
   header p { margin:0; color:var(--doux); }
-  main { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; padding:24px 16px 48px; max-width:1200px; margin:0 auto; }
+  nav { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; padding:16px 16px 0; }
+  nav a { padding:12px 20px; border-radius:12px; text-decoration:none; color:var(--texte); background:var(--carte); font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.06); min-height:48px; display:flex; align-items:center; }
+  nav a[aria-selected="true"] { background:var(--accent); color:#fff; }
+  section[hidden] { display:none; }
+  .grille { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; padding:24px 16px 48px; max-width:1200px; margin:0 auto; }
   .carte { background:var(--carte); border-radius:18px; padding:12px; text-decoration:none; color:inherit; box-shadow:0 4px 14px rgba(0,0,0,.08); transition:transform .15s; }
   .carte:hover, .carte:focus-visible { transform:translateY(-4px); outline:3px solid var(--accent); }
   .carte img, .sans-image { width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:12px; display:block; }
@@ -25,10 +29,14 @@
 </head>
 <body>
 <header>
-  <h1>Jeux éducatifs</h1>
-  <p>Petits jeux en 3D pour les 5-8 ans, à la souris ou au doigt.</p>
+  <h1>Jeux pour enfants</h1>
+  <p>Jeux éducatifs et jeux de société en 3D pour les 5-8 ans, à la souris ou au doigt.</p>
 </header>
-<main>
+<nav role="tablist">
+  <a role="tab" href="#educatifs" aria-controls="p-educatifs" aria-selected="true">Jeux éducatifs</a>
+  <a role="tab" href="#societe" aria-controls="p-societe" aria-selected="false">Jeux de société</a>
+</nav>
+<section id="p-educatifs" role="tabpanel"><div class="grille">
       <a class="carte" href="atelier-coloriage/">
         <img src="atelier-coloriage/assets/img/titre.png" alt="" loading="lazy">
         <h2>Atelier Coloriage</h2>
@@ -144,7 +152,52 @@
         <h2>Usine à Formes</h2>
         <p>Géométrie 3D</p>
       </a>
-</main>
+</div></section>
+<section id="p-societe" role="tabpanel" hidden><div class="grille">
+      <a class="carte" href="jeu-oie/">
+        <div class="sans-image">J</div>
+        <h2>Jeu de l&#x27;Oie</h2>
+        <p>Le jeu de l&#x27;oie classique (domaine public) sur un plateau 3D en spirale, l&#x27;enfant contre 1 à 3 pions adverses (bonhommes de couleur) : il la</p>
+      </a>
+      <a class="carte" href="level-8/">
+        <img src="level-8/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Level 8</h2>
+        <p>Jeu de cartes façon rami où l&#x27;on franchit 8 niveaux : trios, carrés, suites et couleurs pour apprendre les nombres de 1 à 12</p>
+      </a>
+      <a class="carte" href="monopoly/">
+        <img src="monopoly/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Monopoly</h2>
+        <p>Le jeu de l&#x27;immobilier complet contre 1 à 3 robots, avec toutes les règles classiques et un graphisme original</p>
+      </a>
+      <a class="carte" href="petits-chevaux/">
+        <img src="petits-chevaux/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Petits Chevaux</h2>
+        <p>Le jeu des petits chevaux contre 1 à 3 robots, sur un plateau 3D en croix aux 4 couleurs (rouge, bleu, jaune, vert)</p>
+      </a>
+      <a class="carte" href="scrabble/">
+        <img src="scrabble/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Scrabble</h2>
+        <p>Un jeu de mots croisés à tuiles en bois sur un plateau 3D : l&#x27;enfant pose ses lettres pour former de vrais mots français contre 1 à 3 robots</p>
+      </a>
+      <a class="carte" href="sotum/">
+        <img src="sotum/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>SOTUM</h2>
+        <p>Deviner le mot caché, façon Motus</p>
+      </a>
+      <a class="carte" href="uno/">
+        <img src="uno/assets/img/titre.jpg" alt="" loading="lazy">
+        <h2>Uno</h2>
+        <p>Jeu de cartes à défausser façon Uno, contre 1 à 3 robots animaux autour d&#x27;une table 3D : associer la couleur ou le nombre de la carte du mil</p>
+      </a>
+</div></section>
 <footer>Mairie de Méru</footer>
+<script>
+  function montrer() {
+    var id = location.hash === '#societe' ? 'p-societe' : 'p-educatifs';
+    document.querySelectorAll('[role=tabpanel]').forEach(function (s) { s.hidden = s.id !== id; });
+    document.querySelectorAll('[role=tab]').forEach(function (a) { a.setAttribute('aria-selected', a.getAttribute('aria-controls') === id); });
+  }
+  addEventListener('hashchange', montrer); montrer();
+</script>
 </body>
 </html>

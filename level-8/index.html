@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Level 8</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div id="obj"><b id="lvl">Niveau 1</b><span id="objtxt"></span></div>
+    <div id="topbtns">
+      <button id="btn-voice" class="round" aria-label="Lire l'objectif à voix haute">🔊</button>
+      <button id="btn-rules" class="round" aria-label="Règles">❓</button>
+      <button id="btn-menu" class="round" aria-label="Menu">☰</button>
+    </div>
+  </header>
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="chips"></div>
+    <div id="msg"></div>
+  </main>
+  <button id="goal" type="button" aria-label="Ton objectif : toucher pour l'écouter"></button>
+  <section id="groups" aria-label="Groupes posés"></section>
+  <div id="side">
+    <section id="actions">
+      <button id="btn-draw" class="act">🂠<span>Pioche</span></button>
+      <section id="discards" aria-label="Défausses : touche une carte pour la prendre"></section>
+      <button id="btn-lay" class="act go">✅<span>Poser</span></button>
+      <button id="btn-throw" class="act">🗑️<span>Jeter</span></button>
+    </section>
+    <section id="handwrap">
+      <div id="tools">
+        <button id="btn-sort-n" class="tool on" aria-label="Trier par nombre">123</button>
+        <button id="btn-sort-c" class="tool" aria-label="Trier par couleur">🎨</button>
+        <button id="btn-help" class="tool">💡 Aide</button>
+      </div>
+      <div id="hand" aria-label="Ta main"></div>
+    </section>
+  </div>
+</div>
+
+<section id="setup" class="overlay">
+  <div class="panel">
+    <div id="hero" class="hidden"></div>
+    <h1>Level 8</h1>
+    <p class="sub">8 niveaux de cartes à gravir !</p>
+    <div class="opt"><span>Choisis ton avatar</span>
+      <div id="avatars" class="avatars"></div></div>
+    <div class="opt"><span>Palier</span>
+      <div class="seg" data-key="palier">
+        <button data-v="1" class="on">1 Court</button><button data-v="2">2 Complet</button><button data-v="3">3 Expert</button>
+      </div></div>
+    <div class="opt"><span>Adversaires</span>
+      <div class="seg" data-key="bots"></div></div>
+    <div class="opt"><span>Niveau des adversaires</span>
+      <div class="seg" data-key="difficulty">
+        <button data-v="facile" class="on">Facile</button><button data-v="normal">Normal</button>
+      </div></div>
+    <div class="opt"><span>🃏 Reprendre un joker</span>
+      <div class="seg" data-key="jokerSwap">
+        <button data-v="true">Oui</button><button data-v="false" class="on">Non</button>
+      </div></div>
+    <div class="opt"><span>Partie</span>
+      <div class="seg" data-key="mode">
+        <button data-v="full" class="on">Complète</button><button data-v="short">Rapide (5 manches)</button>
+      </div></div>
+    <button id="btn-play" class="btn">▶ Jouer</button>
+  </div>
+</section>
+
+<section id="skippick" class="overlay hidden">
+  <div class="panel">
+    <h2>⏭️ Qui passe son tour ?</h2>
+    <div id="skippick-list" class="avatars"></div>
+    <div class="row"><button id="btn-skip-cancel" class="btn alt">Annuler</button></div>
+  </div>
+</section>
+
+<section id="goalcard" class="overlay hidden">
+  <div class="panel">
+    <h2>Ton objectif</h2>
+    <div id="goalcard-pic"></div>
+    <div class="row"><button id="btn-goal-voice" class="round" aria-label="Écouter l'objectif">🔊</button><button id="btn-goal-ok" class="btn">C'est parti !</button></div>
+  </div>
+</section>
+
+<section id="rules" class="overlay hidden">
+  <div class="panel">
+    <h2>Comment jouer ?</h2>
+    <ul class="rules">
+      <li>📥 Prends une carte : la pioche, ou le dessus d'une défausse (la tienne ou celle d'un autre).</li>
+      <li>✅ Quand tu as ton objectif, choisis ses cartes et appuie sur Poser.</li>
+      <li>➕ Ensuite, ajoute des cartes aux groupes posés.</li>
+      <li>🗑️ Termine en jetant une carte sur ta défausse.</li>
+      <li>★ Le joker remplace n'importe quelle carte.</li>
+      <li>🃏 Tu as posé ? Donne la vraie carte d'un joker posé : tu reprends le joker !</li>
+      <li>⏭ La carte passe : au lieu de jeter, pose-la devant un adversaire. Il passera son tour !</li>
+      <li>🏆 Plus de cartes ? La manche est finie : tu montes de 2 niveaux, ceux qui ont posé de 1. Pose le niveau 8 : tu gagnes !</li>
+    </ul>
+    <div class="row"><button id="btn-rules-voice" class="round" aria-label="Lire les règles">🔊</button><button id="btn-rules-ok" class="btn">Compris</button></div>
+  </div>
+</section>
+
+<section id="round" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="round-emoji">🎉</div>
+    <h2 id="round-title">Manche terminée</h2>
+    <p id="round-sub"></p>
+    <ul id="round-list" class="plist"></ul>
+    <button id="btn-next" class="btn">Manche suivante ▶</button>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-emoji">🏆</div>
+    <h2 id="end-title">Bravo !</h2>
+    <div id="end-stars">⭐⭐⭐</div>
+    <ul id="end-list" class="plist"></ul>
+    <div class="row"><button id="btn-again" class="btn">Rejouer</button><button id="btn-home" class="btn alt">Menu</button></div>
+  </div>
+</section>
+<div id="confetti"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

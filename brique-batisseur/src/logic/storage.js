@@ -1,16 +1,22 @@
 // Sauvegarde locale (création libre, progression des défis). `storage` est injecté (getItem/setItem).
 import { PIECES, COLOR_IDS, footprint } from './pieces.js';
-import { Board, MAX_H } from './board.js';
+import { Board, MAX_H, SIZE, PLATE_SIZES } from './board.js';
 
 export const FREE_KEY = 'brique-batisseur.libre';
 export const PROGRESS_KEY = 'brique-batisseur.progression';
 const VERSION = 1;
 
-export function serialize(pieces) {
+export function serialize(pieces, size = SIZE) {
   return JSON.stringify({
     v: VERSION,
+    size,
     pieces: pieces.map((p) => ({ type: p.type, color: p.color, x: p.x, z: p.z, rot: p.rot, y: p.y })),
   });
+}
+
+/** Taille de plaque d'une sauvegarde (16 si absente ou invalide). */
+export function sizeOf(data) {
+  return data && PLATE_SIZES.includes(data.size) ? data.size : SIZE;
 }
 
 /** Renvoie la liste de pièces validée, ou [] si le texte est invalide. Ne lève jamais. */
@@ -18,7 +24,7 @@ export function deserialize(text) {
   try {
     const data = JSON.parse(text);
     if (!data || data.v !== VERSION || !Array.isArray(data.pieces) || data.pieces.length > 500) return [];
-    const board = new Board();
+    const board = new Board(sizeOf(data));
     const out = [];
     for (const p of data.pieces) {
       if (!p || typeof p !== 'object') return [];
@@ -37,8 +43,16 @@ export function deserialize(text) {
   }
 }
 
-export function saveFree(storage, pieces) {
-  try { storage.setItem(FREE_KEY, serialize(pieces)); return true; } catch { return false; }
+export function saveFree(storage, pieces, size = SIZE) {
+  try { storage.setItem(FREE_KEY, serialize(pieces, size)); return true; } catch { return false; }
+}
+
+/** Taille de plaque de la sauvegarde libre (16 par défaut). */
+export function loadFreeSize(storage) {
+  try {
+    const t = storage.getItem(FREE_KEY);
+    return t ? sizeOf(JSON.parse(t)) : SIZE;
+  } catch { return SIZE; }
 }
 
 export function loadFree(storage) {

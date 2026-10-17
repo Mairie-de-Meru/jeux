@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Scrabble</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div id="scores" aria-label="Scores"></div>
+    <div id="tools">
+      <button id="btn-zoom" class="icon" aria-label="Zoom sur les mots">🔍</button>
+      <button id="btn-rules" class="icon" aria-label="Lire les règles à voix haute">🔊</button>
+      <button id="btn-menu" class="icon" aria-label="Menu">🏠</button>
+    </div>
+  </header>
+  <main id="main">
+    <section id="stage">
+      <canvas id="c"></canvas>
+      <div id="pan" class="hidden">
+        <button id="pan-up" class="pan-b" aria-label="Voir plus haut">▲</button>
+        <button id="pan-left" class="pan-b" aria-label="Voir à gauche">◀</button>
+        <button id="pan-right" class="pan-b" aria-label="Voir à droite">▶</button>
+        <button id="pan-down" class="pan-b" aria-label="Voir plus bas">▼</button>
+      </div>
+      <div id="pop" aria-live="polite"></div>
+      <div id="msg" aria-live="polite"></div>
+    </section>
+    <aside id="panel">
+      <div id="status"></div>
+      <div id="rack" aria-label="Ton chevalet"></div>
+      <div id="actions">
+        <button id="btn-ok" class="btn go">✔ Valider</button>
+        <button id="btn-recall" class="btn">↩ Reprendre</button>
+        <button id="btn-shuffle" class="btn">🔀 Mélanger</button>
+        <button id="btn-swap" class="btn">♻ Échanger</button>
+        <button id="btn-hint" class="btn idea">💡 Idée</button>
+        <button id="btn-pass" class="btn">⏭ Passer</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<section id="home" class="overlay">
+  <div class="panel">
+    <img id="hero" class="hero" src="./assets/img/titre.jpg" alt="" onerror="this.remove()">
+    <h1>Scrabble</h1>
+    <p class="sub">Pose tes lettres et fabrique des mots !</p>
+    <h3>Plateau</h3>
+    <div class="seg" id="seg-palier">
+      <button data-v="1" aria-pressed="true"><b>1</b><span>Petit 9×9<br>mots courts</span></button>
+      <button data-v="2" aria-pressed="false"><b>2</b><span>Moyen 11×11<br>cases bonus</span></button>
+      <button data-v="3" aria-pressed="false"><b>3</b><span>Grand 15×15<br>sans aide</span></button>
+    </div>
+    <h3>Amis robots</h3>
+    <div class="seg" id="seg-bots">
+      <button data-v="1" aria-pressed="true">🐼<span>1</span></button>
+      <button data-v="2" aria-pressed="false">🐼🦊<span>2</span></button>
+      <button data-v="3" aria-pressed="false">🐼🦊🐨<span>3</span></button>
+    </div>
+    <h3>Niveau des robots</h3>
+    <div class="seg" id="seg-diff">
+      <button data-v="facile" aria-pressed="true">🐢<span>Facile</span></button>
+      <button data-v="normal" aria-pressed="false">🐇<span>Normal</span></button>
+    </div>
+    <div class="row">
+      <button id="btn-play" class="btn go big">▶ Jouer</button>
+      <button id="btn-resume" class="btn big hidden">↪ Continuer</button>
+    </div>
+    <div class="row">
+      <button id="btn-voice" class="btn" aria-pressed="true">🗣 Voix : oui</button>
+      <button id="btn-rules2" class="btn">🔊 Écouter les règles</button>
+    </div>
+    <details id="rules"><summary>📖 Les règles</summary>
+      <ul>
+        <li>Choisis une lettre en bas, puis touche une case du plateau (ou glisse-la).</li>
+        <li>Le premier mot passe par l'étoile. Les autres mots doivent toucher ceux déjà posés.</li>
+        <li>Les cases de couleur donnent plus de points.</li>
+        <li>Appuie sur <b>Valider</b>. Si le mot est inconnu, tes lettres reviennent, sans souci !</li>
+        <li>Tu peux échanger tes lettres ou passer ton tour.</li>
+        <li>La partie finit quand le sac est vide ou que tout le monde passe. Le plus de points gagne !</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<section id="swap" class="overlay hidden">
+  <div class="panel">
+    <h2>Échanger des lettres</h2>
+    <p class="sub">Touche les lettres à changer.</p>
+    <div id="swap-rack"></div>
+    <div class="row">
+      <button id="swap-ok" class="btn go big">♻ Échanger</button>
+      <button id="swap-cancel" class="btn big">Annuler</button>
+    </div>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <h2 id="end-title">Bravo !</h2>
+    <div id="end-stars"></div>
+    <ol id="end-list"></ol>
+    <div class="row">
+      <button id="end-again" class="btn go big">▶ Rejouer</button>
+      <button id="end-menu" class="btn big">🏠 Menu</button>
+    </div>
+  </div>
+</section>
+
+<canvas id="confetti"></canvas>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

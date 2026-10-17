@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>SOTUM</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./src/style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="bar">
+    <button id="btnHome" class="ibtn" aria-label="Menu">🏠</button>
+    <div id="info">SOTUM</div>
+    <div id="score" aria-label="Étoiles et série"><span id="starsN">⭐ 0</span><span id="streakN">🔥 0</span></div>
+    <button id="btnRules" class="ibtn" aria-label="Règles">❓</button>
+    <button id="btnSound" class="ibtn" aria-label="Son">🔊</button>
+  </header>
+  <main id="play">
+    <div id="stage">
+      <canvas id="gl"></canvas>
+      <div id="hintline"></div>
+      <div id="toast" role="status"></div>
+    </div>
+    <section id="kb" aria-label="Clavier"></section>
+  </main>
+
+  <div id="home" class="panel">
+    <div class="card">
+      <h1 id="logo" aria-label="SOTUM"></h1>
+      <p class="tag">Devine le mot caché !</p>
+      <div id="homeStats"></div>
+      <div id="modes" role="group" aria-label="Mode">
+        <button class="mode on" data-mode="libre">🎲 Partie libre</button>
+        <button class="mode" data-mode="jour">📅 Mot du jour</button>
+      </div>
+      <div id="paliers"></div>
+      <button id="homeRules" class="btn ghost">❓ Comment jouer ?</button>
+    </div>
+  </div>
+
+  <div id="rules" class="panel hidden">
+    <div class="card">
+      <h2>Comment jouer ?</h2>
+      <ul class="legend">
+        <li><span class="mini c">A</span> Bonne lettre, au bon endroit.</li>
+        <li><span class="mini p"><b>B</b></span> La lettre est dans le mot, mais ailleurs.</li>
+        <li><span class="mini a">C</span> La lettre n'est pas dans le mot.</li>
+      </ul>
+      <p>La première lettre est donnée (entourée). Écris un vrai mot, puis appuie sur Valider.</p>
+      <div class="row">
+        <button id="rulesSpeak" class="btn">🔊 Écouter</button>
+        <button id="rulesClose" class="btn go">J'ai compris</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="hintDlg" class="panel hidden">
+    <div class="card">
+      <h2>💡 Un coup de pouce</h2>
+      <div class="row">
+        <button id="hintLetter" class="btn">🔤 Une lettre</button>
+        <button id="hintDef" class="btn">🔊 Le sens du mot</button>
+        <button id="hintCancel" class="btn ghost">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="end" class="panel hidden">
+    <div class="card">
+      <h2 id="endTitle"></h2>
+      <div id="endWord"></div>
+      <p id="endDef"></p>
+      <div id="endStars"></div>
+      <div class="row">
+        <button id="endAgain" class="btn go">▶ Rejouer</button>
+        <button id="endMenu" class="btn">🏠 Menu</button>
+      </div>
+    </div>
+  </div>
+  <div id="confetti"></div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

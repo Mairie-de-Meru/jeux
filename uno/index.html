@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Uno</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <button id="btn-menu" class="round" aria-label="Menu">☰</button>
+    <div id="status" aria-live="polite">Bienvenue !</div>
+    <div id="colorbadge" title="Couleur à jouer"></div>
+    <button id="btn-voice" class="round" aria-label="Lire les règles à voix haute">🔊</button>
+  </header>
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="toast" aria-live="polite"></div>
+    <div id="chooser" class="hidden">
+      <div class="chooser-panel">
+        <p>Choisis une couleur</p>
+        <div class="chooser-grid">
+          <button class="col-btn" data-c="R" style="--c:#e8454d" aria-label="Rouge"><span>●</span></button>
+          <button class="col-btn" data-c="B" style="--c:#2d78d6" aria-label="Bleu"><span>■</span></button>
+          <button class="col-btn" data-c="G" style="--c:#2ba866" aria-label="Vert"><span>▲</span></button>
+          <button class="col-btn" data-c="Y" style="--c:#f2b21f" aria-label="Jaune"><span>★</span></button>
+        </div>
+        <button id="chooser-cancel" class="btn small ghost">Annuler</button>
+      </div>
+    </div>
+  </main>
+  <section id="side">
+    <div id="bar">
+      <button id="btn-draw" class="btn">🂠 Piocher <span id="draw-count"></span></button>
+      <button id="btn-keep" class="btn ghost hidden">Garder</button>
+      <button id="btn-uno" class="btn uno hidden">Uno !</button>
+    </div>
+    <div id="hand" aria-label="Tes cartes"></div>
+  </section>
+</div>
+
+<section id="home" class="overlay">
+  <div class="panel">
+    <img id="hero" class="hero hidden" alt="" draggable="false">
+    <h1>Uno</h1>
+    <p class="sub">Joue la même couleur ou le même nombre !</p>
+    <div class="group"><h3>Palier</h3>
+      <div class="chips" id="opt-palier">
+        <button class="chip sel" data-v="1"><b>1</b><small>Nombres</small></button>
+        <button class="chip" data-v="2"><b>2</b><small>+ Actions</small></button>
+        <button class="chip" data-v="3"><b>3</b><small>+ Jokers</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Amis robots</h3>
+      <div class="chips" id="opt-bots">
+        <button class="chip sel" data-v="1"><b>1</b><small>🦊</small></button>
+        <button class="chip" data-v="2"><b>2</b><small>🦊🐼</small></button>
+        <button class="chip" data-v="3"><b>3</b><small>🦊🐼🐨</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Niveau des robots</h3>
+      <div class="chips" id="opt-diff">
+        <button class="chip sel" data-v="facile"><b>Facile</b></button>
+        <button class="chip" data-v="normal"><b>Normal</b></button>
+      </div>
+    </div>
+    <div class="group"><h3>Lire la carte jouée</h3>
+      <div class="chips" id="opt-say">
+        <button class="chip sel" data-v="0"><b>Non</b></button>
+        <button class="chip" data-v="1"><b>🔊 Oui</b></button>
+      </div>
+    </div>
+    <div class="row">
+      <button id="btn-play" class="btn big">▶ Jouer</button>
+      <button id="btn-rules" class="round" aria-label="Lire les règles à voix haute">🔊</button>
+    </div>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-emoji">🎉</div>
+    <h2 id="end-title">Bravo !</h2>
+    <ol id="ranking"></ol>
+    <div class="row">
+      <button id="btn-again" class="btn">↻ Rejouer</button>
+      <button id="btn-home" class="btn ghost">Menu</button>
+    </div>
+  </div>
+</section>
+<div id="confetti"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

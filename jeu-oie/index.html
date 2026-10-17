@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Jeu de l'Oie</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+  <header id="hud">
+    <div id="chips"></div>
+    <div id="hud-btns">
+      <button id="btn-zoom" class="icon" aria-label="Voir tout le plateau">🔍</button>
+      <button id="btn-rules" class="icon" aria-label="Lire les règles à voix haute">🔊</button>
+      <button id="btn-menu" class="icon" aria-label="Retour au menu">🏠</button>
+    </div>
+  </header>
+  <main id="main">
+    <div id="boardArea">
+      <div id="counter" class="hidden"></div>
+      <div id="bubble" class="hidden"><div class="b-emoji"></div><div class="b-title"></div><div class="b-text"></div></div>
+    </div>
+    <aside id="side">
+      <div id="dieZone" role="button" tabindex="0" aria-label="Lancer le dé"></div>
+      <p id="msg"></p>
+      <div id="actions">
+        <button id="btn-roll" class="btn" disabled>🎲 Lancer</button>
+        <div id="answers" class="hidden"></div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<section id="menu" class="overlay">
+  <div class="panel">
+    <img id="titre-img" class="titre-img" alt="" hidden>
+    <h1>🦆 Jeu de l'Oie</h1>
+    <div class="group"><h3>Palier</h3>
+      <div class="seg" data-group="palier">
+        <button class="opt" data-val="1"><b>1</b><small>30 cases, on compte</small></button>
+        <button class="opt" data-val="2"><b>2</b><small>63 cases, touche la case</small></button>
+        <button class="opt" data-val="3"><b>3</b><small>2 dés, additionne</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Amis qui jouent</h3>
+      <div class="seg" data-group="bots">
+        <button class="opt" data-val="1"><b>🔵</b><small>1</small></button>
+        <button class="opt" data-val="2"><b>🔵🟠</b><small>2</small></button>
+        <button class="opt" data-val="3"><b>🔵🟠🟢</b><small>3</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Les amis jouent</h3>
+      <div class="seg" data-group="difficulty">
+        <button class="opt" data-val="facile"><b>Facile</b></button>
+        <button class="opt" data-val="normal"><b>Normal</b></button>
+      </div>
+    </div>
+    <div class="group toggles">
+      <button class="opt tog" id="tog-voice" data-on="1">🔊 Voix : oui</button>
+      <button class="opt tog" id="tog-death" data-on="1">😂 Case « retour en riant » (palier 3) : oui</button>
+    </div>
+    <div class="row">
+      <button id="btn-menu-rules" class="icon" aria-label="Lire les règles à voix haute">🔊</button>
+      <button id="btn-play" class="btn">▶ Jouer</button>
+    </div>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-emoji">🏆</div>
+    <h2 id="end-title">Bravo !</h2>
+    <p id="end-text"></p>
+    <div class="row">
+      <button id="btn-again" class="btn">🔁 Rejouer</button>
+      <button id="btn-next" class="btn alt hidden">Palier suivant ▶</button>
+      <button id="btn-end-menu" class="btn alt">🏠 Menu</button>
+    </div>
+  </div>
+</section>
+<div id="fatal" class="hidden">Ce jeu a besoin de WebGL. Essaie un autre navigateur.</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

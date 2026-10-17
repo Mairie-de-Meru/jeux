@@ -31,7 +31,7 @@ export class Stage {
     r.setClearColor(0x000000, 0);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 120);
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 220);
     const h = this.size / 2;
     this.camera.position.set(h + 11, 20, h + 17);
     const c = (this.controls = new OrbitControls(this.camera, canvas));
@@ -43,10 +43,13 @@ export class Stage {
     c.minDistance = 5;
     c.maxDistance = this.size * 2.9;
     c.screenSpacePanning = false;
+    c.mouseButtons.RIGHT = null; // clic droit = retirer une pièce, pas de panoramique
     c.rotateSpeed = 0.8;
     c.update();
 
     this._buildLights();
+    this.baseGroup = new THREE.Group();
+    this.scene.add(this.baseGroup);
     this._buildBase();
 
     this.group = new THREE.Group(); // pièces posées
@@ -82,17 +85,52 @@ export class Stage {
     const hemi = new THREE.HemisphereLight(0xffffff, 0xcfd8ff, 1.0);
     this.scene.add(hemi);
     const sun = (this.sun = new THREE.DirectionalLight(0xfff4e0, 2.0));
-    const h = this.size / 2;
-    sun.position.set(h + 5, 24, h + 3);
-    sun.target.position.set(h, 0, h);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
-    const sc = sun.shadow.camera;
-    const e = this.size * 0.95;
-    sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.near = 5; sc.far = 60;
+    sun.shadow.camera.near = 5;
+    this._fitSun();
     sun.shadow.bias = -0.0006;
     sun.shadow.normalBias = 0.02;
     this.scene.add(sun, sun.target);
+  }
+
+  _fitSun() {
+    const h = this.size / 2;
+    const sun = this.sun;
+    sun.position.set(h + 5, 24, h + 3);
+    sun.target.position.set(h, 0, h);
+    const sc = sun.shadow.camera;
+    const e = this.size * 0.95;
+    sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e;
+    sc.far = 40 + this.size * 1.5;
+    sc.updateProjectionMatrix();
+  }
+
+  /** Reconstruit la plaque à la taille n et recentre caméra, cible et ombres. */
+  setPlateSize(n) {
+    if (n === this.size) return;
+    this.size = n;
+    this._disposeBase();
+    this._buildBase();
+    this._fitSun();
+    const c = this.controls;
+    const h = n / 2;
+    c.maxDistance = n * 2.9;
+    c.target.set(h, 0.8, h);
+    this.camera.position.set(h + 11 * n / 16, 20 * n / 16, h + 17 * n / 16);
+    this.zoomTo = null;
+    c.update();
+    this.pickList = [this.plate, ...this.meshes.values()];
+  }
+
+  _disposeBase() {
+    for (const o of [...this.baseGroup.children]) {
+      this.baseGroup.remove(o);
+      if (o.geometry && o.geometry !== studGeometry()) o.geometry.dispose();
+      if (o.isInstancedMesh) o.dispose();
+      if (o.material && o.material !== this._plateMat) o.material.dispose();
+    }
+    if (this._plateMat) { this._plateMat.dispose(); this._plateMat = null; }
   }
 
   _buildBase() {
@@ -103,14 +141,14 @@ export class Stage {
     );
     table.position.set(s / 2, -0.4 - 0.25, s / 2);
     table.receiveShadow = true;
-    this.scene.add(table);
+    this.baseGroup.add(table);
 
-    const green = new THREE.MeshStandardMaterial({ color: '#9ad9a8', roughness: 0.55 });
+    const green = (this._plateMat = new THREE.MeshStandardMaterial({ color: '#9ad9a8', roughness: 0.55 }));
     const plate = (this.plate = new THREE.Mesh(new RoundedBoxGeometry(s, 0.4, s, 3, 0.12), green));
     plate.position.set(s / 2, -0.2, s / 2);
     plate.receiveShadow = true;
     plate.castShadow = true;
-    this.scene.add(plate);
+    this.baseGroup.add(plate);
 
     const studs = new THREE.InstancedMesh(studGeometry(), green, s * s);
     const m = new THREE.Matrix4();
@@ -120,7 +158,7 @@ export class Stage {
       studs.setMatrixAt(i++, m);
     }
     studs.receiveShadow = true;
-    this.scene.add(studs);
+    this.baseGroup.add(studs);
   }
 
   _buildPreview() {

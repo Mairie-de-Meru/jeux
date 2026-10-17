@@ -1,8 +1,8 @@
 // Brique Bâtisseur : orchestration (écrans, entrées, état). La logique est dans src/logic/.
 import { PIECES } from './logic/pieces.js';
-import { Board, anchorFor } from './logic/board.js';
+import { Board, anchorFor, nextPlateSize } from './logic/board.js';
 import { CHALLENGES, challengeById, score, hintFor, transformPieces, centerTransform } from './logic/challenges.js';
-import { loadFree, saveFree, loadProgress, saveStars } from './logic/storage.js';
+import { loadFree, loadFreeSize, saveFree, loadProgress, saveStars } from './logic/storage.js';
 import { Stage } from './render/stage.js';
 import { unlock, sounds } from './ui/audio.js';
 import { speak } from './ui/speech.js';
@@ -34,6 +34,7 @@ const REASONS = {
   roof: 'Pas sur un toit !',
   high: "C'est trop haut !",
   out: 'Reste sur la plaque !',
+  fit: 'Trop de briques pour rétrécir !',
 };
 
 const board = new Board();
@@ -97,7 +98,15 @@ function enterGame(mode) {
   say(SCRIPTS[mode]);
 }
 
+function applyPlateSize(n) {
+  const r = board.resize(n);
+  if (r.ok) { stage.setPlateSize(n); stage.hideHologram(); }
+  return r;
+}
+
 function startFree() {
+  board.load([]);
+  applyPlateSize(loadFreeSize(store));
   board.load(loadFree(store));
   stage.sync(board.pieces, false);
   state.challengeId = null;
@@ -108,13 +117,14 @@ function startFree() {
 }
 
 function guidePieces(ch) {
-  return transformPieces(ch.pieces, centerTransform(ch.pieces));
+  return transformPieces(ch.pieces, centerTransform(ch.pieces, board.size));
 }
 
 function startChallenge(id) {
   const ch = challengeById(id);
   if (!ch) return;
   board.load([]);
+  applyPlateSize(16);
   stage.sync(board.pieces, false);
   state.challengeId = id;
   $('#fiche').hidden = false;
@@ -129,7 +139,7 @@ function startChallenge(id) {
 
 // ---- actions ------------------------------------------------------------------
 function onChange() {
-  if (state.mode === 'free') saveFree(store, board.pieces);
+  if (state.mode === 'free') saveFree(store, board.pieces, board.size);
   refreshGhost();
 }
 
@@ -197,6 +207,21 @@ function placeActions() {
 function closeActions() {
   actionUid = null;
   actions.hidden = true;
+}
+
+function doPlateSize(n = nextPlateSize(board.size)) {
+  closeActions();
+  const r = applyPlateSize(n);
+  if (!r.ok) { refuse(r.reason); return r; }
+  if (state.mode === 'free') saveFree(store, board.pieces, board.size);
+  else if (state.mode === 'challenge') {
+    const ch = challengeById(state.challengeId);
+    if (ch?.guide) stage.showHologram(guidePieces(ch));
+  }
+  sounds.tick();
+  say(`Terrain ${n} × ${n}`);
+  refreshGhost();
+  return r;
 }
 
 function doUndo() {
@@ -292,6 +317,15 @@ let holdTimer = 0;
 const HOLD_MS = 450;
 
 canvas.addEventListener('pointerdown', (e) => {
+  if (e.button === 2 && e.pointerType === 'mouse') {
+    e.preventDefault();
+    closeActions();
+    if (state.screen === 'game' && $('#result').hidden) {
+      const pk = stage.pick(e.clientX, e.clientY);
+      if (pk && pk.uid != null) doErase(pk.uid);
+    }
+    return;
+  }
   active.add(e.pointerId);
   if (active.size > 1) { if (down) down.valid = false; return; }
   down = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now(), valid: true };
@@ -357,6 +391,7 @@ $('#btn-undo').addEventListener('click', doUndo);
 $('#act-rotate').addEventListener('click', () => { if (actionUid != null) { doRotatePiece(actionUid); placeActions(); } });
 $('#act-delete').addEventListener('click', () => { const uid = actionUid; if (uid == null) return; if (doErase(uid).ok) closeActions(); });
 $('#act-close').addEventListener('click', () => { closeActions(); sounds.tick(); });
+$('#btn-plate').addEventListener('click', () => doPlateSize());
 $('#btn-zoom-in').addEventListener('click', () => { stage.zoom(0.75); sounds.tick(); });
 $('#btn-zoom-out').addEventListener('click', () => { stage.zoom(1.33); sounds.tick(); });
 document.addEventListener('keydown', (e) => {
@@ -418,5 +453,6 @@ window.__game = {
   startChallenge,
   finishChallenge,
   startFree,
+  setPlateSize: (n) => doPlateSize(n),
   PIECES,
 };

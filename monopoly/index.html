@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Ma ville — le jeu de l'immobilier</title>
+<link rel="icon" href="data:,">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<style>
+:root{--ink:#2b3a55;--red:#d6303d;--green:#2fb36b;--orange:#ff9a2e;--blue:#3b78e0}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;font-family:"Trebuchet MS",system-ui,sans-serif;color:var(--ink);background:linear-gradient(#bfe3ff,#e3f6d6);-webkit-tap-highlight-color:transparent}
+#app{position:fixed;inset:0;height:100dvh}
+.hidden{display:none!important}
+button{font:inherit;font-weight:700;min-height:48px;border:0;border-radius:14px;padding:8px 14px;cursor:pointer;background:#fff;color:var(--ink);box-shadow:0 3px 0 rgba(43,58,85,.28);touch-action:manipulation}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(43,58,85,.28)}
+button:disabled{opacity:.45}
+button.primary{background:var(--green);color:#fff;font-size:1.15rem}
+button.warn{background:var(--orange);color:#fff}
+button.danger{background:var(--red);color:#fff}
+button.sel{outline:4px solid var(--blue);background:#eaf2ff}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px;overflow-y:auto;max-height:100dvh}
+.banner{background:var(--red);color:#fff;border:5px solid #fff;border-radius:28px;padding:6px 28px;font-size:clamp(2rem,9vmin,4rem);font-weight:900;transform:rotate(-3deg);box-shadow:0 6px 0 rgba(0,0,0,.2);margin:6px 0}
+#home .hero{width:min(480px,92vw);aspect-ratio:16/9;max-height:34dvh;border-radius:22px;background:linear-gradient(135deg,#9fd7ff,#c9efb8);display:flex;align-items:center;justify-content:center;overflow:hidden;border:5px solid #fff}
+#home .hero img{width:100%;height:100%;object-fit:cover}
+#home .hero canvas{height:80%}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
+.btnrow button{flex:0 1 220px;font-size:1.2rem}
+.split{overflow:hidden}
+.split .scroll{flex:1 1 auto;min-height:0;overflow-y:auto;width:100%;display:flex;flex-direction:column;align-items:center;gap:12px}
+.split .sticky{position:static;flex-shrink:0;background:none}
+.sticky{position:sticky;bottom:-14px;padding:8px 0;background:linear-gradient(transparent,#e6f6d8 35%);z-index:2}
+.card{background:#ffffffd9;border-radius:18px;padding:12px;width:min(560px,100%)}
+.card h3{margin:0 0 8px;font-size:1.05rem}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{flex:1 1 90px}
+.pawnbtn{font-size:1.9rem;flex:0 1 64px!important;min-width:64px}
+.lvl{display:flex;gap:8px;align-items:center;text-align:left;flex:1 1 100%!important;font-weight:600!important}
+.lvl b{font-size:1.1rem}
+input[type=text]{font:inherit;font-size:1.2rem;padding:10px;border-radius:12px;border:3px solid #9fb0c7;width:100%;min-height:48px}
+#rules .text{width:min(640px,100%)}
+#rules h3{margin:10px 0 4px}
+#rules p{margin:4px 0;line-height:1.4}
+
+#game{display:block}
+#stage{position:absolute;inset:0}
+#gl{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#overlay{position:absolute;inset:0;pointer-events:none}
+#topbar{position:absolute;top:6px;left:6px;right:60px;display:flex;gap:6px;align-items:flex-start}
+#overlay .chip{background:#fffd;border-radius:12px;padding:4px 10px;font-weight:800;flex:0 0 auto;min-height:48px;display:flex;align-items:center;box-sizing:border-box}
+#overlay #dicebox{position:absolute;left:6px;bottom:66px;background:#fffd;border-radius:12px;padding:4px 12px;font-weight:800;font-size:1.05rem}
+#overlay #menubtn{position:absolute;top:4px;right:4px;pointer-events:auto;min-height:48px;min-width:48px;padding:4px 10px}
+#camBtn{position:absolute;left:6px;bottom:6px;pointer-events:auto;min-height:52px;padding:4px 12px;font-size:.95rem}
+#toast{position:absolute;left:50%;top:68px;transform:translateX(-50%);max-width:92%;background:var(--ink);color:#fff;border-radius:14px;padding:8px 14px;font-weight:700;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:.96}
+#panel{position:absolute;right:6px;bottom:6px;width:clamp(220px,32vw,320px);max-height:60dvh;overflow-y:auto;padding:8px;border-radius:18px;background:rgba(255,255,255,.74);backdrop-filter:blur(3px);display:flex;flex-direction:column;gap:6px;z-index:5;box-sizing:border-box}
+#players{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;pointer-events:auto}
+.pchip{background:#fff;border:4px solid #ccd;border-radius:12px;padding:3px 6px;min-width:0;text-align:left;box-shadow:none;min-height:48px;display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.pchip .nm{font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pchip .mn{font-size:1.05rem;font-weight:900}
+.pchip canvas{display:none}
+.pchip.me .nm::after{content:" ▶"}
+.pchip.cur{box-shadow:0 0 0 3px #ffd23f}
+.pchip.out{opacity:.4}
+#msg{background:#fffc;border-radius:12px;padding:6px 10px;min-height:2.6em;line-height:1.25;font-weight:600}
+#calc{font-weight:800;color:var(--blue)}
+#actions{display:flex;flex-wrap:wrap;gap:8px}
+#actions button{flex:1 1 120px;font-size:1.05rem}
+#actions button.big{flex:1 1 100%;font-size:1.25rem;min-height:56px}
+#tools{display:flex;gap:4px}
+#tools button{flex:1;min-width:0;padding:2px;font-size:1.25rem;line-height:1.05;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#tools button small{font-size:.58rem;font-weight:700}
+
+.layer{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(30,40,70,.5)}
+.sheet{background:#fff;border-radius:18px;width:min(560px,100%);max-height:calc(100dvh - 16px);overflow-y:auto;padding:14px;position:relative}
+.sheet>.row:last-child,.sheet>div>.row:last-child{position:sticky;bottom:-14px;background:#fff;padding:8px 0;margin-top:10px;z-index:3;box-shadow:0 -6px 8px -4px rgba(0,0,0,.12)}
+.sheet h2{margin:0 0 8px;font-size:1.25rem}
+.sheet .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sheet .row button{flex:1 1 110px}
+.deed{border:4px solid var(--ink);border-radius:10px;overflow:hidden}
+.deed .band{padding:10px;text-align:center;font-weight:900;font-size:1.2rem;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.deed table{width:100%;border-collapse:collapse}
+.deed td{padding:3px 10px}
+.deed td:last-child{text-align:right;font-weight:800}
+.deed tr.hl{background:#fff2b3}
+.deed .foot{padding:6px 10px;font-size:.9rem;border-top:2px dashed #aab}
+.pcard{border:8px solid var(--orange);border-radius:18px;padding:14px;text-align:center;background:#fff}
+.pcard.tirelire{border-color:var(--blue)}
+.pcard .tag{font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+.pcard .txt{font-size:1.25rem;font-weight:700;margin:10px 0}
+.plist .prow{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #dde}
+.plist .dot{width:18px;height:18px;border-radius:5px;flex:0 0 18px;border:2px solid var(--ink)}
+.plist .pn{flex:1;min-width:0;text-align:left;background:none;box-shadow:none;padding:2px;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis}
+.plist .prow button.mini{min-height:48px;min-width:48px;padding:2px 6px;font-size:.85rem}
+.trade .cols{display:flex;gap:8px;flex-wrap:wrap}
+.trade .col{flex:1 1 200px;border:2px solid #dde;border-radius:12px;padding:6px}
+.trade .tg{display:inline-flex;margin:2px;padding:4px 8px;min-height:48px;align-items:center;font-size:.85rem}
+.bidnow{font-size:1.6rem;font-weight:900;text-align:center;margin:6px 0}
+.ranking .rk{display:flex;align-items:center;gap:10px;font-size:1.2rem;padding:6px;background:#fff;border-radius:12px;margin:6px 0;border:4px solid #ccd}
+#end{background:linear-gradient(#ffe9a8,#ffd1e6)}
+#confetti{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}
+.hint{font-size:.85rem;opacity:.8}
+
+button.build{background:#7c4dff;color:#fff;font-size:1.15rem}
+@keyframes bnc{0%,100%{transform:translateY(0)}30%{transform:translateY(-10px) scale(1.04)}55%{transform:translateY(0) scale(1.02,.96)}75%{transform:translateY(-4px)}}
+button.bounce{animation:bnc .9s ease 3}
+.bgroup{border:3px solid #dde;border-radius:12px;overflow:hidden;margin:8px 0}
+.bband{color:#fff;font-weight:800;padding:4px 10px;font-size:.9rem;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.brow{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid #eef}
+.brow .bname{flex:1;min-width:0}
+.brow .bh{font-size:1.05rem}.brow .why{font-size:.82rem;color:#b45309;font-weight:700}.brow .calc{font-size:.85rem;color:var(--blue);font-weight:800}
+.brow button.mini{min-height:48px;min-width:72px}
+body.vitrine #overlay,body.vitrine #panel{display:none!important}
+@media (max-aspect-ratio:1/1){#panel{width:clamp(220px,60vw,320px)}}
+@media (max-height:500px) and (orientation:landscape){
+  .screen{padding:8px;gap:6px}
+  .banner{font-size:2rem;padding:2px 20px;margin:0}
+  #home .hero{max-height:40dvh}
+  .card{padding:8px}.card h3{margin-bottom:4px;font-size:.95rem}
+  #panel{padding:4px;gap:4px}
+  #players{gap:4px}
+  #msg{padding:3px 8px;min-height:2.2em;font-size:.88rem}
+  #actions button{min-height:48px;font-size:.95rem;padding:4px 8px}
+  #actions button.big{min-height:52px;font-size:1.05rem}
+  #tools button{font-size:.8rem}
+  .sheet{padding:10px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="home" class="screen">
+    <div class="banner">Ma ville</div>
+    <div class="hero" id="hero"></div>
+    <div class="btnrow"><button class="primary" id="b-play">▶ Jouer</button><button id="b-rules">📖 Règles</button></div>
+  </section>
+
+  <section id="setup" class="screen split hidden"><div class="scroll">
+    <div class="card"><h3>Ton prénom</h3><input type="text" id="s-name" maxlength="12" value="Toi" autocomplete="off"></div>
+    <div class="card"><h3>Ton pion</h3><div class="opts" id="s-pawn"></div></div>
+    <div class="card"><h3>Combien de robots ?</h3><div class="opts" id="s-bots"></div></div>
+    <div class="card"><h3>Robots</h3><div class="opts" id="s-botlvl"></div></div>
+    <div class="card"><h3>Palier</h3><div class="opts" id="s-level"></div></div>
+    <div class="card"><h3>Durée de la partie</h3><div class="opts" id="s-dur"></div></div>
+  </div>
+    <div class="btnrow sticky"><button id="b-back">⬅ Retour</button><button class="primary" id="b-start">▶ C'est parti !</button></div>
+  </section>
+
+  <section id="rules" class="screen split hidden"><div class="scroll">
+    <div class="banner">Les règles</div>
+    <div class="card text" id="rules-text"></div>
+  </div>
+    <div class="btnrow sticky"><button id="b-rules-say">🔊 Écouter</button><button class="primary" id="b-rules-back">⬅ Retour</button></div>
+  </section>
+
+  <section id="game" class="screen hidden" style="padding:0;gap:0;overflow:hidden;align-items:stretch">
+    <div id="stage">
+      <canvas id="gl"></canvas>
+      <div id="overlay"><div id="topbar"><div class="chip" id="clock"></div><div id="players"></div></div><div id="dicebox" class="hidden"></div><button id="menubtn" aria-label="Menu">☰</button><button id="camBtn">🗺️ Plateau</button><div id="toast"></div></div>
+    </div>
+    <div id="panel">
+      <div id="msg"></div>
+      <div id="actions"></div>
+      <div id="tools">
+        <button id="t-props" aria-label="Mes biens"><span>🏠</span><small>Mes biens</small></button><button id="t-trade" aria-label="Échanger"><span>🤝</span><small>Échanger</small></button><button id="t-log" aria-label="Journal"><span>📜</span><small>Journal</small></button><button id="t-say" aria-label="Lire à voix haute"><span>🔊</span><small>Lire</small></button>
+      </div>
+    </div>
+  </section>
+
+  <section id="end" class="screen hidden">
+    <canvas id="confetti"></canvas>
+    <div class="banner" id="end-title">Bravo !</div>
+    <div class="card ranking" id="end-rank"></div>
+    <div class="btnrow"><button class="primary" id="b-again">🔁 Rejouer</button><button id="b-home">🏠 Accueil</button></div>
+  </section>
+
+  <div id="modal"></div>
+</div>
+<script type="module" src="./src/main.mjs"></script>
+</body>
+</html>

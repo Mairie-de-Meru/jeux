@@ -2,7 +2,14 @@
 import { PIECES, footprint } from './pieces.js';
 
 export const SIZE = 16;
+export const PLATE_SIZES = [16, 24, 32];
 export const MAX_H = 36;
+
+/** Taille de plaque suivante dans le cycle 16 → 24 → 32 → 16. */
+export function nextPlateSize(size) {
+  const i = PLATE_SIZES.indexOf(size);
+  return PLATE_SIZES[(i + 1) % PLATE_SIZES.length];
+}
 const HISTORY_LIMIT = 100;
 
 function covers(piece, x, z) {
@@ -132,6 +139,17 @@ export class Board {
       reason = r.reason;
     }
     return { ok: false, reason };
+  }
+
+  /** Change la taille de la plaque. Refuse si une pièce dépasserait. → { ok, reason } */
+  resize(size) {
+    if (!Number.isInteger(size) || size < 1) return { ok: false, reason: 'size' };
+    for (const p of this.pieces) {
+      const { w, d } = footprint(p.type, p.rot);
+      if (p.x + w > size || p.z + d > size) return { ok: false, reason: 'fit' };
+    }
+    this.size = size;
+    return { ok: true };
   }
 
   clear() {

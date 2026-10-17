@@ -1,0 +1,7 @@
+{
+  "images": {
+    "titre": "assets/img/titre.jpg",
+    "chevaux": { "rouge": "assets/img/cheval-rouge.png", "bleu": "assets/img/cheval-bleu.png", "jaune": "assets/img/cheval-jaune.png", "vert": "assets/img/cheval-vert.png" }
+  },
+  "modeles": {}
+}
