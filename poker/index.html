@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Poker</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <button id="btn-menu" class="round" aria-label="Menu">☰</button>
+    <div id="status" aria-live="polite"><div id="st-main">Bienvenue !</div><div id="st-info"></div></div>
+    <button id="btn-voice" class="round" aria-label="Lire la règle et la situation à voix haute">🔊</button>
+  </header>
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="toast" aria-live="polite"></div>
+    <div id="raisebox" class="hidden">
+      <div class="raise-panel">
+        <p>Relancer à</p>
+        <div class="raise-row">
+          <button id="raise-minus" class="round" aria-label="Moins">−</button>
+          <div id="raise-amt">0</div>
+          <button id="raise-plus" class="round" aria-label="Plus">+</button>
+        </div>
+        <div class="raise-sub">jetons au total ce tour</div>
+        <div class="raise-presets">
+          <button class="btn small ghost" data-p="min">Minimum</button>
+          <button class="btn small ghost" data-p="half">½ pot</button>
+          <button class="btn small ghost" data-p="pot">Pot</button>
+        </div>
+        <div class="raise-row">
+          <button id="raise-ok" class="btn">✓ Relancer</button>
+          <button id="raise-cancel" class="btn ghost">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <section id="side">
+    <div id="me-row">
+      <div id="hand" aria-label="Tes cartes"></div>
+      <div id="info">
+        <div id="help"></div>
+        <div id="result" class="hidden"></div>
+        <div id="info-btns">
+          <button id="btn-combos" class="btn small ghost">🃏 Combinaisons</button>
+          <button id="btn-eye" class="round small hidden" aria-label="Afficher ou cacher ma combinaison">👁</button>
+        </div>
+      </div>
+    </div>
+    <div id="bar">
+      <button id="btn-fold" class="btn fold">✋ Se coucher</button>
+      <button id="btn-call" class="btn call">Parler</button>
+      <button id="btn-raise" class="btn raise">⬆ Relancer</button>
+      <button id="btn-allin" class="btn allin">🔥 Tapis</button>
+      <button id="btn-next" class="btn big hidden">Main suivante ▶</button>
+    </div>
+  </section>
+</div>
+
+<section id="home" class="overlay">
+  <div class="panel">
+    <img id="hero" class="hero hidden" alt="" draggable="false">
+    <h1>Poker</h1>
+    <p class="sub">Fais la plus belle combinaison de cartes !</p>
+    <div class="group"><h3>Palier</h3>
+      <div class="chips" id="opt-palier">
+        <button class="chip sel" data-v="1"><b>1</b><small>Découverte</small></button>
+        <button class="chip" data-v="2"><b>2</b><small>Classique</small></button>
+        <button class="chip" data-v="3"><b>3</b><small>Champion</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Joueurs</h3>
+      <div class="chips" id="opt-players">
+        <button class="chip" data-v="2"><b>2</b></button>
+        <button class="chip sel" data-v="3"><b>3</b></button>
+        <button class="chip" data-v="4"><b>4</b></button>
+        <button class="chip" data-v="5"><b>5</b></button>
+        <button class="chip" data-v="6"><b>6</b></button>
+      </div>
+      <div id="seat-list"></div>
+    </div>
+    <div class="group"><h3>Nombre de mains</h3>
+      <div class="chips" id="opt-hands">
+        <button class="chip sel" data-v="0"><b>Auto</b></button>
+        <button class="chip" data-v="5"><b>5</b></button>
+        <button class="chip" data-v="10"><b>10</b></button>
+        <button class="chip" data-v="20"><b>20</b></button>
+      </div>
+    </div>
+    <div class="group"><h3>Lire les annonces</h3>
+      <div class="chips" id="opt-say">
+        <button class="chip sel" data-v="0"><b>Non</b></button>
+        <button class="chip" data-v="1"><b>🔊 Oui</b></button>
+      </div>
+    </div>
+    <div class="row">
+      <button id="btn-play" class="btn big">▶ Jouer</button>
+      <button id="btn-rules" class="round" aria-label="Lire la règle à voix haute">🔊</button>
+    </div>
+  </div>
+</section>
+
+<section id="pass" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="pass-emoji">🧒</div>
+    <h2 id="pass-text">Passe l'appareil</h2>
+    <div class="row">
+      <button id="btn-ready" class="btn big">Je suis prêt</button>
+    </div>
+  </div>
+</section>
+
+<section id="combos" class="overlay hidden">
+  <div class="panel">
+    <h2>Les combinaisons</h2>
+    <p class="sub">Du plus fort au plus faible</p>
+    <ol id="combo-list"></ol>
+    <div class="row sticky"><button id="btn-combos-close" class="btn">Fermer</button></div>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-emoji">🎉</div>
+    <h2 id="end-title">Bravo !</h2>
+    <ol id="ranking"></ol>
+    <div class="row">
+      <button id="btn-again" class="btn">↻ Rejouer</button>
+      <button id="btn-home" class="btn ghost">Accueil</button>
+    </div>
+  </div>
+</section>
+<div id="confetti"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
