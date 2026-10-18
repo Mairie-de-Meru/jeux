@@ -197,6 +197,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #2a2663; fon
 @keyframes bolts { 50% { opacity: .3; } }
 .pw-wheel { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#e8454d 0 25%, #2d78d6 0 50%, #2ba866 0 75%, #f2b21f 0); border: 12px solid #fff; box-shadow: 0 8px 24px rgba(0,0,0,.5); animation: wheelspin var(--dur, .9s) cubic-bezier(.2, .7, .3, 1) both; }
 @keyframes wheelspin { from { transform: rotate(-540deg) scale(.3); } to { transform: rotate(0) scale(1); } }
+/* joker / +4 (1,4 s) : bascule vers la couleur choisie au même moment qu'avant, puis tenue plus longue */
+.pw-sw { animation-name: pwshowlong; } .pw-sw .pw-bgc { animation-name: bgswitchlong; }
+@keyframes bgswitchlong { 0%, 32% { opacity: 0; } 40%, 100% { opacity: .95; } }
+@keyframes pwshowlong { 0% { opacity: 0; } 5%, 88% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes pwshow { 0% { opacity: 0; } 8%, 78% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes pwzoom { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 #app.quake { animation: quake .4s linear; }

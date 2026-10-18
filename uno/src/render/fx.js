@@ -62,15 +62,15 @@ export function createFx({ root, scene, dur, avatarOf }) {
     const who = p >= 0 && avatarOf ? avatarOf(p) : '';
     const hex = COLORS[color] || '#8a8aa8';
     const sw = kind === 'wild' || kind === 'draw4'; // couleur choisie : le fond bascule après la roue / les éclairs
-    const el = mk(`pw pw-${d.cls}`, `<div class="pw-bg"></div>${sw ? '<div class="pw-bgc"></div>' : ''}<div class="pw-rays"></div><div class="pw-art">${ART[kind]}</div><div class="pw-who">${who}</div><div class="pw-title">${d.title}</div>`, 1000);
+    const el = mk(`pw pw-${d.cls}${sw ? ' pw-sw' : ''}`, `<div class="pw-bg"></div>${sw ? '<div class="pw-bgc"></div>' : ''}<div class="pw-rays"></div><div class="pw-art">${ART[kind]}</div><div class="pw-who">${who}</div><div class="pw-title">${d.title}</div>`, sw ? 1500 : 1000);
     const yellow = color === 'Y';
     el.style.cssText += `--c:${hex};--c2:${mix(hex, -0.35)};--c3:${mix(hex, 0.35)};--fg:${yellow ? '#4a2f00' : '#fff'};--st:${yellow ? 'rgba(255,255,255,.7)' : 'rgba(0,0,0,.35)'};`;
-    el.style.setProperty('--dur', dur(900) / 1000 + 's');
+    el.style.setProperty('--dur', dur(sw ? 1400 : 900) / 1000 + 's'); // joker / +4 : 0,5 s de plus pour voir la couleur choisie
     const app = document.getElementById('app');
     app.classList.remove('quake'); void app.offsetWidth; app.classList.add('quake');
     setTimeout(() => app.classList.remove('quake'), 450);
     setTimeout(() => burst({ x: innerWidth / 2, y: innerHeight * 0.42 }, kind === 'draw4' ? 28 : 20, Math.min(innerWidth, innerHeight) * 0.45), dur(250));
-    await wait(750);
+    await wait(sw ? 1250 : 750);
   }
 
   function uno(name) {
