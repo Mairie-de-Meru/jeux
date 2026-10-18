@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { faceCanvas, backCanvas, cardKey } from './cardart.js';
+import { seatLayout, TA0, TB0, LABEL_R, POT } from '../logic/layout.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
-const TA0 = 5.6, TB0 = 3.4; // demi-axes de la table en paysage (tournée de 90° en portrait)
 export const DECK_POS = new THREE.Vector3(-2.75, 0.1, 0);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const sideMat = new THREE.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.7 });
@@ -109,7 +109,7 @@ export function createScene(stage, canvas) {
   }
   const deck = new THREE.Mesh(cardGeo, [sideMat, sideMat, getBackMat(), getBackMat(), sideMat, sideMat]);
   deck.scale.set(BOARD_S, 8, BOARD_S); deck.position.copy(DECK_POS).setY(0.14); deck.castShadow = true; scene.add(deck);
-  const POT_POS = new THREE.Vector3(0, 0.02, -1.15);
+  const POT_POS = new THREE.Vector3(POT.x, 0.02, POT.z);
 
   let board = [];
   function setBoard(cards) {
@@ -136,25 +136,17 @@ export function createScene(stage, canvas) {
   const labels = document.createElement('div'); labels.id = 'labels'; stage.appendChild(labels);
 
   let seats = [], viewer = 0, layout = { portrait: false, a: TA0, b: TB0 };
-  const seatXZ = (slot, n) => {
-    const th = Math.PI / 2 + (2 * Math.PI * slot) / n;
-    return new THREE.Vector3(Math.cos(th) * layout.a * 0.8, 0, Math.sin(th) * layout.b * 0.8);
-  };
-  function betPos(p) {
-    const v = new THREE.Vector3(p.x * 0.6, 0.02, p.z * 0.6);
-    if (Math.abs(p.x) < 0.6) v.x += 1.0;
-    return v;
-  }
-  let cardOff = 1.4; // décalage (unités) entre l'étiquette et les cartes : demi-hauteur de l'étiquette + demi-carte
-  function cardsPos(p) { return new THREE.Vector3(p.x, 0.05, p.z + (p.z > 1.5 ? -cardOff : cardOff)); }
-
+  void LABEL_R;
   function layoutSeats() {
     const n = seats.length;
+    const L = seatLayout(n, layout.portrait);
     seats.forEach((s, i) => {
-      const slot = (i - viewer + n) % n;
-      s.pos = seatXZ(slot, n);
-      s.bpos = betPos(s.pos);
-      s.cpos = cardsPos(s.pos);
+      const e = L.seats[(i - viewer + n) % n];
+      s.pos = new THREE.Vector3(e.pos.x, 0, e.pos.z);
+      s.bpos = new THREE.Vector3(e.bet.x, 0.02, e.bet.z);
+      s.cpos = new THREE.Vector3(e.cards.x, 0.05, e.cards.z);
+      s.dpos = new THREE.Vector3(e.dealer.x, 0.07, e.dealer.z);
+      if (s.cs !== e.cards.s) { s.cs = e.cards.s; s.cardsKey = ''; }
       if (s.betGroup) s.betGroup.position.copy(s.bpos);
       if (s.cardsGroup) s.cardsGroup.position.copy(s.cpos);
     });
@@ -165,10 +157,7 @@ export function createScene(stage, canvas) {
   function placeDealer() {
     const s = seats[dealerIdx];
     dealerBtn.visible = !!s;
-    if (!s) return;
-    const central = Math.abs(s.pos.x) < 0.6;
-    if (central) dealerBtn.position.set(s.pos.x - 1.4, 0.07, s.pos.z);
-    else dealerBtn.position.set(s.pos.x, 0.07, s.pos.z + (s.pos.z > 1.5 ? 0.9 : -0.9));
+    if (s) dealerBtn.position.copy(s.dpos);
   }
   function setDealer(i) { dealerIdx = i; placeDealer(); }
 
@@ -189,6 +178,7 @@ export function createScene(stage, canvas) {
   }
   function setupSeats(players, v = 0) {
     clearSeats(); viewer = v; dealerIdx = -1;
+    labels.classList.toggle('dense', players.length >= 5);
     players.forEach(() => {
       const el = document.createElement('div'); el.className = 'seat-label';
       el.innerHTML = '<div class="sl-name"></div><div class="sl-stack"></div><div class="sl-tag"></div>';
@@ -226,9 +216,9 @@ export function createScene(stage, canvas) {
         const grp = new THREE.Group();
         for (let k = 0; k < 2; k++) {
           const m = cardMesh(s.cards === 'face' && s.faces ? s.faces[k] : null);
-          m.scale.set(0.8, 1, 0.8);
-          m.position.set((k - 0.5) * 0.78, k * 0.03, 0);
-          m.rotation.y = (k - 0.5) * -0.25;
+          const cs = seat.cs || 0.8;
+          m.scale.set(cs, 1, cs);
+          m.position.set((k - 0.5) * (0.9 * cs + 0.04), k * 0.03, 0);
           grp.add(m);
         }
         grp.position.copy(seat.cpos); scene.add(grp); seat.cardsGroup = grp;
@@ -270,8 +260,8 @@ export function createScene(stage, canvas) {
   const ELEV = (66 * Math.PI) / 180;
   const fitDist = (w, h, a, b) => {
     const t = Math.tan((camera.fov * Math.PI) / 360);
-    const needH = Math.max(a + 0.5, a * 0.8 + 1.8) / (t * (w / h));
-    const needV = (Math.max(b + 0.4, b * 0.8 + 1.2) * Math.sin(ELEV) + 0.9) / t;
+    const needH = Math.max(a + 0.5, a * LABEL_R + 1.8) / (t * (w / h));
+    const needV = (Math.max(b + 0.4, b * LABEL_R + 1.2) * Math.sin(ELEV) + 0.9) / t;
     return Math.max(needH, needV);
   };
   function resize() {
@@ -290,9 +280,6 @@ export function createScene(stage, canvas) {
     camera.lookAt(0, 0, 0.1);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
-    const pzu = Math.abs(screenOf(new THREE.Vector3(0, 0, 1)).y - screenOf(new THREE.Vector3(0, 0, 0)).y) || 30;
-    const half = (seats[0] ? seats[0].el.offsetHeight || 50 : 50) / 2;
-    cardOff = Math.min(2.2, half / pzu + 0.62);
     layoutSeats();
   }
 
