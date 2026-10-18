@@ -1,23 +1,28 @@
 import { mulberry32 } from './logic/rng.js';
 import { createGame, legalMoves, play, drawCard, keepCard, topCard, isWild, COLORS, COLOR_NAMES } from './logic/game.js';
 import { botDecision } from './logic/bots.js';
+import { humanCount, needsPassScreen, seatsFromSettings } from './logic/turns.js';
 import { createScene, HUMAN_POS, DISCARD_POS, DRAW_POS } from './render/scene.js';
 import { COLOR_HEX } from './render/cardart.js';
-import { $, toast, cardLabel, renderHand, setChips, showRanking, confetti } from './ui/ui.js';
+import { $, toast, cardLabel, renderHand, setChips, renderSeats, showRanking, confetti } from './ui/ui.js';
 import { speak, stopSpeech } from './ui/speech.js';
 import { cardSpeech } from './logic/speechtext.js';
 import { loadImage } from './ui/images.js';
 import { sfx } from './ui/audio.js';
 
-const settings = { palier: 1, bots: 1, difficulty: 'facile', sayCards: false };
+const settings = {
+  palier: 1, players: 2, difficulty: 'facile', sayCards: false,
+  seats: [{ type: 'human', name: 'Toi' }, { type: 'bot', name: 'Renard' }, { type: 'bot', name: 'Panda' }, { type: 'bot', name: 'Koala' }],
+};
 let g = null, run = 0, busy = false, waiting = null, armedUno = false, fast = false;
+let viewer = 0, passResolve = null; // viewer : humain dont la main est affichée
 
 const scene = createScene($('stage'), $('c'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, fast ? 0 : ms));
 const dur = (ms) => (fast ? 0 : ms);
 // Rythme des robots : multiplicateur des délais/animations des robots (pas de l'enfant, joueur 0).
 const BOT_PACE = 1.6;
-const bp = (ms, p) => (p !== 0 ? Math.round(ms * BOT_PACE) : ms);
+const bp = (ms, p) => (g?.players[p]?.human ? ms : Math.round(ms * BOT_PACE));
 
 const RULES = {
   base: 'Pose une carte de la même couleur ou du même nombre que la carte du milieu. Si tu ne peux pas, pioche une carte. Le premier qui n\'a plus de cartes gagne ! Quand il te reste une seule carte, appuie sur Uno.',
@@ -27,17 +32,21 @@ const RULES = {
 const rulesText = () => RULES.base + (settings.palier >= 2 ? RULES[2] : '') + (settings.palier >= 3 ? RULES[3] : '');
 
 // ---------- vues ----------
-const me = () => g.players[0];
-const myTurn = () => !!g && g.phase === 'play' && g.current === 0 && !busy && !!waiting;
+const me = () => g.players[viewer];
+const solo = () => humanCount(g) < 2;
+const myTurn = () => !!g && g.phase === 'play' && g.current === viewer && !busy && !!waiting;
+// avec plusieurs humains, la main n'est visible que pendant le tour de son propriétaire
+const handHidden = () => !!g && !solo() && g.phase === 'play' && g.current !== viewer;
 const highlightOn = () => settings.palier < 3;
 
 function statusText() {
   if (!g) return 'Bienvenue !';
   if (g.phase === 'over') return 'Fini !';
-  if (g.current !== 0) return `${g.players[g.current].emoji} ${g.players[g.current].name} joue…`;
+  if (g.current !== viewer) return `${g.players[g.current].emoji} ${g.players[g.current].name} joue…`;
   if (busy) return '';
   if (g.drawn !== null) return 'Joue la carte ou garde-la';
-  return legalMoves(g, 0).length ? 'À toi ! Même couleur ou même nombre' : 'Aucune carte : pioche !';
+  const toi = solo() ? 'À toi !' : `À toi, ${me().name} !`;
+  return legalMoves(g, viewer).length ? `${toi} Même couleur ou même nombre` : (solo() ? 'Aucune carte : pioche !' : `${me().name}, aucune carte : pioche !`);
 }
 
 function refreshViews() {
@@ -48,12 +57,13 @@ function refreshViews() {
   scene.setColor(g.topColor);
   $('colorbadge').style.background = COLOR_HEX[g.topColor] || '#888';
   const mine = myTurn();
-  const legalIds = new Set(mine ? legalMoves(g, 0).map((c) => c.id) : []);
-  renderHand($('hand'), me().hand, { legalIds, highlight: highlightOn() && mine, onTap: onCardTap });
+  const legalIds = new Set(mine ? legalMoves(g, viewer).map((c) => c.id) : []);
+  renderHand($('hand'), handHidden() ? [] : me().hand, { legalIds, highlight: highlightOn() && mine, onTap: onCardTap });
   $('btn-draw').disabled = !(mine && g.drawn === null);
   $('draw-count').textContent = `(${g.draw.length})`;
   $('btn-keep').classList.toggle('hidden', !(mine && g.drawn !== null));
   $('btn-uno').classList.toggle('hidden', !(mine && me().hand.length === 2));
+  $('btn-draw').classList.toggle('hidden', handHidden());
   $('btn-uno').classList.toggle('armed', armedUno);
   $('btn-uno').textContent = armedUno ? 'Uno ! ✓' : 'Uno !';
   if (!busy) $('status').textContent = statusText();
@@ -64,13 +74,15 @@ async function fly(opts) {
   await Promise.race([scene.fly(opts), sleep((opts.duration || 420) + 500)]);
 }
 
+const soloMe = (p) => p === 0 && solo();
+
 async function applyEvents(events) {
   for (const e of events) {
     const name = g.players[e.p ?? 0]?.name;
     switch (e.t) {
       case 'play':
-        $('status').textContent = e.p === 0 ? 'Bien joué !' : `${name} joue ${cardLabel(e.card, e.color)}`;
-        if (e.p !== 0) toast(`${g.players[e.p].emoji} ${name} joue ${cardLabel(e.card, e.color)}`, bp(1800, e.p));
+        $('status').textContent = soloMe(e.p) ? 'Bien joué !' : `${name} joue ${cardLabel(e.card, e.color)}`;
+        if (!soloMe(e.p)) toast(`${g.players[e.p].emoji} ${name} joue ${cardLabel(e.card, e.color)}`, bp(1800, e.p));
         sfx.play();
         if (settings.sayCards) speak(cardSpeech(e.card, e.color));
         await fly({ from: scene.seatPos(e.p), to: DISCARD_POS.clone().setY(0.2), card: e.card, duration: dur(bp(420, e.p)), spin: 0.4 });
@@ -81,19 +93,19 @@ async function applyEvents(events) {
           sfx.draw();
           await fly({ from: DRAW_POS.clone().setY(0.3), to: scene.seatPos(e.p), duration: dur(bp(260, e.p)), arc: 0.8 });
         }
-        if (e.penalty) toast('Oups, tu pioches 1 carte', 1800);
-        else if (e.byCard) toast(`${g.players[e.p].emoji} ${e.p === 0 ? 'Tu pioches' : name + ' pioche'} ${e.n} carte${e.n > 1 ? 's' : ''}`, bp(1600, e.p));
+        if (e.penalty) toast(solo() ? 'Oups, tu pioches 1 carte' : `Oups ${name}, tu pioches 1 carte`, 1800);
+        else if (e.byCard) toast(`${g.players[e.p].emoji} ${soloMe(e.p) ? 'Tu pioches' : name + ' pioche'} ${e.n} carte${e.n > 1 ? 's' : ''}`, bp(1600, e.p));
         break;
       case 'skip':
         sfx.special();
-        toast(e.p === 0 ? 'Tu passes ton tour' : `${name} passe son tour`, bp(1400, e.p));
+        toast(soloMe(e.p) ? 'Tu passes ton tour' : `${name} passe son tour`, bp(1400, e.p));
         await sleep(bp(450, e.p));
         break;
       case 'reverse':
         sfx.special(); scene.setDir(e.dir); toast('Sens inverse !', bp(1400, e.p)); await sleep(bp(350, e.p));
         break;
       case 'uno':
-        sfx.uno(); toast(`${e.p === 0 ? 'Toi' : name} : Uno !`, bp(1400, e.p)); if (e.p === 0) speak('Uno !');
+        sfx.uno(); toast(`${soloMe(e.p) ? 'Toi' : name} : Uno !`, bp(1400, e.p)); if (g.players[e.p].human) speak('Uno !');
         break;
       case 'unoForgot':
         sfx.oops(); toast(e.penalty ? 'Il fallait dire Uno ! Tu piocheras 1 carte.' : 'N\'oublie pas de dire Uno ! La prochaine fois.', 2200);
@@ -103,8 +115,8 @@ async function applyEvents(events) {
         toast('On mélange la défausse', 1400); await sleep(300);
         break;
       case 'pass':
-        if (e.p !== 0) toast(`${name} ne peut pas jouer`, bp(1200, e.p));
-        else toast('Pas jouable : tour suivant', 1300);
+        if (!g.players[e.p].human) toast(`${name} ne peut pas jouer`, bp(1200, e.p));
+        else toast(soloMe(e.p) ? 'Pas jouable : tour suivant' : `${name} : pas jouable, tour suivant`, 1300);
         await sleep(bp(300, e.p));
         break;
       default:
@@ -142,7 +154,7 @@ async function doHumanPlay(card, color) {
 
 async function doHumanDraw() {
   if (!myTurn() || g.drawn !== null) return false;
-  if (legalMoves(g, 0).length) { toast('Tu peux jouer une carte !', 1500); sfx.oops(); return false; }
+  if (legalMoves(g, viewer).length) { toast('Tu peux jouer une carte !', 1500); sfx.oops(); return false; }
   busy = true;
   const ev = drawCard(g);
   await applyEvents(ev);
@@ -162,7 +174,7 @@ async function doKeep() {
 
 async function onCardTap(card, el) {
   if (!myTurn()) return;
-  if (!legalMoves(g, 0).some((c) => c.id === card.id)) {
+  if (!legalMoves(g, viewer).some((c) => c.id === card.id)) {
     sfx.oops(); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
     toast(g.drawn !== null ? 'Joue la carte piochée, ou garde-la' : 'Pas celle-là : même couleur ou même nombre', 1800);
     return;
@@ -195,9 +207,31 @@ async function botTurn() {
   busy = false;
 }
 
+function showPass() {
+  const pl = g.players[g.current];
+  $('pass-emoji').textContent = pl.emoji;
+  const text = `Passe l'appareil à ${pl.name}`;
+  $('pass-text').textContent = text;
+  $('pass').classList.remove('hidden');
+  if (settings.sayCards) speak(text);
+  return new Promise((res) => { passResolve = res; });
+}
+function ready() {
+  const r = passResolve; passResolve = null;
+  $('pass').classList.add('hidden');
+  if (r) r();
+  return !!r;
+}
+
 async function loop(id) {
   while (g && id === run && g.phase === 'play') {
-    if (g.current === 0) {
+    if (g.players[g.current].human) {
+      if (needsPassScreen(g, viewer)) {
+        refreshViews();
+        await showPass();
+        if (id !== run) return;
+      }
+      viewer = g.current; armedUno = false;
       await new Promise((res) => { waiting = res; refreshViews(); });
     } else {
       await botTurn();
@@ -210,18 +244,23 @@ async function finish(id) {
   busy = true; refreshViews();
   await sleep(900);
   if (id !== run) return;
-  const humanWon = g.winner === 0;
-  showRanking(g.ranking, humanWon);
-  if (humanWon) { sfx.win(); confetti(90); speak('Bravo, tu as gagné !'); }
+  const winner = g.players[g.winner];
+  const humanWon = winner.human;
+  showRanking(g.ranking, humanWon, humanWon && !solo() ? `Bravo ${winner.name} !` : undefined);
+  if (humanWon) { sfx.win(); confetti(90); speak(solo() ? 'Bravo, tu as gagné !' : `Bravo ${winner.name} !`); }
   else { sfx.lose(); confetti(30); speak(`${g.players[g.winner].name} a gagné. Bien joué !`); }
 }
 
 function startGame(opts = {}) {
-  Object.assign(settings, opts);
-  run++; busy = false; waiting = null; armedUno = false;
+  const { seats, bots, seed: _s, ...rest } = opts;
+  Object.assign(settings, rest);
+  run++; busy = false; waiting = null; armedUno = false; viewer = 0; ready();
   stopSpeech();
+  let list = settings.seats.slice(0, settings.players);
+  if (seats) list = seats;
+  else if (bots != null) list = [{ type: 'human' }, ...Array.from({ length: Math.max(1, bots) }, () => ({ type: 'bot' }))];
   const seed = opts.seed ?? ((Date.now() ^ (Math.random() * 1e9)) >>> 0);
-  g = createGame({ palier: settings.palier, bots: settings.bots, difficulty: settings.difficulty, rng: mulberry32(seed) });
+  g = createGame({ palier: settings.palier, seats: seatsFromSettings(list), difficulty: settings.difficulty, rng: mulberry32(seed) });
   $('home').classList.add('hidden'); $('end').classList.add('hidden'); $('chooser').classList.add('hidden');
   scene.setupSeats(g.players);
   scene.clearDiscard();
@@ -234,14 +273,16 @@ function startGame(opts = {}) {
 
 // ---------- interface ----------
 setChips('opt-palier', (v) => { settings.palier = +v; });
-setChips('opt-bots', (v) => { settings.bots = +v; });
+setChips('opt-players', (v) => { settings.players = +v; renderSeats($('seat-list'), settings.seats, settings.players, () => {}); });
+renderSeats($('seat-list'), settings.seats, settings.players, () => {});
+$('btn-ready').addEventListener('click', () => ready());
 setChips('opt-diff', (v) => { settings.difficulty = v; });
 setChips('opt-say', (v) => { settings.sayCards = v === '1'; if (!settings.sayCards) stopSpeech(); });
 loadImage('titre').then((im) => { if (im) { $('hero').src = im.src; $('hero').classList.remove('hidden'); } });
 $('btn-play').addEventListener('click', () => startGame());
 $('btn-again').addEventListener('click', () => startGame());
-$('btn-home').addEventListener('click', () => { run++; $('end').classList.add('hidden'); $('home').classList.remove('hidden'); });
-$('btn-menu').addEventListener('click', () => { run++; busy = false; waiting = null; $('home').classList.remove('hidden'); });
+$('btn-home').addEventListener('click', () => { run++; ready(); $('end').classList.add('hidden'); $('home').classList.remove('hidden'); });
+$('btn-menu').addEventListener('click', () => { run++; ready(); busy = false; waiting = null; $('home').classList.remove('hidden'); });
 $('btn-rules').addEventListener('click', () => speak(rulesText()));
 $('btn-voice').addEventListener('click', () => speak(rulesText()));
 $('btn-draw').addEventListener('click', () => doHumanDraw());
@@ -270,13 +311,15 @@ window.__uno = {
   setFast: (b = true) => { fast = !!b; },
   isMyTurn: () => myTurn(),
   refresh: () => refreshViews(),
-  legal: () => (g ? legalMoves(g, 0).map((c) => c.id) : []),
+  legal: () => (g ? legalMoves(g, viewer).map((c) => c.id) : []),
+  viewer: () => viewer,
+  ready: () => ready(),
   hand: () => me().hand.map((c) => ({ id: c.id, color: c.color, kind: c.kind, value: c.value })),
   // joue une carte (id) ; color pour les jokers
   play: async (id, color) => { await until(() => myTurn() || g.phase !== 'play'); const c = me().hand.find((x) => x.id === id); return c ? doHumanPlay(c, color) : false; },
   playFirstLegal: async () => {
     await until(() => myTurn() || g.phase !== 'play');
-    const c = legalMoves(g, 0)[0];
+    const c = legalMoves(g, viewer)[0];
     if (!c) return doHumanDraw();
     return doHumanPlay(c, isWild(c) ? COLORS[0] : undefined);
   },
@@ -285,9 +328,11 @@ window.__uno = {
   // le joueur suit la stratégie des robots jusqu'à la fin de la partie
   autoPlay: async () => {
     while (g.phase === 'play') {
-      await until(() => myTurn() || g.phase !== 'play');
+      await until(() => myTurn() || !!passResolve || g.phase !== 'play');
+      if (passResolve) { ready(); continue; }
       if (g.phase !== 'play') break;
       const d = botDecision(g);
+      if (d.action === 'play' && me().hand.length === 2) armedUno = true; // comme un enfant attentif
       if (d.action === 'play') await doHumanPlay(me().hand.find((c) => c.id === d.cardId), d.color);
       else if (d.action === 'draw') await doHumanDraw();
       else await doKeep();
@@ -296,6 +341,6 @@ window.__uno = {
   },
   state: () => g && ({
     palier: g.palier, current: g.current, dir: g.dir, topColor: g.topColor, top: topCard(g), phase: g.phase,
-    winner: g.winner, hands: g.players.map((p) => p.hand.length), drawLeft: g.draw.length, ranking: g.ranking,
+    winner: g.winner, viewer, pass: !!passResolve, hands: g.players.map((p) => p.hand.length), drawLeft: g.draw.length, ranking: g.ranking,
   }),
 };

@@ -9,6 +9,7 @@ export const BOT_ANIMALS = [
   { name: 'Koala', emoji: '🐨' },
   { name: 'Hibou', emoji: '🦉' },
 ];
+export const HUMAN_EMOJIS = ['🧒', '👧', '👦', '🧑'];
 export const HAND_SIZE = 7;
 
 // kind : 'num' | 'skip' | 'rev' | 'draw2' | 'wild' | 'wild4'
@@ -38,15 +39,25 @@ export function isPlayable(card, top, topColor) {
   return top.kind === 'num' && top.value === card.value;
 }
 
-export function createGame({ palier = 1, bots = 1, difficulty = 'facile', rng, names } = {}) {
+// seats : [{ type: 'human'|'bot', name }] (2 à 4 places, place 0 humaine). Sans seats : [Toi] + `bots` robots.
+export function createGame({ palier = 1, bots = 1, difficulty = 'facile', rng, names, seats } = {}) {
   if (!rng) throw new Error('rng requis');
-  bots = Math.max(1, Math.min(3, bots));
   palier = Math.max(1, Math.min(3, palier));
-  const animals = names || BOT_ANIMALS.slice(0, bots);
-  const players = [{ name: 'Toi', emoji: '🧒', human: true, hand: [] }];
-  for (let i = 0; i < bots; i++) {
-    players.push({ name: animals[i].name, emoji: animals[i].emoji, human: false, hand: [] });
+  if (!seats) {
+    bots = Math.max(1, Math.min(3, bots));
+    const animals = names || BOT_ANIMALS.slice(0, bots);
+    seats = [{ type: 'human', name: 'Toi' }, ...animals.slice(0, bots).map((a) => ({ type: 'bot', name: a.name, emoji: a.emoji }))];
   }
+  if (seats.length < 2 || seats.length > 4) throw new Error('2 à 4 places');
+  if (seats[0].type !== 'human') throw new Error('la place 0 est humaine');
+  let nh = 0, nb = 0;
+  const players = seats.map((st) => {
+    if (st.type === 'human') {
+      return { name: st.name || (nh === 0 ? 'Toi' : `Joueur ${nh + 1}`), emoji: HUMAN_EMOJIS[nh++], human: true, hand: [] };
+    }
+    const a = BOT_ANIMALS[nb++];
+    return { name: st.name || a.name, emoji: st.emoji || a.emoji, human: false, hand: [] };
+  });
   const draw = shuffle(buildDeck(palier), rng);
   const total = draw.length;
   for (let r = 0; r < HAND_SIZE; r++) for (const p of players) p.hand.push(draw.pop());

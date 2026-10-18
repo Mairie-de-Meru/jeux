@@ -1,4 +1,5 @@
 import { faceURL } from '../render/cardart.js';
+import { defaultSeatName, MAX_NAME } from '../logic/turns.js';
 import { fitCardWidth } from '../logic/layout.js';
 import { COLOR_NAMES } from '../logic/game.js';
 
@@ -71,7 +72,7 @@ export function setChips(groupId, onPick) {
   });
 }
 
-export function showRanking(list, winnerHuman) {
+export function showRanking(list, winnerHuman, title) {
   const medals = ['🥇', '🥈', '🥉', '🏅'];
   $('ranking').textContent = '';
   list.forEach((r, i) => {
@@ -81,7 +82,7 @@ export function showRanking(list, winnerHuman) {
     $('ranking').appendChild(li);
   });
   $('end-emoji').textContent = winnerHuman ? '🏆' : '🎉';
-  $('end-title').textContent = winnerHuman ? 'Bravo, tu as gagné !' : `${list[0].name} a gagné !`;
+  $('end-title').textContent = title || (winnerHuman ? 'Bravo, tu as gagné !' : `${list[0].name} a gagné !`);
   $('end').classList.remove('hidden');
 }
 
@@ -96,4 +97,37 @@ export function confetti(n = 70) {
     box.appendChild(p);
     setTimeout(() => p.remove(), 5500);
   }
+}
+
+// Liste des places de l'accueil. seats : [{ type, name, custom }] (modifié en place), count : nombre de places affichées.
+export function renderSeats(container, seats, count, onChange) {
+  const types = () => seats.slice(0, count).map((x) => x.type);
+  const refreshDefaults = () => {
+    seats.slice(0, count).forEach((st, i) => { if (!st.custom) st.name = defaultSeatName(types(), i); });
+    container.querySelectorAll('.seat input').forEach((inp, i) => { if (document.activeElement !== inp) inp.value = seats[i].name; });
+  };
+  container.textContent = '';
+  seats.slice(0, count).forEach((st, i) => {
+    const row = document.createElement('div'); row.className = 'seat';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.maxLength = MAX_NAME; inp.value = st.name; inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', `Prénom de la place ${i + 1}`);
+    inp.addEventListener('focus', () => inp.select());
+    inp.addEventListener('input', () => { st.name = inp.value; st.custom = inp.value.trim() !== ''; onChange(); });
+    const chips = document.createElement('div'); chips.className = 'chips';
+    for (const [v, label] of [['human', '🧒 Humain'], ['bot', '🤖 Robot']]) {
+      const b = document.createElement('button');
+      b.className = 'chip' + (st.type === v ? ' sel' : ''); b.innerHTML = `<b>${label}</b>`;
+      if (i === 0) b.disabled = true; // la place 1 est toujours humaine
+      b.addEventListener('click', () => {
+        if (i === 0 || st.type === v) return;
+        st.type = v; st.custom = false;
+        chips.querySelectorAll('.chip').forEach((c) => c.classList.toggle('sel', c === b));
+        refreshDefaults(); onChange();
+      });
+      chips.appendChild(b);
+    }
+    row.append(inp, chips); container.appendChild(row);
+  });
+  refreshDefaults();
 }

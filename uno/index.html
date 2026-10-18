@@ -59,12 +59,13 @@
         <button class="chip" data-v="3"><b>3</b><small>+ Jokers</small></button>
       </div>
     </div>
-    <div class="group"><h3>Amis robots</h3>
-      <div class="chips" id="opt-bots">
-        <button class="chip sel" data-v="1"><b>1</b><small>🦊</small></button>
-        <button class="chip" data-v="2"><b>2</b><small>🦊🐼</small></button>
-        <button class="chip" data-v="3"><b>3</b><small>🦊🐼🐨</small></button>
+    <div class="group"><h3>Joueurs</h3>
+      <div class="chips" id="opt-players">
+        <button class="chip sel" data-v="2"><b>2</b></button>
+        <button class="chip" data-v="3"><b>3</b></button>
+        <button class="chip" data-v="4"><b>4</b></button>
       </div>
+      <div id="seat-list"></div>
     </div>
     <div class="group"><h3>Niveau des robots</h3>
       <div class="chips" id="opt-diff">
@@ -81,6 +82,16 @@
     <div class="row">
       <button id="btn-play" class="btn big">▶ Jouer</button>
       <button id="btn-rules" class="round" aria-label="Lire les règles à voix haute">🔊</button>
+    </div>
+  </div>
+</section>
+
+<section id="pass" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="pass-emoji">🧒</div>
+    <h2 id="pass-text">Passe l'appareil</h2>
+    <div class="row">
+      <button id="btn-ready" class="btn big">Je suis prêt</button>
     </div>
   </div>
 </section>
