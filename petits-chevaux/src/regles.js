@@ -17,21 +17,45 @@ export function caseCommune(c, p) {
   return p >= 0 && p <= 55 ? (14 * c + p) % 56 : null;
 }
 
-export function nouvellePartie({ palier = 1, nbRobots = 1, difficulte = 'facile', seed = 1 } = {}) {
+// Nom par défaut d'un siège : « Toi » (rouge humain), « Joueur N » (autre humain), « Cheval <couleur> » (robot).
+export function nomParDefaut(c, type) {
+  if (type === 'robot') return NOMS_ROBOTS[c - 1] || `Cheval ${COULEURS[c]}`;
+  return c === 0 ? 'Toi' : `Joueur ${c + 1}`;
+}
+
+// Deux formes : { joueurs: [{type:'humain'|'robot'|'absent', nom}] x4 (par couleur) }
+// ou l'ancienne { nbRobots } (rouge humain « Toi » + robots sur les couleurs suivantes).
+export function nouvellePartie({ palier = 1, nbRobots = 1, joueurs: sieges = null, difficulte = 'facile', seed = 1 } = {}) {
   const cfg = PALIERS[palier];
   if (!cfg) throw new Error('palier inconnu : ' + palier);
-  const n = Math.max(1, Math.min(3, nbRobots));
-  const joueurs = [];
-  for (let c = 0; c <= n; c++) {
-    joueurs.push({
-      couleur: COULEURS[c],
-      nom: c === 0 ? 'Toi' : NOMS_ROBOTS[c - 1],
-      humain: c === 0,
-      chevaux: Array(cfg.chevaux).fill(-1),
-      rang: null,
+  const mk = (c, type, nom) => ({
+    couleur: COULEURS[c],
+    type,
+    nom: type === 'absent' ? '' : (String(nom || '').trim().slice(0, 12) || nomParDefaut(c, type)),
+    humain: type === 'humain',
+    absent: type === 'absent',
+    chevaux: type === 'absent' ? [] : Array(cfg.chevaux).fill(-1),
+    rang: null,
+  });
+  let joueurs;
+  let n = null;
+  if (sieges) {
+    if (!Array.isArray(sieges) || sieges.length > 4) throw new Error('joueurs : tableau de 4 entrées (une par couleur)');
+    joueurs = [0, 1, 2, 3].map((c) => {
+      const s = sieges[c] || { type: 'absent' };
+      if (!['humain', 'robot', 'absent'].includes(s.type)) throw new Error('type de joueur inconnu : ' + s.type);
+      return mk(c, s.type, s.nom);
     });
+    const presents = joueurs.filter((j) => !j.absent);
+    if (presents.length < 2) throw new Error('au moins 2 joueurs');
+    if (!presents.some((j) => j.humain)) throw new Error('au moins 1 humain');
+  } else {
+    n = Math.max(1, Math.min(3, nbRobots));
+    joueurs = [];
+    for (let c = 0; c <= n; c++) joueurs.push(mk(c, c === 0 ? 'humain' : 'robot'));
   }
-  return { palier, nbRobots: n, difficulte, seed, joueurs, courant: 0, phase: 'lancer', de: null, coups: [], classement: [], tour: 0 };
+  const premier = joueurs.findIndex((j) => !j.absent);
+  return { palier, nbRobots: n, difficulte, seed, joueurs, courant: premier, phase: 'lancer', de: null, coups: [], classement: [], tour: 0 };
 }
 
 export function joueurCourant(state) { return state.courant; }
@@ -85,7 +109,7 @@ function suivant(s) {
   const n = s.joueurs.length;
   for (let i = 1; i <= n; i++) {
     const k = (s.courant + i) % n;
-    if (!s.classement.includes(k)) return k;
+    if (!s.classement.includes(k) && !s.joueurs[k].absent) return k;
   }
   return s.courant;
 }
@@ -112,10 +136,10 @@ export function lancer(state, valeur) {
 // Termine la partie : les non finis sont classés par progression totale décroissante.
 export function forcerFin(state) {
   const s = clone(state);
-  const restants = s.joueurs.map((_, i) => i).filter((i) => !s.classement.includes(i));
+  const restants = s.joueurs.map((_, i) => i).filter((i) => !s.classement.includes(i) && !s.joueurs[i].absent);
   restants.sort((a, b) => progressionTotale(s, b) - progressionTotale(s, a) || a - b);
   for (const i of restants) s.classement.push(i);
-  s.joueurs.forEach((jo, i) => { jo.rang = s.classement.indexOf(i) + 1; });
+  s.joueurs.forEach((jo, i) => { jo.rang = jo.absent ? null : s.classement.indexOf(i) + 1; });
   s.phase = 'fini';
   s.coups = [];
   return s;
@@ -153,8 +177,9 @@ export function jouer(state, coup) {
   }
   s.coups = [];
   s.tour++;
-  const restants = s.joueurs.filter((_, i) => !s.classement.includes(i)).length;
-  if (s.classement.includes(0) || restants <= 1) {
+  const restants = s.joueurs.filter((jo, i) => !jo.absent && !s.classement.includes(i)).length;
+  const humainsFinis = s.joueurs.every((jo, i) => !jo.humain || s.classement.includes(i));
+  if (humainsFinis || restants <= 1) {
     const f = forcerFin(s);
     f.de = s.de;
     evenements.push({ type: 'partieFinie', classement: f.classement.slice() });

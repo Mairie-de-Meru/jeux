@@ -1,6 +1,6 @@
 // Boucle de jeu : enchaîne humain / robots, animations, interface et crochet de debug.
 import { createRng, rollDie } from './rng.js';
-import { nouvellePartie, lancer, jouer, forcerFin, PALIERS, ARRIVE } from './regles.js';
+import { nouvellePartie, lancer, jouer, forcerFin, nomParDefaut, PALIERS, ARRIVE } from './regles.js';
 import { chooseMove } from './robots.js';
 import { plusProche } from './pick.js';
 import { creerScene } from './scene.js';
@@ -12,7 +12,11 @@ const canvas = document.getElementById('c');
 const scene = creerScene(canvas, document.getElementById('zone3d'));
 const params = new URLSearchParams(location.search);
 
-const reglages = { nbRobots: 1, palier: 1, difficulte: 'facile' };
+// Sièges par couleur (rouge, bleu, jaune, vert) : humain | robot | absent. Défaut : toi contre un robot.
+const sieges = (types, noms = []) => types.map((type, c) => ({ type, nom: noms[c] ?? (type === 'absent' ? '' : nomParDefaut(c, type)) }));
+const joueursDepuisRobots = (n) => sieges([0, 1, 2, 3].map((c) => (c === 0 ? 'humain' : c <= n ? 'robot' : 'absent')));
+const reglages = { palier: 1, difficulte: 'facile', joueurs: sieges(['humain', 'robot', 'absent', 'absent']) };
+let dernierHumain = -1;
 let etat = null;
 let rng = createRng(1), rngRobot = createRng(2);
 let occupe = false;          // une animation / un tour automatique est en cours
@@ -31,24 +35,29 @@ const humainCourant = () => etat && etat.joueurs[etat.courant].humain && !robotC
 
 // ---- partie ----
 function demarrer(opts = {}) {
-  Object.assign(reglages, opts);
+  if (opts.palier) reglages.palier = opts.palier;
+  if (opts.difficulte) reglages.difficulte = opts.difficulte;
+  if (opts.joueurs) reglages.joueurs = opts.joueurs.map((s, c) => ({ type: s.type, nom: s.nom ?? (s.type === 'absent' ? '' : nomParDefaut(c, s.type)) }));
+  else if (opts.nbRobots != null) reglages.joueurs = joueursDepuisRobots(opts.nbRobots);
+  iface.majReglages();
   partieId++;
+  dernierHumain = -1;
   const seed = opts.seed ?? Math.floor(Math.random() * 2147483647);
-  etat = nouvellePartie({ ...reglages, seed });
+  etat = nouvellePartie({ palier: reglages.palier, difficulte: reglages.difficulte, joueurs: reglages.joueurs, seed });
   rng = createRng(seed);
   rngRobot = createRng(seed + 1);
   occupe = false; attenteChoix = false; robotCourant = false;
   scene.effacer();
   scene.setJoueurs(etat);
   ui.ecran(null);
-  ui.toast(`${PALIERS[etat.palier].nom} : à toi de jouer !`);
+  if (etat.joueurs.filter((x) => x.humain).length === 1) ui.toast(`${PALIERS[etat.palier].nom} : à toi de jouer !`);
   prochain();
   return etat;
 }
 
 function consigneTexte() {
   if (!etat) return '';
-  if (etat.phase === 'lancer') return humainCourant() ? "C'est ton tour. Appuie sur le dé." : 'Un ami joue. Regarde !';
+  if (etat.phase === 'lancer') { const jo = etat.joueurs[etat.courant]; return humainCourant() ? `À ${jo.nom === 'Toi' ? 'toi' : jo.nom} de jouer. Appuie sur le dé.` : 'Un ami joue. Regarde !'; }
   if (etat.phase === 'choisir' && humainCourant()) return PALIERS[etat.palier].surlignage ? 'Touche un cheval qui brille.' : 'Touche le cheval que tu veux faire avancer.';
   return 'Regarde !';
 }
@@ -67,15 +76,20 @@ function prochain() {
   ui.setJoueur(jo, j);
   const g = partieId;
   if (robotCourant) {
-    attente(BOT_GAP_MS / BOT_PACE).then(() => { if (g === partieId && !occupe && etat.phase === 'lancer') actionLancer(); });
+    attente(BOT_GAP_MS / BOT_PACE).then(() => { if (g === partieId && !occupe && etat.phase === 'lancer') actionLancer(undefined, true); });
   } else {
     ui.setLancer(true);
     scene.deInvite(true);
+    occupe = false;
+    const nbH = etat.joueurs.filter((x) => x.humain).length;
+    if (nbH > 1 && dernierHumain !== j) ui.toast(`À ${jo.nom} !`, 1800);
+    dernierHumain = j;
   }
 }
 
-async function actionLancer(valeur) {
+async function actionLancer(valeur, interne = false) {
   if (occupe || !etat || etat.phase !== 'lancer') return null;
+  if (!interne && !humainCourant()) return null; // jamais pour un robot, ni hors du tour d'un humain
   occupe = true;
   const g = partieId;
   const j = etat.courant;
@@ -100,7 +114,7 @@ async function actionLancer(valeur) {
   if (etat.coups.length === 1) {
     await attente(200);
     if (g !== partieId) return null;
-    return jouerCoup(0);
+    return jouerCoup(0, true);
   }
   if (robotCourant) {
     const jo = etat.joueurs[j];
@@ -108,19 +122,21 @@ async function actionLancer(valeur) {
     scene.surligner(j, [coup], false);
     await attente(300);
     if (g !== partieId) return null;
-    return jouerCoup(etat.coups.indexOf(coup));
+    return jouerCoup(etat.coups.indexOf(coup), true);
   }
   // à l'enfant de choisir
   occupe = false;
   attenteChoix = true;
-  ui.setTexteQui('Choisis un cheval');
+  ui.setTexteQui('Choisis un cheval', etat.joueurs[j]);
   if (PALIERS[etat.palier].surlignage) scene.surligner(j, etat.coups, true);
   ui.toast(PALIERS[etat.palier].surlignage ? 'Touche un cheval qui brille !' : 'Touche un cheval !', 3000);
   return etat;
 }
 
-async function jouerCoup(i) {
+async function jouerCoup(i, interne = false) {
   if (!etat || etat.phase !== 'choisir' || !etat.coups[i]) return null;
+  // une action externe (tap, bouton, crochet) n'est acceptée que si un humain doit choisir, hors animation
+  if (!interne && (occupe || !attenteChoix || !humainCourant())) return null;
   const g = partieId;
   occupe = true;
   attenteChoix = false;
@@ -161,6 +177,13 @@ function finPartie() {
   attente(900).then(() => { if (g === partieId && etat.phase === 'fini') ui.afficherFin(etat, etat.joueurs); });
 }
 
+// Le bouton Lancer reflète toujours l'état : actif seulement pour un humain, en phase « lancer », hors animation.
+function syncLancer() {
+  const ok = !!etat && etat.phase === 'lancer' && etat.joueurs[etat.courant].humain && !robotCourant && !occupe;
+  ui.setLancer(ok);
+}
+setInterval(syncLancer, 250);
+
 // ---- entrées ----
 canvas.addEventListener('pointerdown', (e) => {
   debloquer();
@@ -190,7 +213,7 @@ window.__chevaux = {
     const p = new Promise((res) => { autoResolve = res; });
     if (etat && !occupe && etat.phase !== 'fini') {
       if (etat.phase === 'lancer') prochain();
-      else if (attenteChoix) { robotCourant = true; const c = chooseMove(etat, etat.coups, 'facile', rngRobot); jouerCoup(etat.coups.indexOf(c)); }
+      else if (attenteChoix) { robotCourant = true; const c = chooseMove(etat, etat.coups, 'facile', rngRobot); jouerCoup(etat.coups.indexOf(c), true); }
     }
     return p;
   },
@@ -199,8 +222,7 @@ window.__chevaux = {
     partieId++;
     occupe = false;
     const s = JSON.parse(JSON.stringify(etat));
-    s.joueurs[0].chevaux.fill(ARRIVE);
-    s.classement.push(0);
+    s.joueurs.forEach((jo, i) => { if (jo.humain) { jo.chevaux.fill(ARRIVE); s.classement.push(i); } });
     etat = forcerFin(s);
     scene.sync(etat);
     ui.afficherFin(etat, etat.joueurs);
@@ -224,6 +246,12 @@ const iface = ui.initUI({
 // vue de fond pour l'accueil
 scene.setJoueurs(nouvellePartie({ palier: 2, nbRobots: 3 }));
 
+// ?joueurs=hrha : h = humain, r = robot, a = absent, par couleur (rouge, bleu, jaune, vert)
+if (/^[hra]{4}$/.test(params.get('joueurs') || '')) {
+  reglages.joueurs = sieges([...params.get('joueurs')].map((l) => ({ h: 'humain', r: 'robot', a: 'absent' })[l]));
+  iface.majReglages();
+}
+
 // manifeste d'assets : uniquement les fichiers listés
 fetch('./assets/manifest.json').then((r) => (r.ok ? r.json() : {})).then((m) => {
   if (m.images && m.images.titre) {
@@ -244,7 +272,8 @@ fetch('./assets/manifest.json').then((r) => (r.ok ? r.json() : {})).then((m) => 
 if (params.has('vitesse')) { vit = +params.get('vitesse') || 1; appliquerVitesse(); }
 if (params.has('partie')) {
   demarrer({
-    palier: +(params.get('palier') || 1), nbRobots: +(params.get('robots') || 1),
+    palier: +(params.get('palier') || 1),
+    ...(params.has('joueurs') ? {} : { nbRobots: +(params.get('robots') || 1) }),
     difficulte: params.get('diff') || 'facile', seed: params.has('seed') ? +params.get('seed') : undefined,
   });
   if (params.has('auto')) window.__chevaux.auto(+params.get('auto'));
