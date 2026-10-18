@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Dames</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <button id="btn-menu" class="round" aria-label="Menu">☰</button>
+    <div id="counters">
+      <div class="cnt" id="cnt-white"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
+      <div class="cnt" id="cnt-black"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
+    </div>
+    <button id="btn-undo" class="round" aria-label="Annuler le dernier coup"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+    <button id="btn-voice" class="round" aria-label="Lire la règle à voix haute">🔊</button>
+  </header>
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="toast" aria-live="polite"></div>
+  </main>
+</div>
+
+<section id="home" class="overlay">
+  <div class="panel">
+    <h1 class="sr-only">Dames</h1>
+    <div class="col-a">
+    <img id="hero" class="hero" alt="Dames" draggable="false" src="./assets/img/titre.jpg">
+<div class="group"><h3>Les joueurs</h3>
+      <div id="seat-list">
+        <div class="seat" id="seat-white"><i class="dot w"></i><input maxlength="12" aria-label="Prénom des Blancs" autocomplete="off">
+          <div class="chips"><button class="chip" data-t="human"><b>Humain</b></button><button class="chip" data-t="bot"><b>Robot</b></button></div></div>
+        <div class="seat" id="seat-black"><i class="dot b"></i><input maxlength="12" aria-label="Prénom des Rouges" autocomplete="off">
+          <div class="chips"><button class="chip" data-t="human"><b>Humain</b></button><button class="chip" data-t="bot"><b>Robot</b></button></div></div>
+      </div>
+    </div></div>
+    <div class="col-b">
+    <button id="btn-swap" class="btn small ghost">⇄ Changer de couleur</button>
+    <div class="group"><h3>Variante</h3>
+      <div class="chips" id="opt-variant">
+        <button class="chip sel" data-v="international"><b>Internationales</b><small>10×10</small></button>
+        <button class="chip" data-v="english"><b>Anglaises</b><small>8×8</small></button>
+      </div>
+    </div>
+    <div class="group"><h3>Palier du robot</h3>
+      <div class="chips" id="opt-level">
+        <button class="chip sel" data-v="1"><b>1</b><small>Découverte</small></button>
+        <button class="chip" data-v="2"><b>2</b><small>Classique</small></button>
+        <button class="chip" data-v="3"><b>3</b><small>Champion</small></button>
+      </div>
+    </div>
+    <div class="row">
+      <button id="btn-play" class="btn big">▶ Jouer</button>
+      <button id="btn-resume" class="btn ghost hidden">Reprendre</button>
+      <button id="btn-rules" class="round" aria-label="Lire la règle à voix haute">🔊</button>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section id="end" class="overlay hidden">
+  <div class="panel">
+    <div class="big-emoji" id="end-emoji">🎉</div>
+    <h2 id="end-title">Bravo !</h2>
+    <p class="sub" id="end-reason"></p>
+    <div id="end-stars" aria-hidden="true"></div>
+    <div class="row">
+      <button id="btn-again" class="btn">↻ Rejouer</button>
+      <button id="btn-home" class="btn ghost">Menu</button>
+    </div>
+  </div>
+</section>
+<div id="confetti"></div>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
