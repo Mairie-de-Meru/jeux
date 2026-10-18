@@ -5,7 +5,7 @@ import { humanCount, needsPassScreen, seatsFromSettings } from './logic/turns.js
 import { SUIT_SYMBOLS, SUIT_NAMES } from './logic/cards.js';
 import { rulesText } from './logic/speechtext.js';
 import { createScene } from './render/scene.js';
-import { $, toast, bubble, renderHand, renderBid, renderSeats, renderBilan, setChips, confetti } from './ui/ui.js';
+import { $, toast, renderHand, renderBid, renderSeats, renderBilan, setChips, confetti } from './ui/ui.js';
 import { speak, stopSpeech } from './ui/speech.js';
 import { loadImage } from './ui/images.js';
 import { sfx } from './ui/audio.js';
@@ -96,7 +96,7 @@ function refreshViews() {
 
 const seatBubble = (seat, text, ms = 1500) => {
   if (fast) return;
-  bubble(scene.screenOf(scene.seatPos(seat).multiplyScalar(0.62).setY(0.8)), text, bp(ms, seat));
+  toast(`${who(seat)} : ${text}`, bp(ms, seat));
 };
 
 // ---------- animations d'événements ----------

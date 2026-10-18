@@ -11,7 +11,10 @@ export function showMsg(text, { bad = false, ms = 4500 } = {}) {
   s.textContent = text;
   if (bad) s.className = 'bad';
   el.appendChild(s);
-  msgTimer = setTimeout(() => { el.innerHTML = ''; }, ms);
+  msgTimer = setTimeout(() => {
+    s.classList.add('out');
+    msgTimer = setTimeout(() => { el.innerHTML = ''; }, 180);
+  }, ms);
 }
 
 export function showPop(text) {

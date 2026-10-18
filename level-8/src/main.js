@@ -54,8 +54,10 @@ const humanTurn = () => S.g.status === 'playing' && S.g.current === S.viewer && 
 
 function setMsg(text, shake = false) {
   const m = $('msg');
-  m.textContent = text;
-  m.classList.toggle('hidden', !text);
+  if (text) m.textContent = text; // garde l'ancien texte pendant le fondu de sortie
+  m.classList.toggle('off', !text);
+  const c = $('chips'); // la pastille se place sous les pastilles des joueurs
+  m.style.setProperty('--chips-h', (c && c.offsetHeight ? c.offsetTop + c.offsetHeight : 0) + 'px');
   m.classList.remove('shake');
   if (shake) { void m.offsetWidth; m.classList.add('shake'); }
 }

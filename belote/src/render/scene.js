@@ -210,7 +210,7 @@ export function createScene(stage, canvas) {
 
   // cadrage selon le ratio
   function resize() {
-    const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
+    const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const elevDeg = 60, elev = elevDeg * Math.PI / 180;

@@ -214,7 +214,10 @@ setInterval(() => {
 
 // ---------- actions et événements ----------
 async function toast(text, ms = 700) {
-  const t = $('#toast'); t.textContent = text; t.classList.add('on');
+  const t = $('#toast'); t.textContent = text;
+  // pastille juste sous la barre des joueurs (qui peut faire deux lignes en portrait)
+  const tb = $('#topbar').getBoundingClientRect(); const ov = $('#overlay').getBoundingClientRect();
+  t.style.top = `${Math.round(tb.bottom - ov.top + 6)}px`; t.classList.add('on');
   await sleep(ms);
 }
 

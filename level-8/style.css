@@ -354,3 +354,7 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
   .seat .avbtn { width: 48px; height: 48px; min-width: 48px; }
   .seat input, .seat .kind { height: 48px; min-height: 48px; }
 }
+
+/* messages : pastille translucide en haut du plateau, sous les pastilles des joueurs (2026-10-18) */
+#msg { top: calc(var(--chips-h, 0px) + 6px); bottom: auto !important; max-width: min(90vw, calc(100% - 12px)) !important; background: rgba(20, 24, 40, .55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; font-weight: 700; font-size: clamp(13px, 3.6vw, 15px) !important; padding: 6px 14px !important; border-radius: 999px; box-shadow: 0 2px 8px #0003; z-index: 5; transition: opacity .18s; }
+#msg.off { opacity: 0; }
