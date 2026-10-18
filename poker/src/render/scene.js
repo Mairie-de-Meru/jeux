@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { faceCanvas, backCanvas, cardKey } from './cardart.js';
-import { seatLayout, TA0, TB0, LABEL_R, POT } from '../logic/layout.js';
+import { seatLayout, TA0, TB0, POT, BOARD, BOARD_S, BOARD_GAP } from '../logic/layout.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
-export const DECK_POS = new THREE.Vector3(-2.75, 0.1, 0);
+export const DECK_POS = new THREE.Vector3(-(BOARD.hx + 0.6), 0.1, 0);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const sideMat = new THREE.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.7 });
 
@@ -101,7 +101,6 @@ export function createScene(stage, canvas) {
 
   // emplacements du tableau + paquet
   const slotMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14 });
-  const BOARD_S = 0.8, BOARD_GAP = 0.9;
   const slotPos = (i) => new THREE.Vector3((i - 2) * BOARD_GAP, 0.05, 0);
   for (let i = 0; i < 5; i++) {
     const s = new THREE.Mesh(cardGeo, slotMat); s.scale.set(BOARD_S, 0.4, BOARD_S);
@@ -136,22 +135,51 @@ export function createScene(stage, canvas) {
   const labels = document.createElement('div'); labels.id = 'labels'; stage.appendChild(labels);
 
   let seats = [], viewer = 0, layout = { portrait: false, a: TA0, b: TB0 };
-  void LABEL_R;
   function layoutSeats() {
     const n = seats.length;
-    const L = seatLayout(n, layout.portrait);
-    seats.forEach((s, i) => {
-      const e = L.seats[(i - viewer + n) % n];
-      s.pos = new THREE.Vector3(e.pos.x, 0, e.pos.z);
-      s.bpos = new THREE.Vector3(e.bet.x, 0.02, e.bet.z);
-      s.cpos = new THREE.Vector3(e.cards.x, 0.05, e.cards.z);
-      s.dpos = new THREE.Vector3(e.dealer.x, 0.07, e.dealer.z);
-      if (s.cs !== e.cards.s) { s.cs = e.cards.s; s.cardsKey = ''; }
-      if (s.betGroup) s.betGroup.position.copy(s.bpos);
-      if (s.cardsGroup) s.cardsGroup.position.copy(s.cpos);
-    });
+    const sx = Math.abs(screenOf(new THREE.Vector3(1, 0, 0)).x - screenOf(new THREE.Vector3(0, 0, 0)).x) || 30;
+    const sz = Math.abs(screenOf(new THREE.Vector3(0, 0, 1)).y - screenOf(new THREE.Vector3(0, 0, 0)).y) || 30;
+    const el0 = seats[0] && seats[0].el;
+    const maxW = el0 ? parseFloat(getComputedStyle(el0).maxWidth) || el0.offsetWidth : 0; // pire cas : largeur maximale
+    const H = el0 ? el0.offsetHeight : 0;
+    const apply = (m) => {
+      const lab = H ? { hx: maxW / 2 / sx + 0.1 + m, hz: H / 2 / sz + 0.15 + m, dz: 0.2 } : { hx: 0, hz: 0 };
+      const L = seatLayout(n, layout.portrait, lab);
+      seats.forEach((s, i) => {
+        const e = L.seats[(i - viewer + n) % n];
+        s.pos = new THREE.Vector3(e.pos.x, 0, e.pos.z);
+        s.bpos = new THREE.Vector3(e.bet.x, 0.02, e.bet.z);
+        s.cpos = new THREE.Vector3(e.cards.x, 0.05, e.cards.z);
+        s.dpos = new THREE.Vector3(e.dealer.x, 0.07, e.dealer.z);
+        if (s.cs !== e.cards.s) { s.cs = e.cards.s; s.cardsKey = ''; }
+        if (s.betGroup) s.betGroup.position.copy(s.bpos);
+        if (s.cardsGroup) s.cardsGroup.position.copy(s.cpos);
+      });
+      placeLabels();
+    };
+    // marge croissante tant que l'étiquette (largeur maximale) recouvre des cartes à l'écran
+    for (const m of [0, 0.15, 0.3, 0.5, 0.8, 1.1, 1.5]) {
+      apply(m);
+      if (!H || !labelsHitCards(maxW, H)) break;
+    }
     placeLabels();
     placeDealer();
+  }
+  function labelsHitCards(w, h) {
+    const V = new THREE.Vector3();
+    for (const s of seats) {
+      const cx = parseFloat(s.el.style.left), cy = parseFloat(s.el.style.top);
+      const lr = { l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2 };
+      for (const o of seats) {
+        const k = o.cs || 0.8, xs = [], ys = [];
+        for (const dx of [-1, 1]) for (const dz of [-1, 1]) {
+          const q = screenOf(V.set(o.cpos.x + dx * (0.9 * k + 0.02), 0.05, o.cpos.z + dz * 0.675 * k));
+          xs.push(q.x); ys.push(q.y);
+        }
+        if (Math.min(...xs) < lr.r && Math.max(...xs) > lr.l && Math.min(...ys) < lr.b && Math.max(...ys) > lr.t) return true;
+      }
+    }
+    return false;
   }
   let dealerIdx = -1;
   function placeDealer() {
@@ -168,7 +196,9 @@ export function createScene(stage, canvas) {
   function placeLabels() {
     for (const s of seats) {
       const q = screenOf(s.pos.clone().setY(0.4));
-      s.el.style.left = q.x + 'px'; s.el.style.top = q.y + 'px';
+      const hw = s.el.offsetWidth / 2, hh = s.el.offsetHeight / 2;
+      s.el.style.left = Math.min(Math.max(q.x, hw + 1), stage.clientWidth - hw - 1) + 'px';
+      s.el.style.top = Math.min(Math.max(q.y, hh + 1), stage.clientHeight - hh - 1) + 'px';
     }
   }
 
@@ -181,7 +211,7 @@ export function createScene(stage, canvas) {
     labels.classList.toggle('dense', players.length >= 5);
     players.forEach(() => {
       const el = document.createElement('div'); el.className = 'seat-label';
-      el.innerHTML = '<div class="sl-name"></div><div class="sl-stack"></div><div class="sl-tag"></div>';
+      el.innerHTML = '<div class="sl-name">🦊 Nom</div><div class="sl-stack">500</div><div class="sl-tag">tag</div>';
       labels.appendChild(el);
       seats.push({ el, key: '', bet: -1, cardsKey: '', betGroup: null, cardsGroup: null, pos: new THREE.Vector3(), bpos: new THREE.Vector3(), cpos: new THREE.Vector3() });
     });
@@ -260,8 +290,8 @@ export function createScene(stage, canvas) {
   const ELEV = (66 * Math.PI) / 180;
   const fitDist = (w, h, a, b) => {
     const t = Math.tan((camera.fov * Math.PI) / 360);
-    const needH = Math.max(a + 0.5, a * LABEL_R + 1.8) / (t * (w / h));
-    const needV = (Math.max(b + 0.4, b * LABEL_R + 1.2) * Math.sin(ELEV) + 0.9) / t;
+    const needH = Math.max(a + 0.3, a * 0.86 + 1.3) / (t * (w / h));
+    const needV = (Math.max(b + 0.3, b * 0.86 + 0.9) * Math.sin(ELEV) + 0.5) / t;
     return Math.max(needH, needV);
   };
   function resize() {
@@ -291,6 +321,6 @@ export function createScene(stage, canvas) {
   return {
     renderer, scene, camera, resize, render, fly, flyChips, setupSeats, setViewer, setSeat, setBoard, setPot, setDealer, clearTable, screenOf,
     seatPos: (i) => seats[i].pos.clone().setY(0.3), betPos: (i) => seats[i].bpos.clone().setY(0.1), cardsPos: (i) => seats[i].cpos.clone(),
-    slotPos, potPos: POT_POS, deckPos: DECK_POS.clone().setY(0.3), get layout() { return layout; },
+    cardScaleOf: (i) => seats[i].cs, slotPos, potPos: POT_POS, deckPos: DECK_POS.clone().setY(0.3), get layout() { return layout; },
   };
 }

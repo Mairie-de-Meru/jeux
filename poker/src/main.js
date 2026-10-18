@@ -451,6 +451,7 @@ const pub = () => g && ({
 });
 window.__poker = {
   get game() { return g; },
+  scene,
   settings,
   state: pub,
   start: (o) => { startGame(o); return pub(); },

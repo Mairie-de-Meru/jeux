@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 
 export const AVATAR_KEYS = { '🦊': 'av-renard', '🐼': 'av-panda', '🐨': 'av-koala', '🦉': 'av-hibou' };
-const BASE = 2.9;        // hauteur du sprite (unités monde)
+const BASE = 2.32;       // hauteur du sprite (unités monde)
 const EDGE = 4.15;       // rayon du bord de la table où se tiennent les avatars
 
 function avatarCanvas(img, emoji) {
@@ -50,11 +50,13 @@ export function createAvatars(root) {
       sprite.center.set(0.5, 0); sprite.renderOrder = 8;
       sprite.position.copy(pos); sprite.scale.set(BASE, BASE, 1);
       const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
-      bubble.renderOrder = 9; bubble.scale.set(0.8, 0.8, 1); bubble.center.set(-0.2, 0.5);
+      bubble.renderOrder = 9; bubble.scale.set(0.8, 0.8, 1);
+      const side = pos.x > 0.5 ? -1 : 1; // bulle à côté de l'avatar, du côté du centre de la table (jamais hors écran)
+      bubble.center.set(side > 0 ? 0 : 1, 0.5);
       const label = s.label; label.removeFromParent();
       label.center.set(0.5, 1); label.position.copy(pos); label.renderOrder = 10;
       root.add(sprite, bubble, label);
-      const e = { pos, sprite, bubble, label, emoji: pl.emoji, count: -1, active: false, anim: null, seed: i * 1.7 };
+      const e = { pos, side, sprite, bubble, label, emoji: pl.emoji, count: -1, active: false, anim: null, seed: i * 1.7 };
       build(e);
       return e;
     });
@@ -104,7 +106,7 @@ export function createAvatars(root) {
       e.sprite.position.y = e.pos.y + h;
       e.sprite.scale.set(BASE * sx, BASE * sy, 1);
       e.sprite.material.rotation = rot;
-      e.bubble.position.set(e.pos.x, e.pos.y + h + BASE * 0.62 * sy, e.pos.z);
+      e.bubble.position.set(e.pos.x + e.side * BASE * 0.42 * sx, e.pos.y + h + BASE * 0.55 * sy, e.pos.z);
     }
   }
 

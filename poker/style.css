@@ -13,11 +13,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 #stage { position: relative; flex: 1 1 auto; min-height: 0; }
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.seat-label { position: absolute; transform: translate(-50%, -50%); min-width: 74px; max-width: 108px; padding: 3px 6px 4px; border-radius: 14px; background: rgba(255,255,255,.93); border: 3px solid rgba(40,40,80,.35); text-align: center; line-height: 1.15; box-shadow: 0 2px 6px rgba(0,0,0,.3); transition: opacity .2s; }
+.seat-label { position: absolute; transform: translate(-50%, -50%); min-width: 74px; max-width: 84px; padding: 3px 6px 4px; border-radius: 14px; background: rgba(255,255,255,.93); border: 3px solid rgba(40,40,80,.35); text-align: center; line-height: 1.15; box-shadow: 0 2px 6px rgba(0,0,0,.3); transition: opacity .2s; }
 .seat-label .sl-name { font-weight: 800; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seat-label .sl-stack { font-weight: 900; font-size: 14px; color: #1b6f4a; }
 .seat-label .sl-stack::before { content: "●"; color: #e8454d; margin-right: 4px; font-size: 11px; }
-.seat-label .sl-tag { font-weight: 700; font-size: 11px; color: #5a4fcf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat-label .sl-tag { min-height: 1.15em; font-weight: 700; font-size: 11px; color: #5a4fcf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seat-label.active { background: #ffd23f; border-color: #e07a00; }
 .seat-label.me { border-color: #4cd07d; }
 .seat-label.fold, .seat-label.out { opacity: .55; }
@@ -25,7 +25,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 .seat-label.allin .sl-tag { color: #c0392b; font-weight: 900; }
 .seat-label.win { background: #fff1b8; border-color: #f2b21f; }
 .seat-label.win .sl-tag { color: #1b6f4a; }
-#labels.dense .seat-label { min-width: 58px; max-width: 80px; padding: 1px 4px 2px; border-width: 2px; border-radius: 10px; }
+#labels.dense .seat-label { min-width: 58px; max-width: 66px; padding: 1px 4px 2px; border-width: 2px; border-radius: 10px; }
 #labels.dense .sl-name { font-size: 11px; }
 #labels.dense .sl-stack { font-size: 12px; }
 #labels.dense .sl-tag { font-size: 9px; }
@@ -130,7 +130,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
   #bar .btn { min-width: 100px; }
   .btn { min-height: 48px; padding: 6px 12px; font-size: 16px; }
   .btn.big { min-height: 52px; font-size: 20px; }
-  .seat-label { min-width: 64px; max-width: 96px; padding: 2px 4px 3px; }
+  .seat-label { min-width: 64px; max-width: 72px; padding: 2px 4px 3px; }
   .panel { padding: 8px 14px; border-radius: 22px; width: min(640px, 100%); }
   .panel h1 { font-size: 34px; }
   .panel h3 { margin: 3px 0 2px; font-size: 13px; }

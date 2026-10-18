@@ -1,10 +1,11 @@
 // Placement des places autour de la table (pur, unités du monde 3D, axes x/z).
 // Table paysage : demi-axes TA0 x TB0 ; portrait : axes échangés. Le feutre s'arrête au bord intérieur du bois.
-export const TA0 = 5.6, TB0 = 3.4;
+export const TA0 = 6.2, TB0 = 3.8;
 export const WOOD = 0.35; // marge : bord du bois + demi-jeton
 export const LABEL_R = 0.84; // étiquette de place : fraction du rayon de l'ellipse
-export const BOARD = { hx: 2.16, hz: 0.54 }; // demi-dimensions du rectangle des cartes communes
-export const POT = { x: 0, z: -1.15 };
+export const BOARD_S = 0.9, BOARD_GAP = 1.0; // échelle et écart des cartes communes
+export const BOARD = { hx: 2 * BOARD_GAP + (0.9 * BOARD_S) / 2, hz: (1.35 * BOARD_S) / 2 }; // demi-dimensions du rectangle des cartes communes
+export const POT = { x: 0, z: -1.3 };
 const CARD_W = 0.9, CARD_H = 1.35, GAP = 0.08;
 
 export const cardScale = (n) => (n <= 3 ? 0.8 : n === 4 ? 0.7 : n === 5 ? 0.62 : 0.55);
@@ -18,32 +19,50 @@ export function inEllipse(r, a, b, margin = WOOD) {
 export const cardRect = (x, z, s) => rect(x, z, CARD_W * s + GAP / 2, (CARD_H * s) / 2); // les 2 cartes côte à côte
 
 // -> { a, b, seats: [{ pos, cards:{x,z,s,rect}, bet, dealer }] }  (seats[slot], slot 0 = en bas)
-export function seatLayout(n, portrait = false) {
+export function seatLayout(n, portrait = false, label = { hx: 0, hz: 0 }) {
+  let best = null;
+  for (const lr of [LABEL_R, 0.9, 0.95]) {
+    const L = place(n, portrait, label, lr);
+    if (!best || L.minScale > best.minScale) best = L;
+    if (L.minScale >= 0.9 * cardScale(n)) return L;
+  }
+  return best;
+}
+
+function place(n, portrait, label, lr) {
   const a = portrait ? TB0 : TA0, b = portrait ? TA0 : TB0;
   const boardR = rect(0, 0, BOARD.hx, BOARD.hz);
   const potR = rect(POT.x, POT.z, 0.5, 0.5);
   const taken = [];
+  const labels = [];
   const seats = [];
+  for (let slot = 0; slot < n; slot++) {
+    const th0 = Math.PI / 2 + (2 * Math.PI * slot) / n;
+    labels.push(rect(Math.cos(th0) * a * lr, Math.sin(th0) * b * lr - (label.dz || 0), label.hx, label.hz));
+  }
   for (let slot = 0; slot < n; slot++) {
     const th = Math.PI / 2 + (2 * Math.PI * slot) / n;
     const ux = Math.cos(th) * a, uz = Math.sin(th) * b;
-    const pos = { x: ux * LABEL_R, z: uz * LABEL_R };
+    const pos = { x: ux * lr, z: uz * lr };
     // cartes : le long du rayon vers le centre, sur le feutre, hors zone du tableau et des voisines
     let s = cardScale(n), cards = null;
+    // les étiquettes des places suivantes ne sont pas encore connues : on les calcule d'abord
+
     const tl0 = Math.hypot(Math.sin(th) * a, Math.cos(th) * b) || 1;
     const tdx = -(Math.sin(th) * a) / tl0, tdz = (Math.cos(th) * b) / tl0;
     for (let tries = 0; tries < 14 && !cards; tries++, s *= 0.92) {
       for (const sh of [0, 0.5, -0.5, 1, -1, 1.5, -1.5]) for (let r = 0.62; r >= 0.3 && !cards; r -= 0.02) {
         const cx = ux * r + tdx * sh, cz = uz * r + tdz * sh;
         const rc = cardRect(cx, cz, s);
-        if (inEllipse(rc, a, b) && !overlap(rc, boardR, 0.08) && !taken.some((t) => overlap(rc, t, 0.06))) cards = { x: cx, z: cz, s, rect: rc };
+        if (inEllipse(rc, a, b) && !overlap(rc, boardR, 0.08) && !(label.hx && labels.some((l) => overlap(rc, l, 0.1))) && !taken.some((t) => overlap(rc, t, 0.06))) cards = { x: cx, z: cz, s, rect: rc };
       }
     }
+    if (!cards) { const sc = 0.3; cards = { x: ux * 0.5, z: uz * 0.5, s: sc, rect: cardRect(ux * 0.5, uz * 0.5, sc) }; }
     taken.push(cards.rect);
     seats.push({ pos, cards, bet: null, dealer: null });
   }
   // piles de mise puis bouton donneur : sur le feutre, sans toucher cartes, tableau, pot ni autres piles
-  const obst = [boardR, potR, ...taken];
+  const obst = [boardR, potR, ...taken, ...(label.hx ? labels : [])];
   const free = (q) => inEllipse(q, a, b) && !obst.some((o) => overlap(q, o, 0.04));
   seats.forEach((st, slot) => {
     const th = Math.PI / 2 + (2 * Math.PI * slot) / n;
@@ -65,5 +84,5 @@ export function seatLayout(n, portrait = false) {
     const dq = find(0.32, [0.62, 0.58, 0.54, 0.5, 0.46, 0.7], [c.rect.hx + 0.5, -(c.rect.hx + 0.5), c.rect.hx + 1.0, -(c.rect.hx + 1.0)]);
     st.dealer = dq ? { x: dq.x, z: dq.z } : { x: c.x, z: c.z };
   });
-  return { a, b, seats };
+  return { a, b, seats, labels, minScale: Math.min(...seats.map((q) => q.cards.s)) };
 }
