@@ -47,7 +47,10 @@ function majSieges() {
     tete.className = 'siegeTete';
     const ic = document.createElement('span');
     ic.className = 'pastille';
-    pastille(ic, c);
+    pastille(ic, c, s.type === 'robot');
+    row.style.borderColor = css(COL[c]);
+    row.style.background = PALES[c];
+    row.classList.toggle('absent', s.type === 'absent');
     const input = document.createElement('input');
     input.type = 'text'; input.maxLength = 12; input.value = s.nom || '';
     input.setAttribute('aria-label', `Prénom, cheval ${COULEUR_NOM[c]}`);
@@ -60,6 +63,7 @@ function majSieges() {
     TYPES.forEach(([v, lib]) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'btn'; b.textContent = lib;
+      b.dataset.type = v;
       b.setAttribute('aria-pressed', String(s.type === v));
       b.addEventListener('click', () => {
         const ancien = s.type;
@@ -76,7 +80,8 @@ function majSieges() {
   });
   validation();
 }
-function pastille(el, j) {
+function pastille(el, j, robot = false) {
+  el.classList.toggle('robot', !!robot);
   el.style.backgroundColor = css(COL[j]);
   el.classList.toggle('icone', !!ICONES);
   el.style.backgroundImage = ICONES ? `url("${ICONES[j]}")` : '';
@@ -85,7 +90,7 @@ function pastille(el, j) {
 const PALES = ['#ffe0e0', '#dcebff', '#fff7c2', '#dcf3dd'];
 const nomAffiche = (jo) => (jo.nom === 'Toi' ? 'toi' : jo.nom);
 export function setJoueur(jo, j) {
-  pastille($('pastille'), j);
+  pastille($('pastille'), j, !jo.humain);
   const q = $('qui');
   q.style.background = PALES[j];
   q.style.borderColor = css(COL[j]);
@@ -131,7 +136,7 @@ export function afficherFin(etat, joueurs) {
     const li = document.createElement('li');
     if (joueurs[j].humain) li.className = 'moi';
     const m = document.createElement('span'); m.className = 'medaille'; m.textContent = medailles[i] || '🏅';
-    const p = document.createElement('span'); p.className = 'pastille'; pastille(p, j);
+    const p = document.createElement('span'); p.className = 'pastille'; pastille(p, j, !joueurs[j].humain);
     const n = document.createElement('span'); n.textContent = libelle(joueurs[j].nom);
     li.append(m, p, n);
     ol.appendChild(li);

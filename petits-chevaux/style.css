@@ -24,15 +24,28 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #8fd3f4; col
 #pastille { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rouge); border: 3px solid #fff;
   box-shadow: 0 0 0 3px var(--encre); }
 #pastille.icone, .pastille.icone { background-color: transparent !important; border: 0; box-shadow: none; border-radius: 0;
-  background-size: contain; background-repeat: no-repeat; background-position: center bottom; }
-#pastille.icone { width: 44px; height: 44px; }
-#classement .pastille.icone { width: 40px; height: 40px; border: 0; box-shadow: none; border-radius: 0; }
+  background-size: contain; background-repeat: no-repeat; background-position: center; }
+#pastille.icone { width: 52px; height: 52px; }
+#classement .pastille.icone { width: 48px; height: 48px; }
+.pastille { position: relative; }
+.pastille.robot::after { content: '🤖'; position: absolute; right: -6px; bottom: -4px; font-size: 18px; line-height: 1;
+  background: #6a1b9a; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;
+  border: 2px solid #fff; }
 .choix .mini { height: 40px; width: 40px; object-fit: contain; vertical-align: middle; }
 #sieges { display: flex; flex-direction: column; gap: 8px; }
-.siege { background: #f4f7f9; border-radius: 16px; padding: 6px; }
+.siege { background: #f4f7f9; border: 4px solid #cfd8dc; border-radius: 16px; padding: 6px; }
+.siege.absent { filter: saturate(.5); }
 .siegeTete { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.siegeTete .pastille { flex: none; width: 44px; height: 44px; border-radius: 50%; }
+.siegeTete .pastille { flex: none; width: 52px; height: 52px; border-radius: 50%; }
 .siegeTete .pastille.icone { border-radius: 0; }
+.siege .choix .btn { background: #fff; color: var(--encre); border: 3px solid currentColor; box-shadow: none; }
+.siege .choix .btn[data-type=humain] { color: #2e7d32; }
+.siege .choix .btn[data-type=robot] { color: #6a1b9a; }
+.siege .choix .btn[data-type=absent] { color: #607d8b; }
+.siege .choix .btn[aria-pressed="true"] { color: #fff; outline: 0; }
+.siege .choix .btn[data-type=humain][aria-pressed="true"] { background: #2e7d32; border-color: #1b5e20; }
+.siege .choix .btn[data-type=robot][aria-pressed="true"] { background: #6a1b9a; border-color: #4a148c; }
+.siege .choix .btn[data-type=absent][aria-pressed="true"] { background: #607d8b; border-color: #37474f; }
 .siegeTete input { flex: 1 1 0; min-width: 0; min-height: 48px; font: inherit; font-weight: 800; font-size: 18px; padding: 4px 12px;
   border: 3px solid #b0bec5; border-radius: 14px; color: var(--encre); background: #fff; }
 .siegeTete input:disabled { background: #eceff1; color: #90a4ae; }
@@ -83,7 +96,7 @@ h2 { margin: 10px 0 8px; font-size: clamp(20px, 5vw, 26px); }
 #classement li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; font-size: clamp(18px, 4.5vw, 24px); font-weight: 800; min-height: 48px; }
 #classement li.moi { background: #fff9c4; border-radius: 14px; }
 #classement .medaille { font-size: 30px; width: 40px; text-align: center; }
-#classement .pastille { width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--encre); }
+#classement .pastille { width: 48px; height: 48px; border-radius: 50%; }
 #etoiles { font-size: 40px; letter-spacing: 6px; min-height: 48px; }
 #confettis { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
 .confetti { position: absolute; top: -20px; width: 10px; height: 16px; border-radius: 2px; animation: chute linear forwards; }

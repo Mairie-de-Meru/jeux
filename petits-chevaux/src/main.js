@@ -252,18 +252,18 @@ if (/^[hra]{4}$/.test(params.get('joueurs') || '')) {
   iface.majReglages();
 }
 
+// avatars 3D (même pion que le plateau), rendus une fois au démarrage
+{
+  const av = scene.rendreAvatars(128);
+  if (av) ui.setIcones(av);
+}
+
 // manifeste d'assets : uniquement les fichiers listés
 fetch('./assets/manifest.json').then((r) => (r.ok ? r.json() : {})).then((m) => {
   if (m.images && m.images.titre) {
     const img = new Image();
     img.onload = () => ui.fondAccueil(m.images.titre);
     img.src = m.images.titre;
-  }
-  const ch = m.images && m.images.chevaux; 
-  if (ch && ['rouge', 'bleu', 'jaune', 'vert'].every((k) => ch[k])) {
-    const urls = ['rouge', 'bleu', 'jaune', 'vert'].map((k) => ch[k]);
-    ui.setIcones(urls);
-    if (etat && !attenteChoix) ui.setJoueur(etat.joueurs[etat.courant], etat.courant);
   }
   if (m.modeles && m.modeles.cheval) scene.chargerModele(m.modeles.cheval);
 }).catch((e) => console.warn("manifeste", e));

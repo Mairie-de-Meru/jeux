@@ -458,8 +458,36 @@ export function creerScene(canvas, conteneur) {
     } catch (e) { console.warn('modèle de cheval indisponible, primitives conservées', e); }
   }
 
+  // Avatars : le même pion que sur le plateau, rendu une fois par couleur (3/4 face, fond transparent).
+  // Renderer hors écran jeté après les rendus ; renvoie null si WebGL échoue.
+  function rendreAvatars(taille = 128) {
+    let r = null;
+    try {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = taille;
+      r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      r.setPixelRatio(1); r.setSize(taille, taille, false); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xffffff, 0xd9b98f, 1.9));
+      const dl = new THREE.DirectionalLight(0xfff0d6, 2.4); dl.position.set(3, 5, 6); sc.add(dl);
+      const cam = new THREE.PerspectiveCamera(24, 1, 0.1, 50);
+      cam.position.set(1.5, 0.9, 2.5); cam.lookAt(0, 0.55, 0.1);
+      const urls = [0, 1, 2, 3].map((c) => {
+        const grp = modele ? chevalModele(c) : chevalPrimitives(c);
+        grp.rotation.y = -0.25;
+        sc.add(grp);
+        r.render(sc, cam);
+        const u = cv.toDataURL('image/png');
+        sc.remove(grp);
+        return u;
+      });
+      return urls;
+    } catch (e) { console.warn('avatars 3D indisponibles', e); return null; }
+    finally { if (r) { r.dispose(); r.forceContextLoss(); } }
+  }
+
   return {
-    setJoueurs, sync, deplacer, sortie, prise, lancerDe, surligner, effacer,
+    rendreAvatars, setJoueurs, sync, deplacer, sortie, prise, lancerDe, surligner, effacer,
     projeter, projeterDe, chargerModele, ajuster,
     deInvite(v) { invite = v; if (!v) de.position.y = 0.46; },
     setVitesse(x) { vitesse = Math.max(0.1, x); },
