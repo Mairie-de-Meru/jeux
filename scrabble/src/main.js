@@ -1,6 +1,6 @@
 // Orchestration : jeu, interface, robots, crochet de débogage window.__scrabble.
 import { BoardView } from './render/scene.js';
-import { createGame, setBigDict, evaluateMove, applyMove, passTurn, exchangeTiles, chooseBotMove, suggestMove, ranking } from './logic/rules.js';
+import { createGame, setBigDict, HUMAN_AVATARS, evaluateMove, applyMove, passTurn, exchangeTiles, chooseBotMove, suggestMove, ranking } from './logic/rules.js';
 import { PALIERS } from './logic/board.js';
 import { pointsOf } from './logic/bag.js';
 import { playableCells } from './logic/targets.js';
@@ -14,6 +14,8 @@ const RULES_TEXT = "Choisis une lettre en bas, puis touche une case du plateau. 
   + "Tu peux aussi échanger tes lettres ou passer ton tour. Le plus de points gagne !";
 
 const settings = { palier: 1, bots: 1, difficulty: 'facile' };
+// Places de joueurs de l'accueil : place 1 humaine, les autres Vide (null) / 'robot' / 'human'.
+const seatUi = { kinds: ['human', 'robot', null, null], names: ['Toi', '', '', ''] };
 // Grande liste de validation (assets/lexique.txt), chargée sans bloquer l'accueil.
 const lex = { loaded: false, set: null };
 fetch('./assets/lexique.txt').then((r) => (r.ok ? r.text() : Promise.reject(new Error(r.status)))).then((t) => {
@@ -22,19 +24,22 @@ fetch('./assets/lexique.txt').then((r) => (r.ok ? r.text() : Promise.reject(new 
   if (S.game) setBigDict(S.game, lex.set);
 }).catch((err) => console.warn('lexique indisponible, liste enfant seule', err));
 
-const S = { game: null, pending: [], selected: null, view: [], busy: true, lastCells: [], token: 0, hint: null, swapSel: new Set(), drag: null };
+const S = { shown: 0, passScreen: false, game: null, pending: [], selected: null, view: [], busy: true, lastCells: [], token: 0, hint: null, swapSel: new Set(), drag: null };
 
 const view = new BoardView($('c'), $('stage'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Rythme des robots : multiplicateur des délais/animations des robots (pas de l'enfant).
 const BOT_PACE = 1.6;
 const bp = (ms) => Math.round(ms * BOT_PACE);
-const human = () => S.game.players[0];
-const isHumanTurn = () => S.game && !S.game.over && S.game.turn === 0 && !S.game.players[0].bot;
+// Joueur humain dont le chevalet est affiché (celui dont c'est le tour, ou le dernier humain actif pendant un robot).
+const human = () => S.game.players[S.shown];
+const isHumanTurn = () => S.game && !S.game.over && !S.passScreen && !S.game.players[S.game.turn].bot;
+const humanCount = () => S.game.players.filter((p) => !p.bot).length;
 
 // ---------- affichage ----------
 function renderScores() {
   const g = S.game;
+  $('scores').classList.toggle('many', g.players.length >= 4);
   $('scores').innerHTML = g.players.map((p, i) =>
     `<div class="chip${i === g.turn && !g.over ? ' active' : ''}"><span class="av">${p.avatar}</span><span class="nm">${p.name}</span><b>${p.score}</b></div>`).join('');
   renderStatus();
@@ -57,6 +62,7 @@ function renderRack() {
   const hintIdx = S.hint ? S.hint.rackIdx : [];
   const box = $('rack');
   box.innerHTML = '';
+  if (S.passScreen) { syncTargets(); return; } // aucune lettre dans le DOM pendant l'écran de passage
   for (const i of S.view) {
     if (i >= rack.length) continue;
     const b = document.createElement('button');
@@ -203,7 +209,7 @@ function clearLast() {
 function celebrate(out, who) {
   const main = out.words[0].word;
   showPop('+' + out.score);
-  if (out.bingo) { showMsg(`Magnifique ! Tu as posé 7 lettres : bonus +20 !`, { ms: 5000 }); sounds.big(); confetti(90); }
+  if (out.bingo) { showMsg(humanCount() > 1 ? `Magnifique ${human().name} ! 7 lettres : bonus +20 !` : `Magnifique ! Tu as posé 7 lettres : bonus +20 !`, { ms: 5000 }); sounds.big(); confetti(90); }
   else {
     showMsg(out.words.map((w) => w.word).join(' · ') + ` : +${out.score} points`, { ms: 4200 });
     out.score >= 20 ? sounds.big() : sounds.good(3);
@@ -218,11 +224,40 @@ function afterTurn() {
   refresh();
   const cur = S.game.players[S.game.turn];
   if (cur.bot) return botTurn();
+  beginHumanTurn();
+  return Promise.resolve();
+}
+
+// Début du tour d'un humain : avec au moins 2 humains, écran « Passe l'appareil » avant d'afficher le chevalet.
+function beginHumanTurn() {
+  const g = S.game;
+  S.shown = g.turn;
+  S.hint = null;
+  resetView();
+  const p = g.players[g.turn];
+  if (humanCount() >= 2) {
+    S.passScreen = true;
+    S.busy = true;
+    $('pass-who').textContent = `${p.avatar} ${p.name}`;
+    $('pass').classList.remove('hidden');
+    refresh();
+    speech.speak(`Passe l'appareil à ${p.name}`);
+    return;
+  }
   S.busy = false;
-  setStatus('À toi de jouer ! 🧒');
+  setStatus('À toi de jouer ! ' + p.avatar);
+  refresh();
+}
+
+function ready() {
+  if (!S.passScreen) return;
+  S.passScreen = false;
+  $('pass').classList.add('hidden');
+  S.busy = false;
+  const p = human();
+  setStatus(`À ${p.avatar} ${p.name} de jouer !`);
   resetView();
   refresh();
-  return Promise.resolve();
 }
 
 // ---------- robots ----------
@@ -354,24 +389,35 @@ function endGame() {
   renderScores();
   renderButtons();
   const { sorted, winners } = ranking(S.game);
-  const won = winners.some((p) => p.id === 0);
-  const rank = sorted.findIndex((p) => p.id === 0);
-  $('end-title').textContent = won ? (winners.length > 1 ? 'Égalité, bravo !' : 'Bravo, tu as gagné !') : 'Bien joué !';
+  S.passScreen = false;
+  $('pass').classList.add('hidden');
+  const nbH = humanCount();
+  const won = winners.some((p) => !p.bot);
+  const rank = sorted.findIndex((p) => !p.bot);
+  const title = won
+    ? (winners.length > 1 ? 'Égalité, bravo !' : nbH === 1 ? 'Bravo, tu as gagné !' : `Bravo ${winners[0].name} !`)
+    : (nbH === 1 ? 'Bien joué !' : `Bravo ${winners[0].name} ! Bien joué tout le monde`);
+  $('end-title').textContent = title;
   $('end-stars').textContent = '⭐'.repeat(won ? 3 : rank === 1 ? 2 : 1);
   $('end-list').innerHTML = sorted.map((p) => `<li class="${winners.includes(p) ? 'win' : ''}"><span>${p.avatar} ${p.name}</span><span>${p.score}</span></li>`).join('');
   setTimeout(() => {
     $('end').classList.remove('hidden');
     if (won) { sounds.win(); confetti(200); } else sounds.good(4);
-    speech.speak(won ? 'Bravo, tu as gagné !' : 'Bien joué ! On rejoue ?');
+    speech.speak(won || nbH > 1 ? title : 'Bien joué ! On rejoue ?');
   }, 900);
   return Promise.resolve();
 }
 
 // ---------- démarrage ----------
 function startGame(opts = {}) {
-  Object.assign(settings, opts);
+  const { seats: _s, ...rest } = opts;
+  Object.assign(settings, rest);
   S.token++;
-  S.game = createGame({ palier: settings.palier, bots: settings.bots, difficulty: settings.difficulty, seed: opts.seed ?? (Date.now() & 0x7fffffff), allBots: !!opts.allBots, bigDict: lex.set });
+  // `seats` explicites, sinon réglages de l'accueil ; l'ancien mode (bots/allBots) reste pour le débogage.
+  const legacy = !opts.seats && ('bots' in opts || opts.allBots);
+  const seats = legacy ? null : (opts.seats || seatsForGame());
+  S.game = createGame({ palier: settings.palier, bots: settings.bots, difficulty: settings.difficulty, seed: opts.seed ?? (Date.now() & 0x7fffffff), allBots: !!opts.allBots, seats, bigDict: lex.set });
+  S.shown = 0; S.passScreen = false; $('pass').classList.add('hidden');
   S.pending = []; S.selected = null; S.lastCells = []; S.hint = null;
   view.setupBoard(S.game.size, S.game.premium);
   syncZoomUi();
@@ -384,7 +430,7 @@ function startGame(opts = {}) {
   S.busy = false;
   refresh();
   if (S.game.players[0].bot) return botTurn();
-  setStatus('À toi de jouer ! 🧒');
+  beginHumanTurn();
   return Promise.resolve();
 }
 
@@ -392,8 +438,43 @@ function readRules() { sounds.tap(); speech.speak(RULES_TEXT, { force: true }); 
 
 // ---------- événements ----------
 seg('seg-palier', (v) => { settings.palier = +v; });
-seg('seg-bots', (v) => { settings.bots = +v; });
+// ----- places de joueurs (accueil) -----
+const SEAT_NEXT = { '': 'robot', robot: 'human', human: '' };
+function seatsForGame() {
+  const out = [];
+  seatUi.kinds.forEach((k, i) => { if (k === 'human') out.push({ kind: 'human', name: seatUi.names[i] }); else if (k === 'robot') out.push({ kind: 'robot' }); });
+  return out;
+}
+function renderSeatsUi() {
+  let h = 0;
+  document.querySelectorAll('#seats .seat').forEach((el, i) => {
+    const k = seatUi.kinds[i];
+    const av = k === 'human' ? HUMAN_AVATARS[h++] : k === 'robot' ? '🤖' : '➕';
+    const b = el.querySelector('.seat-b');
+    if (b) b.innerHTML = `${av}<span>${k === 'human' ? 'Humain' : k === 'robot' ? 'Robot' : 'Vide'}</span>`;
+    else el.querySelector('.seat-av').textContent = av;
+    el.querySelector('input').classList.toggle('hidden', k !== 'human');
+  });
+  const hasBot = seatUi.kinds.includes('robot');
+  $('lbl-diff').classList.toggle('hidden', !hasBot);
+  $('seg-diff').classList.toggle('hidden', !hasBot);
+}
+document.querySelectorAll('#seats .seat').forEach((el, i) => {
+  el.querySelector('input').addEventListener('input', (e) => { seatUi.names[i] = e.target.value; });
+  const b = el.querySelector('.seat-b');
+  if (!b) return;
+  b.onclick = () => {
+    sounds.tap();
+    let nk = SEAT_NEXT[seatUi.kinds[i] || ''] || null;
+    // au moins 2 places occupées : on ne vide pas la dernière place autre que la première
+    if (!nk && !seatUi.kinds.some((k, j) => j > 0 && j !== i && k)) nk = 'robot';
+    seatUi.kinds[i] = nk;
+    renderSeatsUi();
+  };
+});
+renderSeatsUi();
 seg('seg-diff', (v) => { settings.difficulty = v; });
+$('pass-ready').onclick = () => { sounds.tap(); ready(); };
 $('btn-play').onclick = () => { sounds.tap(); startGame(); };
 $('btn-resume').onclick = () => { $('home').classList.add('hidden'); };
 $('btn-menu').onclick = () => { sounds.tap(); $('home').classList.remove('hidden'); };
@@ -496,7 +577,7 @@ rackEl.addEventListener('pointercancel', (e) => endDrag(e, true));
 window.__scrabble = {
   view,
   get state() { return S.game; },
-  get ui() { return { pending: S.pending, selected: S.selected, busy: S.busy, hint: S.hint, view: S.view }; },
+  get ui() { return { passScreen: S.passScreen, pending: S.pending, selected: S.selected, busy: S.busy, hint: S.hint, view: S.view }; },
   settings,
   newGame: (o) => startGame(o),
   setPalier: (p, o = {}) => startGame({ palier: p, ...o }),
@@ -532,6 +613,7 @@ window.__scrabble = {
   recall: () => recallAll(),
   shuffle: shuffleRack,
   zoom: () => $('btn-zoom').click(),
+  ready,
   lexique: () => ({ loaded: lex.loaded, size: lex.set ? lex.set.size : 0 }),
   targets: () => targetCells.map(([r, c]) => [r, c]),
   cellPx: () => view.cellPx(),

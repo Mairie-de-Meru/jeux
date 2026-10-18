@@ -284,3 +284,50 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
   #discards { gap: 4px; padding: 2px 4px 0; }
   .dis { flex: 1 1 0; min-width: 0; padding: 0 4px; gap: 2px; height: 50px; }
 }
+
+/* ===== paysage (toute fenêtre plus large que haute) : plateau à gauche, panneau à droite ===== */
+@media (orientation: landscape) {
+  #app { display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 42%, 560px); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "top top" "stage side" "goal side" "groups side"; }
+  #top { grid-area: top; min-height: 44px; padding: 2px 8px; flex-direction: row; }
+  #obj { flex-direction: row; align-items: baseline; gap: 8px; }
+  #lvl { font-size: 15px; }
+  #objtxt { display: none; }
+  .round { width: 44px; height: 44px; font-size: 18px; }
+  #stage { grid-area: stage; min-height: 0; min-width: 0; }
+  #chips { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 3px; }
+  .chip { font-size: 12px; padding: 2px 6px; flex: none; }
+  .chip .cn { display: none; }
+  #msg { font-size: clamp(12px, 2.2vh, 15px); padding: 3px 10px; bottom: 3px; max-width: 80%; }
+  #goal { grid-area: goal; --gcw: clamp(24px, 4.4vh, 38px); min-height: 0; max-height: none; padding: 4px 6px; }
+  #goal.grow { --gcw: clamp(26px, 5vh, 40px); padding: 4px 6px; }
+  #goal.grow .goalgroups { flex-wrap: nowrap; gap: 6px; }
+  #goal.grow .ggroup { flex: 1 1 0; min-width: 0; }
+  .goalgroups { gap: 6px; }
+  .ggroup { padding: 3px 6px 4px; }
+  .glegend, #goal.grow .glegend { font-size: clamp(10px, 1.8vh, 13px); white-space: normal; text-align: center; line-height: 1.1; }
+  #goal .gok { font-size: 24px; }
+  #groups { grid-area: groups; min-width: 0; max-width: 100%; min-height: 0; max-height: none; padding: 3px 6px; }
+  .group { min-height: 64px; padding: 2px 6px; }
+  .group .cards { --cw: clamp(28px, 5.2vh, 36px); }
+  #side { grid-area: side; min-height: 0; overflow-y: auto; }
+  #actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; padding: 4px; }
+  #discards { order: -1; grid-column: 1 / -1; gap: 4px; padding: 2px 0 0; }
+  .dis { flex: 1 1 0; min-width: 0; padding: 0 4px; gap: 2px; height: clamp(50px, 7vh, 62px); }
+  .act { flex-direction: row; gap: 6px; min-height: clamp(48px, 7vh, 60px); font-size: 20px; }
+  .act span { font-size: 14px; }
+  #handwrap { padding: 0 6px 4px; }
+  #tools { padding-bottom: 2px; }
+  .tool { min-height: 48px; }
+  #hand { flex-wrap: wrap; gap: 4px 0; max-height: none; overflow: visible; justify-content: center; padding: 14px 2px 2px; }
+  #hand .card { --cw: var(--hcw, 48px); }
+  #hand .card:not(:first-child) { margin-left: calc(var(--hcw, 48px) * -0.16); }
+  #hero { display: none; }
+}
+@media (orientation: landscape) and (min-width: 1000px) { .chip .cn { display: inline; } }
+/* portrait étroit : bandeau <= 80 px, boutons du header plus petits */
+@media (max-width: 500px) and (orientation: portrait) {
+  .round { width: 44px; height: 44px; font-size: 18px; }
+  #goal { max-height: 80px; overflow: hidden; }
+  .glegend, #goal.grow .glegend { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  #msg { max-width: 80%; }
+}

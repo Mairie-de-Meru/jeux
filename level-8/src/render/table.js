@@ -172,13 +172,25 @@ export class TableView {
     this.renderer.setSize(w, h, false);
     const asp = w / h;
     this.camera.aspect = asp;
-    const vf = (this.camera.fov * Math.PI) / 360;
-    const r = 3.7;
-    const d = Math.max((r * 0.78) / Math.tan(vf), r / (Math.tan(vf) * asp)) * 1.04;
-    const pitch = (58 * Math.PI) / 180;
-    this.camera.position.set(0, Math.sin(pitch) * d, Math.cos(pitch) * d + 0.2);
-    this.camera.lookAt(0, 0, 0.2);
     this.camera.updateProjectionMatrix();
+    // la table (bord compris) et les mains des bots doivent remplir le stage, avec ~6 % de marge
+    const pitch = ((asp < 0.9 ? 64 : 58) * Math.PI) / 180;
+    const pts = [];
+    for (let k = 0; k < 32; k++) {
+      const a = (k / 32) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.sin(a) * 3.56, 0, Math.cos(a) * 3.56));
+      pts.push(new THREE.Vector3(Math.sin(a) * 2.75, 0.5, Math.cos(a) * 2.75));
+    }
+    const fits = (d) => {
+      this.camera.position.set(0, Math.sin(pitch) * d, Math.cos(pitch) * d + 0.2);
+      this.camera.lookAt(0, 0, 0.2);
+      this.camera.updateMatrixWorld(true);
+      return pts.every((p) => { const q = p.clone().project(this.camera); return Math.abs(q.x) <= 0.94 && Math.abs(q.y) <= 0.94; });
+    };
+    let lo = 2;
+    let hi = 60;
+    for (let it = 0; it < 24; it++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
+    fits(hi);
   }
 
   toScreen(v) {

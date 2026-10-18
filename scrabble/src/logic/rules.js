@@ -15,15 +15,43 @@ export const BOT_NAMES = [
 // Injecte la grande liste dans une partie en cours (objet ou Set avec .has).
 export function setBigDict(state, big) { state.validDict = big || null; }
 
-export function createGame({ palier = 1, bots = 1, difficulty = 'facile', seed = Date.now(), dict = defaultDict, bigDict = null, playerName = 'Toi', allBots = false } = {}) {
+export const HUMAN_AVATARS = ['🧒', '👧', '👦', '🧑'];
+
+// Prénom saisi : espaces réduits, 12 caractères au plus, repli sur `defaut`.
+export function cleanName(name, defaut) {
+  const n = String(name ?? '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12).trim();
+  return n || defaut;
+}
+
+// Places de joueurs : 2 à 4, au moins un humain, au plus 3 robots.
+function playersFromSeats(seats) {
+  if (!Array.isArray(seats) || seats.length < 2 || seats.length > 4) throw new Error('seats : 2 à 4 places');
+  if (!seats.some((s) => s && s.kind === 'human')) throw new Error('seats : au moins un humain');
+  let h = 0, b = 0;
+  return seats.map((s, i) => {
+    if (s && s.kind === 'robot') {
+      if (b >= BOT_NAMES.length) throw new Error('seats : 3 robots au plus');
+      const bn = BOT_NAMES[b++];
+      return { id: i, name: bn.name, avatar: bn.avatar, bot: true, rack: [], score: 0 };
+    }
+    const k = h++;
+    return { id: i, name: cleanName(s && s.name, k === 0 ? 'Toi' : 'Joueur ' + (k + 1)), avatar: HUMAN_AVATARS[k], bot: false, rack: [], score: 0 };
+  });
+}
+
+export function createGame({ palier = 1, bots = 1, difficulty = 'facile', seed = Date.now(), dict = defaultDict, bigDict = null, playerName = 'Toi', allBots = false, seats = null } = {}) {
   const cfg = PALIERS[palier];
   if (!cfg) throw new Error('palier inconnu');
   const nb = Math.max(1, Math.min(3, bots));
   const rng = mulberry32(seed);
   const bag = shuffle(fullBag(), rng).slice(0, BAG_SIZE[palier]);
-  const players = [{ id: 0, name: playerName, avatar: '🧒', bot: !!allBots, rack: [], score: 0 }];
-  for (let i = 0; i < nb; i++) {
-    players.push({ id: i + 1, name: BOT_NAMES[i].name, avatar: BOT_NAMES[i].avatar, bot: true, rack: [], score: 0 });
+  let players;
+  if (seats) players = playersFromSeats(seats);
+  else {
+    players = [{ id: 0, name: playerName, avatar: '🧒', bot: !!allBots, rack: [], score: 0 }];
+    for (let i = 0; i < nb; i++) {
+      players.push({ id: i + 1, name: BOT_NAMES[i].name, avatar: BOT_NAMES[i].avatar, bot: true, rack: [], score: 0 });
+    }
   }
   const state = {
     palier,
