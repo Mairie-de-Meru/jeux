@@ -12,7 +12,7 @@ import * as sfx from './audio.js';
 const $ = (id) => document.getElementById(id);
 
 // Manifeste des images : seules celles listées sont demandées (pas de 404 si une image manque encore)
-const IMAGES = { titre: null }; // 'assets/img/titre.jpg' une fois générée
+const IMAGES = { titre: 'assets/img/titre.jpg' };
 if (IMAGES.titre) { const im = $('titre-img'); im.onload = () => { im.hidden = false; }; im.src = IMAGES.titre; }
 const app = $('app'), canvas = $('c');
 const cfg = { palier: 1, bots: 1, difficulty: 'facile', death: true, voice: true };
