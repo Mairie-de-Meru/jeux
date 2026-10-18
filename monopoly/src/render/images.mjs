@@ -1,5 +1,6 @@
 // Images optionnelles listées dans assets/manifest.json : chargées à la demande, erreurs ignorées (repli en dessin).
 import { setRef } from './textures.mjs';
+import { pawnAvatarURL, peekAvatarURL } from './avatars.mjs';
 let manifest = null;
 const cache = {};
 const loaded = {};
@@ -17,12 +18,19 @@ export async function getFirst(keys) { for (const k of keys) { const i = await g
 // image déjà chargée (synchrone) ou null
 export const peek = (key) => loaded[key] || null;
 // images de référence (billets, icônes, pions…) : disponibles pour les dessins canvas dès leur arrivée
-export const refsReady = loadManifest().then((imgs) => Promise.all(Object.keys(imgs).filter((k) => /^(icone-|billet-|pion-|dos-.*-ref|des$|maisons$|hotels$)/.test(k)).map((k) => getImage(k).then((i) => { if (i) setRef(k, i); })))).then(() => true);
+export const refsReady = loadManifest().then((imgs) => Promise.all(Object.keys(imgs).filter((k) => /^(icone-|billet-|dos-.*-ref|des$|maisons$|hotels$)/.test(k)).map((k) => getImage(k).then((i) => { if (i) setRef(k, i); })))).then(() => true);
 export const GROUP_IMG = { brown: 'marron', lightblue: 'bleu-clair', pink: 'rose', orange: 'orange', red: 'rouge', yellow: 'jaune', green: 'vert', darkblue: 'bleu-fonce' };
-export const PAWN_IMG = { car: 'pion-voiture', dog: 'pion-chien', cat: 'pion-chat', boat: 'pion-bateau', plane: 'pion-avion' };
-// avatar d'un pion : image de référence si présente, sinon emoji
-export function pawnAvatar(id, emoji, size = 26) {
-  const img = peek(PAWN_IMG[id]);
-  if (!img) return document.createTextNode(emoji);
-  const i = img.cloneNode(); i.alt = ''; i.style.cssText = `height:${size}px;width:auto;vertical-align:middle`; return i;
+// avatar d'un pion : rendu 3D du pion du jeu à la couleur du joueur ; emoji tant que le rendu n'est pas prêt (ou sans WebGL)
+function avatarImg(url, size) {
+  const i = document.createElement('img'); i.src = url; i.alt = ''; i.draggable = false;
+  i.style.cssText = `height:${size}px;width:${size}px;vertical-align:middle`; return i;
 }
+export function pawnAvatar(id, emoji, size = 26, color = '#e5424f') {
+  const hit = peekAvatarURL(id, color);
+  if (hit) return avatarImg(hit, size);
+  const span = document.createElement('span'); span.className = 'avatar'; span.textContent = emoji;
+  pawnAvatarURL(id, color).then((url) => { if (url) span.replaceChildren(avatarImg(url, size)); });
+  return span;
+}
+// avatar d'un joueur de la partie (pion + couleur du joueur)
+export const playerAvatar = (p, size = 22) => pawnAvatar(p.pawn, p.emoji, size, p.color);

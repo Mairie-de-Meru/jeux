@@ -12,16 +12,29 @@ function tone(freq, dur = 0.12, type = 'sine', vol = 0.12, delay = 0, slideTo) {
   g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + 0.02);
 }
-function noise(dur = 0.08, vol = 0.1, delay = 0) {
+// « clac » sec de dé : bruit très court filtré (bois/plastique) + petit ton aigu
+function clack(delay, vol = 0.18) {
   const a = ac(); if (!a) return;
+  const t = a.currentTime + delay; const dur = 0.025;
   const n = Math.floor(a.sampleRate * dur); const buf = a.createBuffer(1, n, a.sampleRate); const d = buf.getChannelData(0);
-  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-  const s = a.createBufferSource(); const g = a.createGain(); g.gain.value = vol; s.buffer = buf; s.connect(g).connect(a.destination); s.start(a.currentTime + delay);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 4);
+  const s = a.createBufferSource(); s.buffer = buf;
+  const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800 + Math.random() * 1600; f.Q.value = 6;
+  const g = a.createGain(); g.gain.value = vol * 2.5;
+  s.connect(f).connect(g).connect(a.destination); s.start(t);
+  tone(900 + Math.random() * 700, 0.03, 'triangle', vol * 0.35, delay);
+}
+// deux dés qui rebondissent : chocs de plus en plus rapprochés et faibles
+function diceRoll() {
+  for (const off of [0, 0.035]) {
+    let t = off; let gap = 0.16; let v = 0.2;
+    for (let i = 0; i < 6; i++) { clack(t, v); t += gap * (0.8 + Math.random() * 0.4); gap *= 0.72; v *= 0.75; }
+  }
 }
 const SFX = {
   click: () => tone(660, 0.07, 'triangle', 0.1),
   step: () => tone(420, 0.06, 'sine', 0.07, 0, 520),
-  dice: () => { for (let i = 0; i < 6; i++) noise(0.05, 0.12, i * 0.1); },
+  dice: diceRoll,
   coin: () => { tone(988, 0.1, 'square', 0.07); tone(1318, 0.18, 'square', 0.07, 0.09); },
   pay: () => tone(330, 0.2, 'triangle', 0.1, 0, 220),
   buy: () => { tone(523, 0.1, 'triangle', 0.12); tone(659, 0.1, 'triangle', 0.12, 0.1); tone(784, 0.2, 'triangle', 0.12, 0.2); },

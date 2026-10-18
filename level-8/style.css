@@ -145,7 +145,7 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
 }
 
 #hero { margin: 0 0 6px; }
-#hero img { display: block; width: 100%; max-height: 12vh; object-fit: cover; object-position: 50% 35%; border-radius: 18px; }
+#hero img { display: block; width: 100%; max-height: 16vh; object-fit: cover; object-position: 50% 0; border-radius: 18px; }
 @media (max-height: 740px) { #hero { display: none; } }
 
 /* bandeau objectif */

@@ -197,7 +197,7 @@ export function createScene(canvas, container) {
   let pawns = []; let pawnState = [];
   function setPlayers(players) {
     for (const p of pawns) scene.remove(p);
-    pawns = players.map((pl) => { const m = createPawn(pl.pawn || 'car', pl.color); upgradePawn(m, pl.pawn || 'car'); scene.add(m); return m; });
+    pawns = players.map((pl) => { const m = createPawn(pl.pawn || 'car', pl.color); upgradePawn(m, pl.pawn || 'car', pl.color); scene.add(m); return m; });
     pawnState = players.map(() => ({ pos: 0, jail: false })); cam.follow = 0;
   }
   const slotOf = (pid) => pid % 4;

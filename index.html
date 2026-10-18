@@ -20,7 +20,7 @@
   .grille { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; padding:24px 16px 48px; max-width:1200px; margin:0 auto; }
   .carte { background:var(--carte); border-radius:18px; padding:12px; text-decoration:none; color:inherit; box-shadow:0 4px 14px rgba(0,0,0,.08); transition:transform .15s; }
   .carte:hover, .carte:focus-visible { transform:translateY(-4px); outline:3px solid var(--accent); }
-  .carte img, .sans-image { width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:12px; display:block; }
+  .carte img, .sans-image { width:100%; aspect-ratio:16/10; object-fit:cover; object-position:50% 20%; border-radius:12px; display:block; }
   .sans-image { display:grid; place-items:center; font-size:3rem; font-weight:700; color:#fff; background:var(--accent); }
   .carte h2 { font-size:1.15rem; margin:10px 4px 4px; }
   .carte p { font-size:.9rem; color:var(--doux); margin:0 4px 4px; }

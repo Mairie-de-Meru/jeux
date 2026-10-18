@@ -1,4 +1,5 @@
 // Échanges : fenêtre de composition (humain) et offre reçue.
+import { playerAvatar } from '../render/images.mjs';
 import { h, showModal, hideModal } from './dom.mjs';
 import { SPACES, GROUP_INFO } from '../logic/board.mjs';
 import { ownedBy, validateTrade } from '../logic/rules.mjs';
@@ -47,13 +48,13 @@ function drawTrade(state, me, dispatch) {
   let body;
   if (draft.to == null) {
     body = h('div', {}, h('h2', {}, '🤝 Échanger avec qui ?'),
-      h('div', { class: 'row' }, ...others.map((p) => h('button', { onclick: () => { draft.to = p.id; redraw(); } }, `${p.emoji} ${p.name}`))),
+      h('div', { class: 'row' }, ...others.map((p) => h('button', { onclick: () => { draft.to = p.id; redraw(); } }, playerAvatar(p, 28), ` ${p.name}`))),
       h('div', { class: 'row' }, h('button', { onclick: () => hideModal('trade') }, 'Annuler')));
   } else {
     const action = { type: 'proposeTrade', to: draft.to, give: draft.give, get: draft.get };
     const err = validateTrade(state, action);
     const to = state.players[draft.to];
-    body = h('div', { class: 'trade' }, h('h2', {}, `🤝 Échange avec ${to.emoji} ${to.name}`),
+    body = h('div', { class: 'trade' }, h('h2', {}, '🤝 Échange avec ', playerAvatar(to, 30), ` ${to.name}`),
       h('div', { class: 'cols' }, side(state, me, 'Je donne', draft.give, redraw), side(state, draft.to, 'Je veux', draft.get, redraw)),
       h('p', { class: 'hint' }, err ? (err === 'offre vide' ? 'Choisis ce que tu donnes et ce que tu veux.' : 'Cet échange n’est pas possible : ' + err + '.') : `Tu donnes : ${describe(state, draft.give)} · Tu reçois : ${describe(state, draft.get)}`),
       h('div', { class: 'row' }, h('button', { onclick: () => { draft.to = null; redraw(); } }, '⬅ Autre joueur'),
@@ -66,7 +67,7 @@ function drawTrade(state, me, dispatch) {
 export function renderIncoming(state, me, dispatch) {
   if (state.phase !== 'trade' || state.pending.to !== me) { hideModal('tradein', true); return; }
   const t = state.pending; const from = state.players[t.from];
-  showModal('tradein', h('div', {}, h('h2', {}, `🤝 ${from.emoji} ${from.name} te propose un échange`),
+  showModal('tradein', h('div', {}, h('h2', {}, '🤝 ', playerAvatar(from, 30), ` ${from.name} te propose un échange`),
     h('p', {}, h('b', {}, 'Il donne : '), describe(state, t.give)),
     h('p', {}, h('b', {}, 'Il veut : '), describe(state, t.get)),
     h('div', { class: 'row' }, h('button', { class: 'primary', onclick: () => dispatch({ type: 'acceptTrade' }) }, '✅ Accepter'), h('button', { class: 'warn', onclick: () => dispatch({ type: 'rejectTrade' }) }, '❌ Refuser'))));

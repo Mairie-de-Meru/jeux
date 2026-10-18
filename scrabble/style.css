@@ -109,7 +109,7 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 #pan-right { right: 6px; top: 50%; margin-top: -26px; }
 
 /* bandeau titre de l'accueil */
-.hero { display: block; width: 100%; height: clamp(60px, 12vh, 130px); object-fit: cover; object-position: center 40%; border-radius: 16px; margin: 0 0 8px; }
+.hero { display: block; width: 100%; height: clamp(60px, 12vh, 130px); object-fit: cover; object-position: center 6%; border-radius: 16px; margin: 0 0 8px; }
 @media (max-height: 520px) { .hero { display: none; } }
 
 /* places de joueurs */

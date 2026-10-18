@@ -1,4 +1,5 @@
 // Fenêtre d'enchère : +10 / +50 / +100 / Passer.
+import { playerAvatar } from '../render/images.mjs';
 import { h, showModal, hideModal, hasModal } from './dom.mjs';
 import { SPACES } from '../logic/board.mjs';
 import { legalActions, actor } from '../logic/rules.mjs';
@@ -12,7 +13,7 @@ export function renderAuction(state, me, dispatch) {
     h('h2', {}, `🔨 Enchère : ${sp.name}`),
     h('p', {}, `Prix en boutique : ${sp.price} € · Tu as ${state.players[me].money} €`),
     h('div', { class: 'bidnow' }, best),
-    h('p', { class: 'hint' }, mine ? 'À toi ! Choisis une offre ou passe.' : `${who.emoji} ${who.name} réfléchit…`),
+    h('p', { class: 'hint' }, ...(mine ? ['À toi ! Choisis une offre ou passe.'] : [playerAvatar(who, 28), ` ${who.name} réfléchit…`])),
     h('div', { class: 'row' },
       ...(mine ? [
         ...legalActions(state).filter((x) => x.type === 'bid').map((x) => h('button', { class: 'primary', onclick: () => dispatch(x) }, `${x.amount} €`)),

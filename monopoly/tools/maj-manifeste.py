@@ -7,14 +7,14 @@ GROUPES = ["marron", "bleu-clair", "rose", "orange", "rouge", "jaune", "vert", "
 CLES = {"titre": ["titre.jpg"], "mascotte": ["mascotte.png"], "dosChance": ["dos-chance.png"], "dosCaisse": ["dos-caisse.png"]}
 for g in GROUPES:
     CLES["quartier-" + g] = ["quartier-%s.jpg" % g, "quartier-%s.png" % g]
-# images de référence (assets/img/ref/) : clé = nom du fichier sans extension ; fiche-vierge exclue
+# images de référence (assets/img/ref/) : clé = nom du fichier sans extension ; fiche-vierge et pion-* exclus (pions rendus en 3D)
 REF = os.path.join(IMG, "ref")
 EXCLUES = {"fiche-vierge"}
 refs = {}
 if os.path.isdir(REF):
     for f in sorted(os.listdir(REF)):
         nom, ext = os.path.splitext(f)
-        if ext.lower() in (".png", ".jpg") and nom not in EXCLUES:
+        if ext.lower() in (".png", ".jpg") and nom not in EXCLUES and not nom.startswith("pion-"):
             refs[nom] = "img/ref/" + f
 images = {}
 for cle, fichiers in CLES.items():

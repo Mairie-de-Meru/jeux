@@ -5,8 +5,9 @@ import { LEVELS, DURATIONS } from './logic/levels.mjs';
 import { mulberry32 } from './logic/rng.mjs';
 import { SPACES, GROUPS } from './logic/board.mjs';
 import { DECKS } from './logic/cards.mjs';
-import { getImage, refsReady, pawnAvatar } from './render/images.mjs';
+import { getImage, refsReady, pawnAvatar, playerAvatar } from './render/images.mjs';
 import { PAWNS } from './render/pawns.mjs';
+import { assignPawns } from './logic/seats.mjs';
 import { createScene } from './render/scene.mjs';
 import { iconCanvas, drawHouse } from './render/textures.mjs';
 import { h, $, showModal, hideModal, hasModal, hideAllModals } from './ui/dom.mjs';
@@ -62,13 +63,14 @@ function buildSetup() {
     const draw = () => box.replaceChildren(...(typeof items === 'function' ? items() : items).map((it) => h('button', { class: (cls + ' ' + (get() === it.v ? 'sel' : '')).trim(), onclick: () => { set(it.v); sfx('click'); draw(); }, 'aria-label': it.aria || null }, ...it.c)));
     draw(); return draw;
   };
-  const redrawPawns = fill('#s-pawn', () => PAWNS.map((p) => ({ v: p.id, c: [pawnAvatar(p.id, p.emoji, 40)], aria: p.label })), () => cfg.pawn, (v) => { cfg.pawn = v; }, 'pawnbtn');
+  const redrawPawns = fill('#s-pawn', () => PAWNS.map((p) => ({ v: p.id, c: [pawnAvatar(p.id, p.emoji, 44, PLAYER_COLORS[0])], aria: p.label })), () => cfg.pawn, (v) => { cfg.pawn = v; drawSeats(); }, 'pawnbtn');
   refsReady.then(() => { redrawPawns(); if (G.state) render(); });
   let drawSeats;
   fill('#s-bots', [2, 3, 4].map((n) => ({ v: n, c: [`${n} joueurs`] })), () => cfg.seats.length, (v) => {
     while (cfg.seats.length < v) { const k = cfg.seats.length; cfg.seats.push({ name: defName(k, false), human: false }); }
     cfg.seats.length = v; cfg.bots = v - 1; drawSeats();
   });
+  const seatPawn = (k) => { const id = assignPawns(cfg.pawn, PAWNS.map((p) => p.id), cfg.seats.length)[k]; return pawnAvatar(id, PAWNS.find((p) => p.id === id).emoji, 34, PLAYER_COLORS[k]); };
   drawSeats = () => {
     $('#s-seats').replaceChildren(...cfg.seats.map((st, k) => {
       const toggle = h('button', { class: 'seatbtn' + (st.human ? ' sel' : ''), 'aria-label': st.human ? 'Humain' : 'Robot', onclick: () => {
@@ -79,7 +81,7 @@ function buildSetup() {
       } }, st.human ? '🙂 Humain' : '🤖 Robot');
       const input = h('input', { type: 'text', maxlength: '12', value: st.name, autocomplete: 'off', 'aria-label': `Prénom place ${k + 1}` });
       input.addEventListener('input', () => { st.name = input.value.trim() || defName(k, st.human); });
-      return h('div', { class: 'seat', style: `border-color:${PLAYER_COLORS[k]}` }, h('span', { class: 'sdot', style: `background:${PLAYER_COLORS[k]}` }, String(k + 1)), input, toggle);
+      return h('div', { class: 'seat', style: `border-color:${PLAYER_COLORS[k]}` }, h('span', { class: 'sdot', style: `background:${PLAYER_COLORS[k]}` }, String(k + 1)), seatPawn(k), input, toggle);
     }));
     cfg.bots = cfg.seats.length - 1; cfg.name = cfg.seats[0].name;
   };
@@ -119,11 +121,11 @@ function buildSeats(o) {
 }
 function buildPlayers(o) {
   const pawnIds = PAWNS.map((p) => p.id);
-  const mine = pawnIds.includes(o.pawn) ? o.pawn : 'car';
-  const others = pawnIds.filter((p) => p !== mine);
+  const seatsN = buildSeats(o).length;
+  const pawns = assignPawns(o.pawn, pawnIds, seatsN);
   const emoji = (id) => PAWNS.find((p) => p.id === id).emoji;
   return buildSeats(o).map((st, k) => {
-    const pawn = k === 0 ? mine : others[k - 1];
+    const pawn = pawns[k];
     const base = { name: (st.name || '').trim().slice(0, 12) || defName(k, st.human), pawn, emoji: emoji(pawn), isBot: !st.human, color: PLAYER_COLORS[k] };
     return st.human ? base : { ...base, name: (st.name || '').trim() ? base.name : BOT_NAMES[(k - 1) % 3].name, botLevel: o.botLevel || 'facile' };
   });
@@ -295,7 +297,7 @@ function showEnd() {
   $('#end-title').textContent = w.isBot ? `${w.name} gagne !` : (multi ? `Bravo ${w.name} !` : 'Bravo, tu as gagné !');
   const medals = ['🥇', '🥈', '🥉', '🎈'];
   $('#end-rank').replaceChildren(h('p', { class: 'hint' }, s.final.reason === 'timeUp' ? 'Le temps est écoulé : le plus riche gagne.' : s.final.reason === 'maxTurns' ? 'Partie très longue : le plus riche gagne.' : 'Il ne reste qu’un joueur.'),
-    ...s.final.ranking.map((r, k) => h('div', { class: 'rk', style: `border-color:${s.players[r.id].color}` }, medals[k] || '🎈', ` ${s.players[r.id].emoji} ${s.players[r.id].name}`, h('span', { style: 'margin-left:auto' }, r.bankrupt ? 'Sorti' : `💰 ${r.net}`), k === 0 ? ' ⭐⭐⭐' : k === 1 ? ' ⭐⭐' : ' ⭐')));
+    ...s.final.ranking.map((r, k) => h('div', { class: 'rk', style: `border-color:${s.players[r.id].color}` }, medals[k] || '🎈', ' ', playerAvatar(s.players[r.id], 30), ` ${s.players[r.id].name}`, h('span', { style: 'margin-left:auto' }, r.bankrupt ? 'Sorti' : `💰 ${r.net}`), k === 0 ? ' ⭐⭐⭐' : k === 1 ? ' ⭐⭐' : ' ⭐')));
   getImage('mascotte').then((img) => { if (img && !$('#end-mascot')) { const m = img.cloneNode(); m.id = 'end-mascot'; m.alt = ''; m.style.cssText = 'max-height:22dvh;max-width:60%;display:block;margin:0 auto 8px'; $('#end-rank').before(m); } });
   confetti();
   sfx('win');

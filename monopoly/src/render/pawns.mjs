@@ -82,12 +82,33 @@ function loadModel(type) {
   const d = MODELS[type]; if (!d) return Promise.resolve(null);
   return (modelCache[type] ||= new Promise((res) => new GLTFLoader().load(d.url, (g) => res(g.scene), undefined, () => res(null))));
 }
-export function upgradePawn(group, type) {
-  loadModel(type).then((src) => {
-    if (!src) return;
+// Teinte la carrosserie du modèle GLB (texels saturés de la palette) à la couleur du joueur ; gris, noir et blanc (roues, vitres) restent intacts.
+function tintedMaterial(src, color) {
+  const m = src.clone(); const tint = new THREE.Color(color);
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTint = { value: tint };
+    sh.fragmentShader = 'uniform vec3 uTint;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+      { vec3 c = diffuseColor.rgb; float mx = max(max(c.r, c.g), c.b); float mn = min(min(c.r, c.g), c.b);
+        float k = smoothstep(0.25, 0.45, (mx - mn) / max(mx, 0.001));
+        float l = dot(c, vec3(0.299, 0.587, 0.114)); float tl = max(dot(uTint, vec3(0.299, 0.587, 0.114)), 0.001);
+        diffuseColor.rgb = mix(c, clamp(uTint * (l / tl), 0.0, 1.0), k); }`);
+  };
+  m.customProgramCacheKey = () => 'pawn-tint';
+  return m;
+}
+// Remplace les primitives par le modèle GLB (si présent) ; renvoie une promesse (vrai si remplacé).
+export function upgradePawn(group, type, color) {
+  return loadModel(type).then((src) => {
+    if (!src) return false;
     const d = MODELS[type]; const m = src.clone(true); m.scale.setScalar(d.scale); m.rotation.y = d.rotY; m.position.y = d.y;
-    m.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    for (const c of [...group.children]) if (c.userData.base !== true) group.remove(c);
+    const tints = new Map();
+    m.traverse((o) => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.userData.sharedGeo = true;
+      if (color) { if (!tints.has(o.material)) tints.set(o.material, tintedMaterial(o.material, color)); o.material = tints.get(o.material); }
+    });
+    for (const c of [...group.children]) if (c.userData.base !== true) { group.remove(c); c.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); }
     group.add(m);
-  }).catch(() => {});
+    return true;
+  }).catch(() => false);
 }

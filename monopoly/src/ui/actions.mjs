@@ -1,4 +1,5 @@
 // Panneau d'actions généré depuis legalActions, et fenêtre « Mes biens ».
+import { playerAvatar } from '../render/images.mjs';
 import { h, showModal, hideModal } from './dom.mjs';
 import { SPACES, GROUP_INFO } from '../logic/board.mjs';
 import { legalActions, actor, lvl, ownedBy } from '../logic/rules.mjs';
@@ -85,7 +86,7 @@ export function propsContent(state, me, view, dispatch, openDeed, close) {
         unmortgage: () => btn(a, '🔓'), sellToBank: () => btn(a, `💱 +${sp.price / 2}`),
       }[a.type] || (() => null))()));
   });
-  return h('div', { class: 'plist' }, h('h2', {}, `${owner.emoji} ${view === me ? 'Mes biens' : owner.name}  ·  💰 ${owner.money}`),
+  return h('div', { class: 'plist' }, h('h2', {}, playerAvatar(owner, 30), ` ${view === me ? 'Mes biens' : owner.name}  ·  💰 ${owner.money}`),
     ...(rows.length ? rows : [h('p', {}, 'Pas encore de terrain. Achète ta première case !')]),
     h('p', { class: 'hint' }, '➕ construire · ➖ revendre · 🏦 gage · 🔓 reprendre · 💱 rendre à la banque'),
     h('div', { class: 'row' }, h('button', { class: 'primary', onclick: close }, 'Fermer')));
