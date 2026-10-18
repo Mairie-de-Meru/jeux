@@ -1,5 +1,5 @@
 // Orchestration : état -> rendu 3D + interface ; robots avec délai ; crochet window.__monopoly.
-import { createGame, applyAction, legalActions, actor, BOT_NAMES, PLAYER_COLORS, lvl } from './logic/rules.mjs';
+import { createGame, applyAction, legalActions, actor, BOT_NAMES, PLAYER_COLORS, lvl, localHuman, turnBanner } from './logic/rules.mjs';
 import { chooseAction } from './logic/bots.mjs';
 import { LEVELS, DURATIONS } from './logic/levels.mjs';
 import { mulberry32 } from './logic/rng.mjs';
@@ -25,7 +25,8 @@ const G = { state: null, me: 0, fast: false, busy: false, scene: null, timer: nu
 // Rythme des robots : multiplicateur des délais/animations quand un robot agit (G.pace), pas pour l'enfant.
 const BOT_PACE = 1.6, BOT_GAP_MS = 1200;
 const sleep = (ms) => new Promise((r) => setTimeout(r, G.fast ? 0 : ms * (G.pace || 1)));
-const cfg = { name: 'Toi', pawn: 'car', bots: 1, botLevel: 'facile', level: 1, minutes: 20 };
+const defName = (k, human) => (human ? (k === 0 ? 'Toi' : `Joueur ${k + 1}`) : BOT_NAMES[(k - 1) % 3].name);
+const cfg = { name: 'Toi', pawn: 'car', bots: 1, seats: [{ name: 'Toi', human: true }, { name: BOT_NAMES[0].name, human: false }], botLevel: 'facile', level: 1, minutes: 20 };
 
 // ---------- écrans ----------
 const SCREENS = ['home', 'setup', 'rules', 'game', 'end'];
@@ -63,14 +64,32 @@ function buildSetup() {
   };
   const redrawPawns = fill('#s-pawn', () => PAWNS.map((p) => ({ v: p.id, c: [pawnAvatar(p.id, p.emoji, 40)], aria: p.label })), () => cfg.pawn, (v) => { cfg.pawn = v; }, 'pawnbtn');
   refsReady.then(() => { redrawPawns(); if (G.state) render(); });
-  fill('#s-bots', [1, 2, 3].map((n) => ({ v: n, c: [`${n} 🤖`] })), () => cfg.bots, (v) => { cfg.bots = v; });
+  let drawSeats;
+  fill('#s-bots', [2, 3, 4].map((n) => ({ v: n, c: [`${n} joueurs`] })), () => cfg.seats.length, (v) => {
+    while (cfg.seats.length < v) { const k = cfg.seats.length; cfg.seats.push({ name: defName(k, false), human: false }); }
+    cfg.seats.length = v; cfg.bots = v - 1; drawSeats();
+  });
+  drawSeats = () => {
+    $('#s-seats').replaceChildren(...cfg.seats.map((st, k) => {
+      const toggle = h('button', { class: 'seatbtn' + (st.human ? ' sel' : ''), 'aria-label': st.human ? 'Humain' : 'Robot', onclick: () => {
+        if (st.human && cfg.seats.filter((x) => x.human).length <= 1) { sfx('oops'); return; }
+        const wasDefault = st.name === defName(k, st.human) || !st.name;
+        st.human = !st.human; if (wasDefault) st.name = defName(k, st.human);
+        sfx('click'); drawSeats();
+      } }, st.human ? '🙂 Humain' : '🤖 Robot');
+      const input = h('input', { type: 'text', maxlength: '12', value: st.name, autocomplete: 'off', 'aria-label': `Prénom place ${k + 1}` });
+      input.addEventListener('input', () => { st.name = input.value.trim() || defName(k, st.human); });
+      return h('div', { class: 'seat', style: `border-color:${PLAYER_COLORS[k]}` }, h('span', { class: 'sdot', style: `background:${PLAYER_COLORS[k]}` }, String(k + 1)), input, toggle);
+    }));
+    cfg.bots = cfg.seats.length - 1; cfg.name = cfg.seats[0].name;
+  };
+  drawSeats();
   fill('#s-botlvl', [{ v: 'facile', c: ['😊 Facile'] }, { v: 'normal', c: ['😎 Normal'] }], () => cfg.botLevel, (v) => { cfg.botLevel = v; });
   let redrawDur;
   const redrawLvl = fill('#s-level', [1, 2, 3].map((n) => ({ v: n, c: [h('span', { class: 'lvl' }, h('span', { style: 'font-size:1.8rem' }, LEVELS[n].icon), h('span', {}, h('b', {}, `${n}. ${LEVELS[n].name}`), h('br'), LEVELS[n].hint))] })),
     () => cfg.level, (v) => { cfg.level = v; cfg.minutes = LEVELS[v].minutes; redrawDur(); }, 'lvlbtn');
   redrawDur = fill('#s-dur', DURATIONS.map((m) => ({ v: m, c: [m ? `${m} min` : '∞ Libre'] })), () => cfg.minutes, (v) => { cfg.minutes = v; });
   void redrawLvl;
-  $('#s-name').addEventListener('input', (e) => { cfg.name = e.target.value.trim() || 'Toi'; });
   $('#b-back').onclick = () => show('home');
   $('#b-start').onclick = () => { sfx('click'); startGame({ ...cfg }); };
 }
@@ -90,16 +109,24 @@ function ensureScene() {
   }
 }
 
+// Places : o.seats [{name, human}] (2 à 4, au moins un humain) ; à défaut, joueur 0 humain + o.bots robots (compatibilité).
+function buildSeats(o) {
+  let seats;
+  if (Array.isArray(o.seats) && o.seats.length >= 2) seats = o.seats.slice(0, 4).map((x) => ({ name: x.name, human: !!x.human }));
+  else seats = [{ name: o.name || 'Toi', human: true }, ...Array.from({ length: Math.min(3, Math.max(1, o.bots ?? 1)) }, () => ({ human: false }))];
+  if (!seats.some((x) => x.human)) seats[0].human = true;
+  return seats;
+}
 function buildPlayers(o) {
   const pawnIds = PAWNS.map((p) => p.id);
   const mine = pawnIds.includes(o.pawn) ? o.pawn : 'car';
   const others = pawnIds.filter((p) => p !== mine);
   const emoji = (id) => PAWNS.find((p) => p.id === id).emoji;
-  const list = [{ name: o.name || 'Toi', pawn: mine, emoji: emoji(mine), isBot: false, color: PLAYER_COLORS[0] }];
-  for (let k = 0; k < Math.min(3, Math.max(1, o.bots ?? 1)); k++) {
-    list.push({ name: BOT_NAMES[k].name, pawn: others[k], emoji: emoji(others[k]), isBot: true, botLevel: o.botLevel || 'facile', color: PLAYER_COLORS[k + 1] });
-  }
-  return list;
+  return buildSeats(o).map((st, k) => {
+    const pawn = k === 0 ? mine : others[k - 1];
+    const base = { name: (st.name || '').trim().slice(0, 12) || defName(k, st.human), pawn, emoji: emoji(pawn), isBot: !st.human, color: PLAYER_COLORS[k] };
+    return st.human ? base : { ...base, name: (st.name || '').trim() ? base.name : BOT_NAMES[(k - 1) % 3].name, botLevel: o.botLevel || 'facile' };
+  });
 }
 
 function startGame(o) {
@@ -110,7 +137,7 @@ function startGame(o) {
   const level = o.level ?? 1;
   const seed = o.seed ?? ((Date.now() % 100000) + 1);
   G.state = createGame({ level, seed, players: buildPlayers(o), minutes: o.minutes ?? LEVELS[level].minutes, maxTurns: o.maxTurns ?? 1500, startedAt: 0 });
-  G.cfg = o; G.me = 0; G.botRng = mulberry32(seed * 7 + 3); G.busy = false; G.startMs = performance.now(); G.lastMsg = '';
+  G.cfg = o; G.me = localHuman(G.state, null); G.lastKey = ''; G.botRng = mulberry32(seed * 7 + 3); G.busy = false; G.startMs = performance.now(); G.lastMsg = '';
   G.scene.setPlayers(G.state.players); G.scene.placePawns(G.state); G.scene.syncBoard(G.state);
   $('#dicebox').classList.add('hidden');
   render(); afterRender();
@@ -120,13 +147,19 @@ function startGame(o) {
 // ---------- rendu de l'interface ----------
 function render() {
   const s = G.state; if (!s) return;
+  const me = localHuman(s, G.me);
+  if (me !== G.me) { for (const id of ['props', 'build', 'trade', 'tradein', 'deed']) hideModal(id, true); G.me = me; }
   renderPlayers($('#players'), s, G.me, (pid) => openProps(pid));
+  const ban = turnBanner(s); const bar = $('#turnbar');
+  bar.classList.toggle('hidden', !ban);
+  if (ban) { bar.textContent = ban.text; bar.style.background = ban.color; }
   const ctx = { calc: '', openProps: () => openProps(G.me), confirmBankrupt, openBuild, buildFirst: () => { if (G.buildSeen) return false; G.buildSeen = true; if (!G.fast) setTimeout(() => speak('Tu peux construire une maison !'), 400); return true; } };
   const msg = panelMessage(s, G.me);
   const box = $('#actions');
   renderActions(box, s, G.me, dispatch, ctx);
   const m = $('#msg'); m.replaceChildren(...[msg, ctx.calc ? h('div', { id: 'calc' }, ctx.calc) : null].filter(Boolean));
-  if (msg !== G.lastMsg && actor(s) === G.me) { G.lastMsg = msg; if (!G.fast) autoSpeak(msg); }
+  const key = `${G.me}|${ban ? ban.text : ''}|${msg}`;
+  if (key !== G.lastKey && actor(s) === G.me) { G.lastKey = key; if (!G.fast) autoSpeak(ban ? `${ban.text}. ${msg}` : msg); }
   renderAuction(s, G.me, dispatch);
   renderIncoming(s, G.me, dispatch);
   $('#t-trade').disabled = !lvl(s).trade;
@@ -258,8 +291,8 @@ function afterRender() {
 function showEnd() {
   const s = G.state; if (!s || !s.over || !$('#end').classList.contains('hidden')) return;
   hideAllModals(); show('end');
-  const win = s.winner === G.me;
-  $('#end-title').textContent = win ? 'Bravo, tu as gagné !' : `${s.players[s.winner].name} gagne !`;
+  const w = s.players[s.winner]; const multi = s.players.filter((p) => !p.isBot).length > 1;
+  $('#end-title').textContent = w.isBot ? `${w.name} gagne !` : (multi ? `Bravo ${w.name} !` : 'Bravo, tu as gagné !');
   const medals = ['🥇', '🥈', '🥉', '🎈'];
   $('#end-rank').replaceChildren(h('p', { class: 'hint' }, s.final.reason === 'timeUp' ? 'Le temps est écoulé : le plus riche gagne.' : s.final.reason === 'maxTurns' ? 'Partie très longue : le plus riche gagne.' : 'Il ne reste qu’un joueur.'),
     ...s.final.ranking.map((r, k) => h('div', { class: 'rk', style: `border-color:${s.players[r.id].color}` }, medals[k] || '🎈', ` ${s.players[r.id].emoji} ${s.players[r.id].name}`, h('span', { style: 'margin-left:auto' }, r.bankrupt ? 'Sorti' : `💰 ${r.net}`), k === 0 ? ' ⭐⭐⭐' : k === 1 ? ' ⭐⭐' : ' ⭐')));
@@ -342,7 +375,10 @@ window.__monopoly = {
   state: () => G.state,
   legal: () => (G.state ? legalActions(G.state) : []),
   act: async (a) => { await waitIdle(); return dispatch(a); },
+  // o.seats : [{name, human}] optionnel (2 à 4 places) ; sinon joueur 0 humain + o.bots robots.
   newGame: (o = {}) => startGame({ level: 1, bots: 1, botLevel: 'facile', name: 'Toi', ...o, minutes: o.minutes }),
+  me: () => G.me,
+  banner: () => turnBanner(G.state),
   pawnScreen: (pid = 0) => G.scene.pawnScreen(pid),
   autoplay: async (n = 10) => {
     let done = 0;

@@ -1,8 +1,8 @@
-import { createGame, rollDice, botRollDice, applyRoll, firstLanding, walkPath } from './logic/game.js';
+import { createGame, defaultSeats, humanCount, rollDice, botRollDice, applyRoll, firstLanding, walkPath } from './logic/game.js';
 import { sumChoices, hintLevel } from './logic/quiz.js';
 import { numberToFrench } from './logic/numbers.js';
 import { mulberry32 } from './logic/rng.js';
-import { SPECIALS, RULES } from './logic/texts.js';
+import { SPECIALS, RULES, PLAYERS } from './logic/texts.js';
 import { createWorld } from './render/world.js';
 import { createDice } from './render/dice.js';
 import { clock, sleep, dur, BOT_PACE } from './timing.js';
@@ -15,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 const IMAGES = { titre: 'assets/img/titre.jpg' };
 if (IMAGES.titre) { const im = $('titre-img'); im.onload = () => { im.hidden = false; }; im.src = IMAGES.titre; }
 const app = $('app'), canvas = $('c');
-const cfg = { palier: 1, bots: 1, difficulty: 'facile', death: true, voice: true };
+const cfg = { palier: 1, nseats: 2, seats: defaultSeats(4), difficulty: 'facile', death: true, voice: true };
 const num = numberToFrench;
 
 let world, dice;
@@ -65,10 +65,25 @@ function updateHud() {
     const d = document.createElement('div');
     d.className = 'chip' + (p.id === G.turn && !G.over ? ' active' : '') + (p.skip > 0 ? ' rest' : '');
     d.style.setProperty('--c', '#' + p.color.toString(16).padStart(6, '0'));
-    d.innerHTML = `<span class="e">${p.emoji}</span><span>${p.pos}</span>`;
+    const e = document.createElement('span'); e.className = 'e'; e.textContent = p.emoji;
+    const n = document.createElement('span'); n.textContent = p.pos;
+    d.append(e, n);
     d.title = p.name;
     box.appendChild(d);
   }
+}
+// « Tu » seulement s'il n'y a qu'un humain et que c'est lui ; sinon le prénom.
+function isYou(p) { return !p.bot && humanCount(G) === 1; }
+function who(p) { return isYou(p) ? 'Tu' : p.name; }
+const multiHuman = () => humanCount(G) >= 2;
+function showTurnBar(p) {
+  const b = $('turnbar');
+  if (!p || p.bot || !multiHuman()) { b.classList.add('hidden'); return; }
+  b.textContent = p.name === 'Toi' ? 'À toi de jouer' : `À ${p.name} de jouer`;
+  b.style.setProperty('--c', '#' + p.color.toString(16).padStart(6, '0'));
+  const r = (p.color >> 16) & 255, g = (p.color >> 8) & 255, bl = p.color & 255;
+  b.style.color = (0.299 * r + 0.587 * g + 0.114 * bl) > 150 ? '#1f2a52' : '#fff';
+  b.classList.remove('hidden');
 }
 function enableRoll(on) {
   const b = $('btn-roll');
@@ -150,7 +165,7 @@ async function playEvents(events, myRun, humanMoves) {
         await countAlong(p, e.from, e.path, !p.bot && humanMoves);
         break;
       case 'special':
-        await showBubble(e.kind, p.bot ? Math.round(2600 * BOT_PACE) : 2600, p.bot ? p.name : '');
+        await showBubble(e.kind, p.bot ? Math.round(2600 * BOT_PACE) : 2600, (p.bot || multiHuman()) ? p.name : '');
         break;
       case 'jump':
         sfx.good();
@@ -159,15 +174,15 @@ async function playEvents(events, myRun, humanMoves) {
         G_hud();
         break;
       case 'rest':
-        setMsg(`${p.name === 'Toi' ? 'Tu te reposes' : p.name + ' se repose'}.`);
+        setMsg(isYou(p) ? 'Tu te reposes.' : `${p.name} se repose.`);
         break;
       case 'release':
-        setMsg(`${G.players[e.pid].name === 'Toi' ? 'Tu es libéré' : G.players[e.pid].name + ' est libéré'} !`);
+        setMsg(isYou(p) ? 'Tu es libéré !' : `${p.name} est libéré !`);
         sfx.good();
         await world.wiggle(e.pid);
         break;
       case 'turnSkipped':
-        setMsg(`${G.players[e.pid].name === 'Toi' ? 'Tu passes' : G.players[e.pid].name + ' passe'} son tour en se reposant.`);
+        setMsg(isYou(p) ? 'Tu passes ton tour en te reposant.' : `${p.name} passe son tour en se reposant.`);
         updateHud();
         await sleep(p.bot ? Math.round(1200 * BOT_PACE) : 1200);
         break;
@@ -198,7 +213,7 @@ async function askDestination(p, total, myRun) {
   world.setFocus(path);
   try {
   setMsg('Touche la case où ton pion arrive !');
-  say(`Tu as fait ${num(total)}. Touche la case où ton pion arrive !`);
+  say(`${isYou(p) ? 'Tu as' : p.name + ' a'} fait ${num(total)}. Touche la case où ton pion arrive !`);
   for (;;) {
     const tapped = auto ? dest : await awaitTap();
     chk(myRun);
@@ -280,14 +295,21 @@ async function playTurn(myRun) {
   world.setActive(p.id);
   updateHud();
   let dc;
+  showTurnBar(p.bot ? null : p);
   if (p.bot) {
     setMsg(`${p.emoji} ${p.name} joue…`);
     await sleep(Math.round(1000 * BOT_PACE));
     chk(myRun);
     dc = botRollDice(G);
   } else {
-    setMsg('À toi ! Touche le dé.');
-    say('À toi de jouer ! Touche le dé.');
+    if (multiHuman()) {
+      showTurnBar(p);
+      setMsg('Touche le dé.');
+      say(p.name === 'Toi' ? 'À toi de jouer ! Touche le dé.' : `À ${p.name} de jouer ! Touche le dé.`);
+    } else {
+      setMsg('À toi ! Touche le dé.');
+      say('À toi de jouer ! Touche le dé.');
+    }
     enableRoll(true);
     await waitRoll();
     chk(myRun);
@@ -306,8 +328,8 @@ async function playTurn(myRun) {
   } else if (G.palier === 2) {
     await askDestination(p, total, myRun);
   } else {
-    setMsg(`Tu as fait ${total} ! On compte ensemble.`);
-    say(`Tu as fait ${num(total)} ! On compte ensemble.`);
+    setMsg(`${isYou(p) ? 'Tu as' : p.name + ' a'} fait ${total} ! On compte ensemble.`);
+    say(`${isYou(p) ? 'Tu as' : p.name + ' a'} fait ${num(total)} ! On compte ensemble.`);
     await sleep(900);
   }
   chk(myRun);
@@ -336,7 +358,12 @@ function finish() {
   sfx.fanfare();
   confetti();
   $('end-emoji').textContent = w.emoji + '🏆';
-  if (!w.bot) {
+  showTurnBar(null);
+  if (!w.bot && multiHuman()) {
+    $('end-title').textContent = `Bravo ${w.name} !`;
+    $('end-text').textContent = 'Arrivé pile sur la dernière case.';
+    say(`Bravo ${w.name} !`);
+  } else if (!w.bot) {
     $('end-title').textContent = 'Bravo, tu as gagné !';
     $('end-text').textContent = "Tu es arrivé pile sur la dernière case.";
     say('Bravo, tu as gagné !');
@@ -350,19 +377,23 @@ function finish() {
 }
 
 function startGame(o = {}) {
-  Object.assign(cfg, o);
+  const { seats: oSeats, bots: oBots, ...rest } = o;
+  Object.assign(cfg, rest);
+  if (Array.isArray(oSeats)) { cfg.nseats = Math.max(2, Math.min(4, oSeats.length)); cfg.seats = padSeats(oSeats); }
+  else if (oBots != null) { cfg.nseats = 1 + Math.max(1, Math.min(3, oBots)); cfg.seats = defaultSeats(4); }
   run++;
   const myRun = run;
   rollResolver = tapResolver = answerResolver = null;
   speech.cancel();
   speech.setVoice(cfg.voice);
-  G = createGame({ palier: cfg.palier, bots: cfg.bots, difficulty: cfg.difficulty, death: cfg.death, seed: (Math.random() * 1e9) | 0 });
+  G = createGame({ palier: cfg.palier, seats: padSeats(cfg.seats).slice(0, cfg.nseats), difficulty: cfg.difficulty, death: cfg.death, seed: (Math.random() * 1e9) | 0 });
   lastRng = mulberry32((Math.random() * 1e9) | 0);
   world.build(G);
   dice.setCount(G.diceCount);
   showAnswers(null);
   showCounter(null);
   $('bubble').classList.add('hidden');
+  showTurnBar(null);
   $('menu').classList.add('hidden');
   $('end').classList.add('hidden');
   enableRoll(false);
@@ -376,12 +407,77 @@ function toMenu() {
   run++;
   rollResolver = tapResolver = answerResolver = null;
   speech.cancel();
+  showTurnBar(null);
   $('end').classList.add('hidden');
   $('menu').classList.remove('hidden');
 }
 
 // ---------- menu ----------
+const SEATS_KEY = 'oie.seats';
+function padSeats(list) {
+  const def = defaultSeats(4);
+  const out = def.map((d, i) => {
+    const s = Array.isArray(list) ? list[i] : null;
+    return s && typeof s === 'object' ? { name: typeof s.name === 'string' ? s.name.slice(0, 12) : d.name, bot: !!s.bot } : d;
+  });
+  return out;
+}
+function fixHuman() { if (!cfg.seats.slice(0, cfg.nseats).some((s) => !s.bot)) cfg.seats[0].bot = false; }
+function saveSeats() {
+  try { localStorage.setItem(SEATS_KEY, JSON.stringify({ n: cfg.nseats, seats: cfg.seats })); } catch (e) { /* stockage indisponible */ }
+}
+function loadSeats() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SEATS_KEY));
+    if (d && Array.isArray(d.seats)) {
+      cfg.seats = padSeats(d.seats);
+      const n = Number(d.n);
+      cfg.nseats = n >= 2 && n <= 4 ? Math.floor(n) : 2;
+    }
+  } catch (e) { /* repli sur le défaut */ }
+  fixHuman();
+}
+function renderSeats() {
+  const box = $('seats');
+  box.textContent = '';
+  for (let i = 0; i < cfg.nseats; i++) {
+    const seat = cfg.seats[i];
+    const row = document.createElement('div');
+    row.className = 'seat';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.setProperty('--c', '#' + PLAYERS[i].color.toString(16).padStart(6, '0'));
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.maxLength = 12; inp.enterKeyHint = 'done';
+    inp.value = seat.name; inp.placeholder = PLAYERS[i].name;
+    inp.setAttribute('aria-label', 'Prénom du joueur ' + (i + 1));
+    inp.autocomplete = 'off';
+    inp.addEventListener('input', () => { seat.name = inp.value; saveSeats(); });
+    inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') inp.blur(); });
+    const btn = document.createElement('button');
+    btn.className = 'who';
+    btn.dataset.bot = seat.bot ? '1' : '0';
+    btn.textContent = seat.bot ? '🤖 Robot' : '🧒 Humain';
+    btn.addEventListener('click', () => {
+      sfx.unlock();
+      const humans = cfg.seats.slice(0, cfg.nseats).filter((s) => !s.bot).length;
+      if (!seat.bot && humans <= 1) { // dernier humain : refus doux
+        sfx.oops();
+        btn.classList.remove('no'); void btn.offsetWidth; btn.classList.add('no');
+        return;
+      }
+      seat.bot = !seat.bot;
+      saveSeats();
+      syncMenu();
+    });
+    row.append(dot, inp, btn);
+    box.appendChild(row);
+  }
+}
 function syncMenu() {
+  fixHuman();
+  renderSeats();
+  $('grp-diff').classList.toggle('hidden', !cfg.seats.slice(0, cfg.nseats).some((s) => s.bot));
   document.querySelectorAll('.seg').forEach((seg) => {
     const g = seg.dataset.group;
     seg.querySelectorAll('.opt').forEach((b) => b.classList.toggle('sel', String(cfg[g]) === b.dataset.val));
@@ -397,6 +493,7 @@ document.querySelectorAll('.seg').forEach((seg) => {
     if (!b) return;
     const g = seg.dataset.group;
     cfg[g] = g === 'difficulty' ? b.dataset.val : Number(b.dataset.val);
+    if (g === 'nseats') saveSeats();
     sfx.unlock();
     syncMenu();
   });
@@ -418,6 +515,7 @@ $('btn-roll').addEventListener('click', () => { sfx.unlock(); requestRoll(); });
 const dz = $('dieZone');
 dz.addEventListener('pointerdown', (ev) => { ev.preventDefault(); sfx.unlock(); requestRoll(); });
 dz.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); requestRoll(); } });
+loadSeats();
 syncMenu();
 
 // ---------- crochet de test ----------

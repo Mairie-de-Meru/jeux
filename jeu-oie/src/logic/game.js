@@ -5,12 +5,31 @@ import { PLAYERS } from './texts.js';
 
 const sum = (a) => a.reduce((s, v) => s + v, 0);
 
-export function createGame({ palier = 1, bots = 1, difficulty = 'facile', death = true, seed = 1 } = {}) {
+export const MAX_NAME = 12;
+
+// Places par défaut : « Toi » humain, puis des robots (n entre 2 et 4).
+export function defaultSeats(n = 2) {
+  const k = Math.max(2, Math.min(4, Math.floor(Number(n)) || 2));
+  return PLAYERS.slice(0, k).map((p, i) => ({ name: p.name, bot: i > 0 }));
+}
+
+export function humanCount(state) { return state.players.filter((p) => !p.bot).length; }
+
+export function createGame({ palier = 1, seats, bots = 1, difficulty = 'facile', death = true, seed = 1 } = {}) {
   const board = makeBoard(palier, { death });
-  const count = 1 + Math.max(1, Math.min(3, bots));
-  const players = PLAYERS.slice(0, count).map((p, id) => ({
-    id, name: p.name, emoji: p.emoji, color: p.color, bot: id > 0, pos: 0, skip: 0, rest: null,
-  }));
+  let list;
+  if (Array.isArray(seats)) {
+    list = seats.slice(0, 4).map((s) => ({ name: s && s.name, bot: !!(s && s.bot) }));
+    while (list.length < 2) list.push({ name: '', bot: true });
+  } else {
+    list = defaultSeats(1 + Math.max(1, Math.min(3, bots)));
+  }
+  if (!list.some((s) => !s.bot)) list[0].bot = false;
+  const players = list.map((s, id) => {
+    const base = PLAYERS[id];
+    const name = String(s.name == null ? '' : s.name).trim().slice(0, MAX_NAME).trim();
+    return { id, name: name || base.name, emoji: base.emoji, color: base.color, bot: s.bot, pos: 0, skip: 0, rest: null };
+  });
   return {
     palier, board, n: board.n, players, turn: 0, over: false, winner: null,
     diceCount: palier === 3 ? 2 : 1, difficulty, rng: mulberry32(seed), turnCount: 0,
@@ -26,8 +45,8 @@ export function botRollDice(state) {
   let d = rollDice(state);
   if (state.difficulty === 'facile') {
     const me = state.players[state.turn];
-    const human = state.players[0];
-    if (me.bot && me.pos - human.pos >= 8 && sum(d) >= state.diceCount * 6 - 1) d = rollDice(state);
+    const best = Math.max(0, ...state.players.filter((q) => !q.bot).map((q) => q.pos));
+    if (me.bot && me.pos - best >= 8 && sum(d) >= state.diceCount * 6 - 1) d = rollDice(state);
   }
   return d;
 }

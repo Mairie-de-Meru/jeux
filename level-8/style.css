@@ -331,3 +331,26 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
   .glegend, #goal.grow .glegend { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   #msg { max-width: 80%; }
 }
+
+/* jeu à plusieurs sur le même appareil */
+.seats { display: grid; gap: 4px; margin: 4px 0; }
+.seat { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.seat .avbtn { flex: none; width: 52px; height: 52px; min-width: 52px; aspect-ratio: auto; }
+.seat input { min-width: 0; height: 52px; padding: 0 12px; font: inherit; font-weight: 700; border: 3px solid #d7dcf5; border-radius: 16px; color: var(--ink); }
+.seat .kind { min-width: 112px; min-height: 52px; padding: 0 10px; border: 3px solid #d7dcf5; border-radius: 16px; background: #fff; font: inherit; font-weight: 800; color: var(--ink); }
+.seat .kind.human { border-color: #5b3fd1; background: #ece7ff; }
+.seat .kind:disabled { opacity: 1; }
+#gate { z-index: 40; background: #14204a; }
+#gate .big-emoji .av { width: 1.6em; height: 1.6em; }
+.gate-name { font-size: clamp(30px, 9vw, 44px); font-weight: 900; color: #5b3fd1; margin: 4px 0 10px; overflow-wrap: anywhere; }
+#btn-ready { min-height: 72px; min-width: 220px; font-size: 24px; }
+#app.cloak #handwrap, #app.cloak #goal, #app.cloak #discards { visibility: hidden; }
+@media (max-width: 420px) and (orientation: portrait) {
+  .seat .kind { min-width: 96px; font-size: 14px; padding: 0 6px; }
+}
+@media (max-height: 420px) and (orientation: landscape) {
+  .seat, .seats { gap: 3px; }
+  .seat { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .seat .avbtn { width: 48px; height: 48px; min-width: 48px; }
+  .seat input, .seat .kind { height: 48px; min-height: 48px; }
+}

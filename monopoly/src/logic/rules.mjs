@@ -58,6 +58,27 @@ export function actor(s) {
   return s.current;
 }
 
+// Joueur local (« passe et joue ») : l'humain qui doit agir ; sinon le dernier humain affiché (prev) s'il est encore en jeu,
+// sinon le premier humain actif. Pur : prev est fourni par l'appelant.
+export function localHuman(s, prev = null) {
+  const a = actor(s);
+  if (a != null && !s.players[a].isBot) return a;
+  const p = prev != null ? s.players[prev] : null;
+  if (p && !p.isBot && !p.bankrupt) return prev;
+  const hum = s.players.find((q) => !q.isBot && !q.bankrupt) || s.players.find((q) => !q.isBot);
+  return hum ? hum.id : 0;
+}
+export const humansInGame = (s) => s.players.filter((p) => !p.isBot && !p.bankrupt).length;
+
+// Bandeau « À <prénom> … » : seulement s'il y a plusieurs humains en partie et qu'un humain doit décider.
+export function turnBanner(s) {
+  if (s.over || humansInGame(s) < 2) return null;
+  const a = actor(s); if (a == null) return null;
+  const p = s.players[a]; if (p.isBot) return null;
+  const text = s.phase === 'auction' ? `À ${p.name} d’enchérir` : s.phase === 'trade' ? `${p.name}, une offre pour toi` : `À ${p.name} de jouer`;
+  return { pid: a, text, color: p.color };
+}
+
 function ev(s, type, data = {}) {
   const e = { type, ...data };
   s.events.push(e);

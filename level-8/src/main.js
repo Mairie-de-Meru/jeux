@@ -7,27 +7,50 @@ import { usefulIds, bestDiscard, objectiveFill } from './logic/planner.js';
 import { objectiveTotal, RULES_SPEECH } from './logic/levels.js';
 import { cardEl, cardName } from './ui/cardview.js';
 import { goalEl } from './ui/goalview.js';
-import { AVATARS, botAvatars } from './logic/avatars.js';
+import { AVATARS } from './logic/avatars.js';
 import { avatarHTML, preloadAvatars, onAvatarLoaded } from './avatarimg.js';
 import { speak } from './speech.js';
 import { sfx } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
-const S = { g: null, view: null, sel: new Set(), sort: 'number', helpOn: false, fast: false, newId: null, flash: null, suggest: null, token: 0, botsPromise: Promise.resolve(), opts: { palier: 1, bots: 1, difficulty: 'facile', mode: 'full', jokerSwap: 'false', avatar: loadAvatar() } };
+const S = { g: null, view: null, sel: new Set(), sort: 'number', helpOn: false, fast: false, newId: null, flash: null, suggest: null, token: 0, botsPromise: Promise.resolve(), opts: { palier: 1, bots: 1, difficulty: 'facile', mode: 'full', jokerSwap: 'false', avatar: loadAvatar(), count: 2, seats: defaultSeats() }, viewer: 0, gateFor: null, cloak: false, fresh: false, goalSeen: new Set() };
+loadSeats();
 
 function loadAvatar() {
   try { const v = +localStorage.getItem('level8.avatar'); if (v >= 1 && v <= AVATARS.length) return v; } catch (e) { /* silencieux */ }
   return 1;
 }
+function defaultSeats() {
+  return [{ type: 'human', name: '', avatar: loadAvatar() }, { type: 'bot', name: '', avatar: 2 }, { type: 'bot', name: '', avatar: 3 }, { type: 'bot', name: '', avatar: 4 }];
+}
+function loadSeats() {
+  try {
+    const d = JSON.parse(localStorage.getItem('level8.seats') || 'null');
+    if (!d || !Array.isArray(d.seats) || d.seats.length !== 4) return;
+    const used = new Set();
+    const seats = d.seats.map((x, i) => {
+      let av = AVATARS.some((a) => a.id === x.avatar) && !used.has(x.avatar) ? x.avatar : (AVATARS.find((a) => !used.has(a.id)) || AVATARS[0]).id;
+      used.add(av);
+      return { type: i === 0 || x.type !== 'bot' ? 'human' : 'bot', name: String(x.name || '').slice(0, 10), avatar: av };
+    });
+    S.opts.seats = seats;
+    S.opts.count = Math.max(2, Math.min(4, +d.count || 2));
+  } catch (e) { /* silencieux */ }
+}
+function saveSeats() { try { localStorage.setItem('level8.seats', JSON.stringify({ count: +S.opts.count, seats: S.opts.seats })); } catch (e) { /* silencieux */ } }
 function saveAvatar(v) { try { localStorage.setItem('level8.avatar', String(v)); } catch (e) { /* silencieux */ } }
 
 const wait = (ms) => new Promise((r) => setTimeout(r, S.fast ? 0 : ms));
-// Rythme des robots : multiplicateur des délais/animations des robots (pas du joueur 0).
+// Rythme des robots : multiplicateur des délais/animations des robots (jamais des humains).
 const BOT_PACE = 1.6;
-const botMs = (ms, p) => (p !== 0 ? Math.round(ms * BOT_PACE) : ms);
+const isBotSeat = (p) => !!(S.g && S.g.players[p] && S.g.players[p].isBot);
+const botMs = (ms, p) => (isBotSeat(p) ? Math.round(ms * BOT_PACE) : ms);
 const flyMs = (p = 0) => (S.fast ? 0 : botMs(450, p));
-const me = () => S.g.players[0];
-const humanTurn = () => S.g.status === 'playing' && S.g.current === 0;
+const me = () => S.g.players[S.viewer];
+const multi = () => S.g.players.filter((p) => !p.isBot).length >= 2;
+const handVisible = () => !S.cloak && S.gateFor == null;
+// C'est le tour du joueur dont la main est affichée (et la main est visible).
+const humanTurn = () => S.g.status === 'playing' && S.g.current === S.viewer && !S.g.players[S.viewer].isBot && handVisible();
 
 function setMsg(text, shake = false) {
   const m = $('msg');
@@ -40,9 +63,11 @@ function setMsg(text, shake = false) {
 function turnHint() {
   const g = S.g;
   if (g.status !== 'playing') return '';
-  if (g.current !== 0) return `${g.players[g.current].emoji} ${g.players[g.current].name} joue…`;
+  if (g.players[g.current].isBot) return multi() ? `Au tour des robots… ${g.players[g.current].emoji}` : `${g.players[g.current].emoji} ${g.players[g.current].name} joue…`;
+  if (!handVisible() || g.current !== S.viewer) return '';
   const short = window.matchMedia && window.matchMedia('(max-width: 500px) and (orientation: portrait)').matches;
-  if (g.phase === 'draw') return short ? 'À toi ! Pioche une carte.' : 'À toi ! Pioche, ou prends une carte sur une défausse.';
+  const you = multi() ? `À toi, ${me().name} !` : 'À toi !';
+  if (g.phase === 'draw') return short ? `${you} Pioche une carte.` : `${you} Pioche, ou prends une carte sur une défausse.`;
   if (short) return me().laid ? 'Ajoute, puis jette.' : 'Pose ton objectif, puis jette.';
   return me().laid ? 'Ajoute des cartes aux groupes, puis jette une carte.' : 'Pose ton objectif si tu l\'as, puis jette une carte.';
 }
@@ -57,6 +82,7 @@ function renderHand() {
   const p = me();
   const hand = $('hand');
   hand.textContent = '';
+  if (!handVisible()) return;
   // largeur des cartes pour tenir sur une ligne en éventail (portrait étroit, voir style.css)
   const W = ($('handwrap').clientWidth || window.innerWidth) - 14;
   const n = Math.max(p.hand.length, 1);
@@ -179,9 +205,10 @@ function renderTop() {
   $('objtxt').textContent = obj.title;
   const chips = $('chips');
   chips.textContent = '';
-  g.players.slice(1).forEach((b, i) => {
+  g.players.forEach((b, i) => {
+    if (i === S.viewer) return;
     const c = document.createElement('span');
-    c.className = 'chip' + (g.status === 'playing' && g.current === i + 1 ? ' active' : '');
+    c.className = 'chip' + (g.status === 'playing' && g.current === i ? ' active' : '');
     c.innerHTML = `${avatarHTML(b)} <span class="cn">${b.name}</span> 🃏${b.hand.length} · niv ${Math.min(b.level + 1, g.levelCount)}${b.laid ? ' ✅' : ''}${b.skip ? ' ⏭️' : ''}`;
     chips.appendChild(c);
   });
@@ -236,7 +263,7 @@ function renderDiscards() {
     b.type = 'button';
     b.className = 'dis' + (help.has(j) ? ' pulse' : '');
     b.disabled = !(can && ok.has(j));
-    b.setAttribute('aria-label', j === 0 ? 'Ma défausse' : `Défausse de ${pl.name}`);
+    b.setAttribute('aria-label', j === S.viewer && !multi() ? 'Ma défausse' : `Défausse de ${pl.name}`);
     const top = topDiscard(g, j);
     const av = document.createElement('span');
     av.className = 'dis-av';
@@ -251,13 +278,14 @@ function renderDiscards() {
 
 function refresh() {
   const g = S.g;
-  for (const id of [...S.sel]) if (!me().hand.some((c) => c.id === id)) S.sel.delete(id);
+  for (const id of [...S.sel]) if (!handVisible() || !me().hand.some((c) => c.id === id)) S.sel.delete(id);
   renderTop();
   renderGoal();
   renderGroups();
   renderButtons();
   renderHand();
-  S.view.sync(g);
+  document.getElementById('app').classList.toggle('cloak', !handVisible());
+  S.view.sync(g, S.viewer);
 }
 
 function toggleSel(id) {
@@ -273,14 +301,16 @@ function describe(ev) {
   const g = S.g;
   const pl = g.players[ev.p];
   const who = pl ? `${pl.emoji} ${pl.name}` : '';
+  const human = pl && !pl.isBot;
+  const solo = human && !multi(); // seul humain : on lui parle directement
   switch (ev.t) {
-    case 'draw': return ev.p === 0 ? '' : ev.from === 'pile' ? `${who} pioche` : ev.fromPlayer === ev.p ? `${who} reprend sa carte` : `${who} prend ${cardName(ev.card)} chez ${g.players[ev.fromPlayer].emoji}`;
-    case 'lay': return ev.p === 0 ? '' : `${who} pose son objectif ! 🎉`;
-    case 'add': return ev.p === 0 ? '' : `${who} ajoute une carte`;
-    case 'swap': return ev.p === 0 ? 'Tu récupères le joker ! 🃏' : `${who} récupère un joker 🃏`;
-    case 'discard': return ev.p === 0 ? '' : `${who} jette ${cardName(ev.card)}${ev.card.k === 's' ? ' ⏭' : ''}`;
-    case 'skipplay': return ev.p === 0 ? '' : `${who} fait passer ${g.players[ev.target].emoji} ${g.players[ev.target].name} ⏭️`;
-    case 'skip': return ev.p === 0 ? '⏭ Tu sautes ton tour !' : `⏭ ${pl.name} saute son tour`;
+    case 'draw': return human ? '' : ev.from === 'pile' ? `${who} pioche` : ev.fromPlayer === ev.p ? `${who} reprend sa carte` : `${who} prend ${cardName(ev.card)} chez ${g.players[ev.fromPlayer].emoji}`;
+    case 'lay': return human ? '' : `${who} pose son objectif ! 🎉`;
+    case 'add': return human ? '' : `${who} ajoute une carte`;
+    case 'swap': return solo ? 'Tu récupères le joker ! 🃏' : `${who} récupère un joker 🃏`;
+    case 'discard': return human ? '' : `${who} jette ${cardName(ev.card)}${ev.card.k === 's' ? ' ⏭' : ''}`;
+    case 'skipplay': return human ? '' : `${who} fait passer ${g.players[ev.target].emoji} ${g.players[ev.target].name} ⏭️`;
+    case 'skip': return solo ? '⏭ Tu sautes ton tour !' : `⏭ ${pl.name} saute son tour`;
     case 'reshuffle': return 'La pioche est remélangée';
     default: return '';
   }
@@ -291,7 +321,7 @@ async function consume(awaitFlights) {
   const ps = [];
   let mySkip = false;
   for (const ev of evs) {
-    if (ev.t === 'skip' && ev.p === 0) mySkip = true;
+    if (ev.t === 'skip' && !S.g.players[ev.p].isBot) mySkip = true;
     if (ev.t === 'skipplay') sfx.add();
     if (ev.t === 'draw') {
       ps.push(S.view.fly({ from: ev.from === 'pile' ? 'pile' : { disc: ev.fromPlayer }, to: { seat: ev.p }, card: ev.from === 'discard' ? ev.card : null, ms: flyMs(ev.p) }));
@@ -316,10 +346,56 @@ async function consume(awaitFlights) {
 /* ---------- actions du joueur ---------- */
 async function afterHuman() {
   await consume(false);
+  flow();
+}
+
+// Décide la suite après un changement d'état : fin de manche, passage d'appareil, objectif, robots.
+function settle() {
+  const g = S.g;
+  const humans = g.players.map((p, i) => (p.isBot ? -1 : i)).filter((i) => i >= 0);
+  if (humans.length < 2) { S.viewer = humans[0]; S.gateFor = null; S.cloak = false; S.fresh = false; return; }
+  if (g.status !== 'playing') return;
+  if (g.players[g.current].isBot) { S.cloak = true; return; }
+  if (g.current !== S.viewer || S.fresh) { S.viewer = g.current; S.gateFor = g.current; S.cloak = true; S.fresh = false; return; }
+  S.cloak = false;
+}
+
+function showGate() {
+  const p = S.g.players[S.gateFor];
+  $('gate-av').innerHTML = avatarHTML(p, 'bigav');
+  $('gate-name').textContent = p.name;
+  $('gate').classList.remove('hidden');
+}
+
+function onReady() {
+  if (S.gateFor == null) return false;
+  S.gateFor = null;
+  S.cloak = false;
+  $('gate').classList.add('hidden');
+  flow();
+  return true;
+}
+
+// Fenêtre « Ton objectif » : une fois par joueur humain et par manche.
+function maybeGoalCard(then) {
+  const g = S.g;
+  const ok = !S.fast && !S.noGoalCard && g.status === 'playing' && !S.goalSeen.has(S.viewer) && (!multi() || humanTurn());
+  if (!ok) { then(); return; }
+  S.goalSeen.add(S.viewer);
+  speakObjective();
+  showGoalCard(then);
+}
+
+function flow() {
+  const g = S.g;
+  settle();
   refresh();
-  if (S.g.status !== 'playing') { showRoundEnd(); return; }
-  if (S.g.current !== 0) { S.botsPromise = runBots(); return; }
-  setMsg(S.g.events.length ? '' : turnHint());
+  if (g.status !== 'playing') { showRoundEnd(); return; }
+  if (S.gateFor != null) { setMsg(''); showGate(); return; }
+  setMsg(turnHint());
+  maybeGoalCard(() => {
+    if (g.players[g.current].isBot) S.botsPromise = runBots();
+  });
 }
 
 function onDraw() {
@@ -495,7 +571,7 @@ function onHelp() {
 async function runBots() {
   const tk = ++S.token;
   const g = S.g;
-  while (g.status === 'playing' && g.current !== 0 && tk === S.token) {
+  while (g.status === 'playing' && g.players[g.current].isBot && tk === S.token) {
     refresh();
     setMsg(turnHint());
     await wait(botMs(550, g.current));
@@ -509,10 +585,8 @@ async function runBots() {
     if (mySkip) await wait(Math.round(1300 * BOT_PACE));
   }
   if (tk !== S.token) return;
-  refresh();
-  if (g.status !== 'playing') { showRoundEnd(); return; }
-  sfx.turn();
-  setMsg(turnHint());
+  if (g.status === 'playing') sfx.turn();
+  flow();
 }
 
 /* ---------- fin de manche / de partie ---------- */
@@ -534,16 +608,22 @@ function showRoundEnd() {
   const r = g.roundResult;
   setMsg('');
   if (g.status === 'over') { showEnd(); return; }
-  const adv = r.advanced.includes(0);
-  const mine = r.gains[0];
+  const group = multi();
+  const mine = group ? Math.max(0, ...r.gains) : r.gains[S.viewer];
+  const adv = group ? mine > 0 : r.advanced.includes(S.viewer);
+  const outP = r.out === null ? null : g.players[r.out];
   $('round-emoji').textContent = mine ? '🎉' : '💪';
-  $('round-title').textContent = mine === 2 ? 'Bravo, tu as fini : +2 niveaux ! ⭐⭐' : mine ? 'Bravo, tu montes d\'un niveau ! ⭐' : 'On recommence ce niveau, tu y es presque !';
-  $('round-sub').textContent = r.out === null ? 'Personne n\'a fini ses cartes.' : r.out === 0 ? 'Tu as fini tes cartes !' : `${g.players[r.out].emoji} ${g.players[r.out].name} a fini ses cartes.`;
+  if (group) {
+    $('round-title').textContent = outP ? `Bravo ${outP.name} : +${r.gains[r.out]} niveau${r.gains[r.out] > 1 ? 'x' : ''} ! ⭐` : 'Bien joué tout le monde !';
+  } else {
+    $('round-title').textContent = mine === 2 ? 'Bravo, tu as fini : +2 niveaux ! ⭐⭐' : mine ? 'Bravo, tu montes d\'un niveau ! ⭐' : 'On recommence ce niveau, tu y es presque !';
+  }
+  $('round-sub').textContent = r.out === null ? 'Personne n\'a fini ses cartes.' : (!group && r.out === S.viewer) ? 'Tu as fini tes cartes !' : `${outP.emoji} ${outP.name} a fini ses cartes.`;
   const list = $('round-list');
   list.textContent = '';
   g.players.forEach((p, i) => {
     const li = document.createElement('li');
-    if (i === 0) li.className = 'me';
+    if (!group && i === S.viewer) li.className = 'me';
     const up = r.advanced.includes(i);
     li.innerHTML = `<span>${avatarHTML(p)} ${p.name}</span><span>${up ? `${r.gains[i] === 2 ? '+2 ⭐⭐' : '+1 ⭐'} niveau ${r.prevLevels[i] + 1} ✅ → ${Math.min(p.level + 1, g.levelCount)}` : `niveau ${r.prevLevels[i] + 1} (encore)`}</span>`;
     list.appendChild(li);
@@ -554,16 +634,19 @@ function showRoundEnd() {
 
 function showEnd() {
   const g = S.g;
-  const won = g.winners.includes(0);
-  $('end-emoji').innerHTML = won ? '🏆' : avatarHTML(g.players[g.winners[0]], 'bigav');
-  $('end-title').textContent = won ? 'Bravo, tu as gagné !' : `Bravo ${g.players[g.winners[0]].name} ! Tu as bien joué !`;
+  const group = multi();
+  const humanWon = g.winners.some((i) => !g.players[i].isBot);
+  const won = group ? humanWon : g.winners.includes(S.viewer);
+  const w = g.players[g.winners[0]];
+  $('end-emoji').innerHTML = won ? '🏆' : avatarHTML(w, 'bigav');
+  $('end-title').textContent = group ? `Bravo ${w.name} !` : won ? 'Bravo, tu as gagné !' : `Bravo ${w.name} ! Tu as bien joué !`;
   const prog = Math.min(1, me().level / g.levelCount);
-  $('end-stars').textContent = won ? '⭐⭐⭐' : prog > 0.5 ? '⭐⭐' : '⭐';
+  $('end-stars').textContent = won || group ? '⭐⭐⭐' : prog > 0.5 ? '⭐⭐' : '⭐';
   const list = $('end-list');
   list.textContent = '';
   g.players.forEach((p, i) => {
     const li = document.createElement('li');
-    if (i === 0) li.className = 'me';
+    if (!group && i === S.viewer) li.className = 'me';
     li.innerHTML = `<span>${g.winners.includes(i) ? '🏆 ' : ''}${avatarHTML(p)} ${p.name}</span><span>niveau ${Math.min(p.level, g.levelCount)} / ${g.levelCount}</span>`;
     list.appendChild(li);
   });
@@ -578,68 +661,90 @@ function speakObjective() {
   speak(`Niveau ${Math.min(p.level + 1, g.levelCount)}. ${objectiveOf(g, p).speech}`);
 }
 
-function startGame(o = {}) {
-  S.token++;
-  const opts = { ...S.opts, ...o };
-  S.g = createGame({ seed: opts.seed ?? ((Date.now() ^ (Math.random() * 1e9)) & 0x7fffffff), palier: +opts.palier, bots: +opts.bots, difficulty: opts.difficulty, mode: opts.mode, jokerSwap: opts.jokerSwap === true || opts.jokerSwap === 'true', avatar: +opts.avatar || 1, shortRounds: 5 });
+function seatsFor(o) {
+  const list = (o.seats || S.opts.seats).slice(0, o.seats ? 4 : Math.max(2, Math.min(4, +S.opts.count || 2)));
+  return list.map((x) => ({ type: x.type === 'bot' ? 'bot' : 'human', name: x.name, avatar: x.avatar }));
+}
+
+function resetRound() {
   S.sel.clear();
   S.helpOn = false;
   S.suggest = null;
   S.newId = null;
+  S.goalSeen = new Set();
+  S.cloak = false;
+  S.gateFor = null;
+  S.fresh = true; // premier tour de la manche : en jeu à plusieurs, on passe toujours par « Passe l'appareil »
   S.g.events.length = 0;
+  $('gate').classList.add('hidden');
+}
+
+function startGame(o = {}) {
+  S.token++;
+  const opts = { ...S.opts, ...o };
+  const base = { seed: opts.seed ?? ((Date.now() ^ (Math.random() * 1e9)) & 0x7fffffff), palier: +opts.palier, difficulty: opts.difficulty, mode: opts.mode, jokerSwap: opts.jokerSwap === true || opts.jokerSwap === 'true', shortRounds: 5 };
+  if (o.seats || o.bots == null) base.seats = seatsFor(o);
+  else { base.bots = +o.bots; base.avatar = +opts.avatar || 1; }
+  S.g = createGame(base);
+  S.viewer = Math.max(0, S.g.players.findIndex((p) => !p.isBot));
+  resetRound();
   S.view.setPlayers(S.g.players);
   for (const id of ['setup', 'round', 'end', 'rules', 'goalcard', 'skippick']) $(id).classList.add('hidden');
-  refresh();
-  setMsg(turnHint());
   S.noGoalCard = o.goalCard === false;
-  const go = () => { if (S.g.current !== 0) S.botsPromise = runBots(); };
-  if (S.fast || S.noGoalCard) go(); else { speakObjective(); }
-  showGoalCard(go);
+  flow();
 }
 
 function continueRound() {
   nextRound(S.g);
-  S.g.events.length = 0;
-  S.sel.clear();
-  S.helpOn = false;
-  S.suggest = null;
+  S.token++;
+  resetRound();
   $('round').classList.add('hidden');
-  refresh();
-  setMsg(turnHint());
-  const go = () => { if (S.g.current !== 0) S.botsPromise = runBots(); };
-  if (!S.fast && !S.noGoalCard) speakObjective();
-  showGoalCard(go);
+  flow();
 }
 
-function renderBotsPicker() {
-  const seg = document.querySelector('.seg[data-key="bots"]');
-  if (!seg) return;
-  seg.textContent = '';
-  const bots = botAvatars(+S.opts.avatar);
-  for (let n = 1; n <= 3; n++) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.dataset.v = String(n);
-    b.className = 'botsbtn' + (+S.opts.bots === n ? ' on' : '');
-    b.setAttribute('aria-label', `${n} adversaire${n > 1 ? 's' : ''}`);
-    b.innerHTML = bots.slice(0, n).map((a) => avatarHTML({ avatar: a.id, emoji: a.emoji })).join('');
-    seg.appendChild(b);
-  }
-}
-
-function renderAvatarPicker() {
-  renderBotsPicker();
-  const box = $('avatars');
+function renderSeats() {
+  const box = $('seats');
   if (!box) return;
+  const count = Math.max(2, Math.min(4, +S.opts.count || 2));
+  document.querySelectorAll('.seg[data-key="count"] button').forEach((b) => b.classList.toggle('on', +b.dataset.v === count));
   box.textContent = '';
-  for (const a of AVATARS) {
+  const seats = S.opts.seats;
+  for (let i = 0; i < count; i++) {
+    const seat = seats[i];
+    const av = AVATARS.find((a) => a.id === seat.avatar) || AVATARS[0];
+    const row = document.createElement('div');
+    row.className = 'seat';
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'avbtn' + (+S.opts.avatar === a.id ? ' on' : '');
-    b.setAttribute('aria-label', a.name);
-    b.innerHTML = avatarHTML({ avatar: a.id, emoji: a.emoji });
-    b.addEventListener('click', () => { S.opts.avatar = a.id; saveAvatar(a.id); sfx.pick(); renderAvatarPicker(); });
-    box.appendChild(b);
+    b.className = 'avbtn on';
+    b.setAttribute('aria-label', `Avatar du joueur ${i + 1} : changer`);
+    b.innerHTML = avatarHTML({ avatar: av.id, emoji: av.emoji });
+    b.addEventListener('click', () => {
+      // prochain avatar libre (jamais deux joueurs avec le même)
+      const used = new Set(seats.slice(0, count).map((x, k) => (k === i ? -1 : x.avatar)));
+      for (let k = 1; k <= AVATARS.length; k++) {
+        const cand = AVATARS[(AVATARS.findIndex((a) => a.id === seat.avatar) + k) % AVATARS.length];
+        if (!used.has(cand.id)) { seat.avatar = cand.id; break; }
+      }
+      if (i === 0) saveAvatar(seat.avatar);
+      saveSeats(); sfx.pick(); renderSeats();
+    });
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.maxLength = 10;
+    inp.value = seat.name;
+    inp.placeholder = seat.type === 'bot' ? av.name : `Joueur ${i + 1}`;
+    inp.setAttribute('aria-label', `Prénom du joueur ${i + 1}`);
+    inp.addEventListener('input', () => { seat.name = inp.value.slice(0, 10); saveSeats(); });
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'kind ' + seat.type;
+    k.textContent = seat.type === 'bot' ? '🤖 Robot' : '🧑 Humain';
+    k.setAttribute('aria-label', `Joueur ${i + 1} : ${seat.type === 'bot' ? 'robot' : 'humain'}`);
+    if (i === 0) k.disabled = true; // le joueur 1 est toujours humain
+    else k.addEventListener('click', () => { seat.type = seat.type === 'bot' ? 'human' : 'bot'; saveSeats(); sfx.pick(); renderSeats(); });
+    row.append(b, inp, k);
+    box.appendChild(row);
   }
 }
 
@@ -651,12 +756,13 @@ function init() {
       if (!b) return;
       seg.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
       S.opts[seg.dataset.key] = b.dataset.v;
+      if (seg.dataset.key === 'count') { saveSeats(); renderSeats(); }
       sfx.pick();
     });
   });
-  renderAvatarPicker();
+  renderSeats();
   preloadAvatars();
-  onAvatarLoaded(() => { renderAvatarPicker(); if (S.g) refresh(); });
+  onAvatarLoaded(() => { renderSeats(); if (S.g) refresh(); });
   const hero = new Image();
   hero.alt = '';
   hero.onload = () => { const box = $('hero'); box.appendChild(hero); box.classList.remove('hidden'); };
@@ -665,7 +771,8 @@ function init() {
   $('goal').addEventListener('click', () => S.g && speakObjective());
   $('btn-goal-voice').addEventListener('click', () => S.g && speakObjective());
   $('btn-goal-ok').addEventListener('click', closeGoalCard);
-  $('btn-play').addEventListener('click', () => startGame());
+  $('btn-play').addEventListener('click', () => { saveSeats(); startGame(); });
+  $('btn-ready').addEventListener('click', onReady);
   $('btn-draw').addEventListener('click', onDraw);
   $('btn-lay').addEventListener('click', onLay);
   $('btn-throw').addEventListener('click', onThrow);
@@ -688,6 +795,7 @@ function init() {
   });
   // partie en arrière-plan pour que la table ne soit pas vide derrière le menu
   S.g = createGame({ seed: 7, palier: 1, bots: 1, avatar: +S.opts.avatar });
+  S.viewer = 0;
   S.g.events.length = 0;
   S.view.setPlayers(S.g.players);
   refresh();
@@ -704,12 +812,11 @@ window.__level8 = {
   start: (o) => startGame(o),
   jump(n) {
     S.token++;
-    setLevel(S.g, 0, n);
+    setLevel(S.g, S.viewer, n);
     S.g.events.length = 0;
     S.sel.clear();
     for (const id of ['setup', 'round', 'end']) $(id).classList.add('hidden');
-    refresh();
-    if (S.g.current !== 0) S.botsPromise = runBots(); else setMsg(turnHint());
+    flow();
   },
   draw: onDraw,
   take: (from) => onTake(from),
@@ -723,11 +830,16 @@ window.__level8 = {
   help: onHelp,
   objFill() { return objectiveFill(me().hand, objectiveOf(S.g, me()).groups).map((f) => ({ t: f.spec.t, size: f.size, have: f.cards.length, ids: f.cards.map((c) => c.id), full: f.cards.length >= f.size })); },
   closeGoalCard,
-  give(list) { forceHand(S.g, 0, list); refresh(); return S.g.players[0].hand; },
+  give(list) { forceHand(S.g, S.viewer, list); refresh(); return me().hand; },
+  // passage d'appareil : appuie sur « Je suis prêt » (renvoie le prénom du joueur qui prend la main, ou null)
+  ready() { const who = S.gateFor; return onReady() ? S.g.players[who].name : null; },
+  get viewer() { return S.viewer; },
+  get gate() { return S.gateFor; },
   speakObjective,
   // joue le tour complet du joueur avec le planificateur des bots, puis laisse les bots jouer
   async auto() {
     let guard = 0;
+    if (S.gateFor != null) onReady();
     while (humanTurn() && guard++ < 30) {
       const a = chooseAction(S.g);
       if (a.type === 'draw') onDraw();

@@ -9,13 +9,27 @@ export const BOT_POOL = botAvatars(1);
 export function createGame(opts = {}) {
   const { seed = 1, palier = 1, bots = 1, difficulty = 'facile', mode = 'full', shortRounds = 5, maxTurns = 400, maxRounds = 60, jokerSwap = false, avatar = 1 } = opts;
   const pal = PALIERS[palier];
-  const me = AVATARS.find((a) => a.id === avatar) || AVATARS[0];
-  const pool = botAvatars(me.id);
-  const players = [{ id: 0, name: 'Toi', emoji: me.emoji, avatar: me.id, isBot: false, diff: difficulty, hand: [], discard: [], skip: null, laid: false, level: 0 }];
-  for (let i = 0; i < Math.max(1, Math.min(3, bots)); i++) {
-    const b = pool[i];
-    players.push({ id: i + 1, name: b.name, emoji: b.emoji, avatar: b.id, isBot: true, diff: difficulty, hand: [], discard: [], skip: null, laid: false, level: 0 });
+  // places : [{type:'human'|'bot', name, avatar}] (2 à 4) ; sinon compat : un humain 'Toi' + `bots` robots
+  let list;
+  if (Array.isArray(opts.seats) && opts.seats.length >= 2) {
+    list = opts.seats.slice(0, 4).map((x) => ({ type: x.type === 'bot' ? 'bot' : 'human', name: x.name, avatar: x.avatar }));
+    if (!list.some((x) => x.type === 'human')) list[0].type = 'human';
+  } else {
+    const first = AVATARS.find((a) => a.id === avatar) || AVATARS[0];
+    list = [{ type: 'human', name: 'Toi', avatar: first.id }];
+    botAvatars(first.id).slice(0, Math.max(1, Math.min(3, bots))).forEach((a) => list.push({ type: 'bot', name: a.name, avatar: a.id }));
   }
+  // avatars uniques : on garde ceux qui sont valides et libres, les autres prennent les premiers libres
+  const used = new Set();
+  list.forEach((x) => {
+    if (AVATARS.some((a) => a.id === x.avatar) && !used.has(x.avatar)) used.add(x.avatar); else x.avatar = null;
+  });
+  list.forEach((x) => { if (x.avatar === null) { x.avatar = AVATARS.find((a) => !used.has(a.id)).id; used.add(x.avatar); } });
+  const players = list.map((x, i) => {
+    const av = AVATARS.find((a) => a.id === x.avatar);
+    const name = (x.name && String(x.name).trim().slice(0, 10)) || (x.type === 'bot' ? av.name : `Joueur ${i + 1}`);
+    return { id: i, name, emoji: av.emoji, avatar: av.id, isBot: x.type === 'bot', diff: difficulty, hand: [], discard: [], skip: null, laid: false, level: 0 };
+  });
   const g = {
     seed, palier, pal, mode, jokerSwap, shortRounds, maxTurns, maxRounds,
     rng: mulberry32(seed), botRng: mulberry32((seed ^ 0x9e3779b9) | 0),

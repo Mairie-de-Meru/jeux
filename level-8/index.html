@@ -48,20 +48,28 @@
   </div>
 </div>
 
+<section id="gate" class="overlay hidden" aria-live="polite">
+  <div class="panel">
+    <div class="big-emoji" id="gate-av"></div>
+    <h2>Passe l'appareil à</h2>
+    <div id="gate-name" class="gate-name"></div>
+    <button id="btn-ready" class="btn">Je suis prêt</button>
+  </div>
+</section>
+
 <section id="setup" class="overlay">
   <div class="panel">
     <div id="hero" class="hidden"></div>
     <h1>Level 8</h1>
     <p class="sub">8 niveaux de cartes à gravir !</p>
-    <div class="opt"><span>Choisis ton avatar</span>
-      <div id="avatars" class="avatars"></div></div>
+    <div class="opt"><span>Joueurs</span>
+      <div class="seg" data-key="count"><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div></div>
+    <div id="seats" class="seats" aria-label="Joueurs : humain ou robot"></div>
     <div class="opt"><span>Palier</span>
       <div class="seg" data-key="palier">
         <button data-v="1" class="on">1 Court</button><button data-v="2">2 Complet</button><button data-v="3">3 Expert</button>
       </div></div>
-    <div class="opt"><span>Adversaires</span>
-      <div class="seg" data-key="bots"></div></div>
-    <div class="opt"><span>Niveau des adversaires</span>
+    <div class="opt"><span>Niveau des robots</span>
       <div class="seg" data-key="difficulty">
         <button data-v="facile" class="on">Facile</button><button data-v="normal">Normal</button>
       </div></div>

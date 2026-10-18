@@ -29,6 +29,7 @@
       <div id="bubble" class="hidden"><div class="b-emoji"></div><div class="b-title"></div><div class="b-text"></div></div>
     </div>
     <aside id="side">
+      <div id="turnbar" class="hidden"></div>
       <div id="dieZone" role="button" tabindex="0" aria-label="Lancer le dé"></div>
       <p id="msg"></p>
       <div id="actions">
@@ -50,14 +51,15 @@
         <button class="opt" data-val="3"><b>3</b><small>2 dés, additionne</small></button>
       </div>
     </div>
-    <div class="group"><h3>Amis qui jouent</h3>
-      <div class="seg" data-group="bots">
-        <button class="opt" data-val="1"><b>🔵</b><small>1</small></button>
-        <button class="opt" data-val="2"><b>🔵🟠</b><small>2</small></button>
-        <button class="opt" data-val="3"><b>🔵🟠🟢</b><small>3</small></button>
+    <div class="group" id="grp-seats"><h3>Joueurs</h3>
+      <div class="seg" data-group="nseats">
+        <button class="opt" data-val="2"><b>2</b></button>
+        <button class="opt" data-val="3"><b>3</b></button>
+        <button class="opt" data-val="4"><b>4</b></button>
       </div>
+      <div id="seats"></div>
     </div>
-    <div class="group"><h3>Les amis jouent</h3>
+    <div class="group" id="grp-diff"><h3>Les amis jouent</h3>
       <div class="seg" data-group="difficulty">
         <button class="opt" data-val="facile"><b>Facile</b></button>
         <button class="opt" data-val="normal"><b>Normal</b></button>

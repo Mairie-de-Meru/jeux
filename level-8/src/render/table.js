@@ -101,7 +101,8 @@ export class TableView {
     this.resize();
   }
 
-  sync(g) {
+  // viewer : joueur dont la main est affichée en DOM (les autres montrent leurs dos de cartes)
+  sync(g, viewer = 0) {
     const n = g.drawPile.length;
     this.pileMesh.visible = n > 0;
     this.pileMesh.scale.y = 0.03 + n * 0.0055;
@@ -119,8 +120,9 @@ export class TableView {
         s.disc.scale.y = 0.03 + p.discard.length * 0.0055;
         s.disc.position.y = s.disc.scale.y / 2;
       }
-      if (i > 0) {
-        const count = Math.min(p.hand.length, 12);
+      s.sprite.visible = i !== viewer;
+      {
+        const count = i === viewer ? 0 : Math.min(p.hand.length, 12);
         while (s.cards.length < count) {
           const m = new THREE.Mesh(this.cardGeo, [this.sideMat, this.sideMat, this.backMat, this.backMat, this.sideMat, this.sideMat]);
           s.group.add(m); s.cards.push(m);
