@@ -4,10 +4,12 @@ import { botDecision } from './logic/bots.js';
 import { humanCount, needsPassScreen, seatsFromSettings } from './logic/turns.js';
 import { createScene, HUMAN_POS, DISCARD_POS, DRAW_POS } from './render/scene.js';
 import { COLOR_HEX } from './render/cardart.js';
-import { $, toast, cardLabel, renderHand, setChips, renderSeats, showRanking, confetti } from './ui/ui.js';
+import { $, toast, cardLabel, setChips, renderSeats, showRanking, confetti } from './ui/ui.js';
 import { speak, stopSpeech } from './ui/speech.js';
 import { cardSpeech } from './logic/speechtext.js';
 import { loadImage } from './ui/images.js';
+import { createFx } from './render/fx.js';
+import { renderFan, launchCard, setHandFast } from './ui/hand.js';
 import { sfx } from './ui/audio.js';
 
 const settings = {
@@ -15,9 +17,13 @@ const settings = {
   seats: [{ type: 'human', name: 'Toi' }, { type: 'bot', name: 'Renard' }, { type: 'bot', name: 'Panda' }, { type: 'bot', name: 'Koala' }],
 };
 let g = null, run = 0, busy = false, waiting = null, armedUno = false, fast = false;
+const avatarSrc = {};
+let drawFromNext = null, flyFromScreen = null;
 let viewer = 0, passResolve = null; // viewer : humain dont la main est affichée
 
 const scene = createScene($('stage'), $('c'));
+const fx = createFx({ root: $('fx'), scene, dur: (ms) => (fast ? 0 : ms), avatarOf: (p) => { const pl = g?.players[p]; if (!pl) return ''; const src = avatarSrc[pl.emoji]; return src ? `<img src="${src}" alt="">` : pl.emoji; } });
+const POWER_KIND = { skip: 'skip', rev: 'reverse', draw2: 'draw2', wild: 'wild', wild4: 'draw4' };
 const sleep = (ms) => new Promise((r) => setTimeout(r, fast ? 0 : ms));
 const dur = (ms) => (fast ? 0 : ms);
 // Rythme des robots : multiplicateur des délais/animations des robots (pas de l'enfant, joueur 0).
@@ -58,7 +64,8 @@ function refreshViews() {
   $('colorbadge').style.background = COLOR_HEX[g.topColor] || '#888';
   const mine = myTurn();
   const legalIds = new Set(mine ? legalMoves(g, viewer).map((c) => c.id) : []);
-  renderHand($('hand'), handHidden() ? [] : me().hand, { legalIds, highlight: highlightOn() && mine, onTap: onCardTap });
+  renderFan($('hand'), handHidden() ? [] : me().hand, { legalIds, highlight: highlightOn() && mine, onTap: onCardTap, drawFrom: drawFromNext });
+  drawFromNext = null;
   $('btn-draw').disabled = !(mine && g.drawn === null);
   $('draw-count').textContent = `(${g.draw.length})`;
   $('btn-keep').classList.toggle('hidden', !(mine && g.drawn !== null));
@@ -84,31 +91,46 @@ async function applyEvents(events) {
         $('status').textContent = soloMe(e.p) ? 'Bien joué !' : `${name} joue ${cardLabel(e.card, e.color)}`;
         if (!soloMe(e.p)) toast(`${g.players[e.p].emoji} ${name} joue ${cardLabel(e.card, e.color)}`, bp(1800, e.p));
         sfx.play();
+        scene.react(e.p, 'joy', dur(700));
         if (settings.sayCards) speak(cardSpeech(e.card, e.color));
-        await fly({ from: scene.seatPos(e.p), to: DISCARD_POS.clone().setY(0.2), card: e.card, duration: dur(bp(420, e.p)), spin: 0.4 });
+        {
+          let from = scene.seatPos(e.p);
+          if (e.p === viewer && flyFromScreen) { from = scene.worldFromScreen(flyFromScreen.x, flyFromScreen.y, 1.2) || from; }
+          flyFromScreen = null;
+          await fly({ from, to: DISCARD_POS.clone().setY(0.2), card: e.card, duration: dur(bp(480, e.p)), spin: Math.PI * 2 + 0.3, arc: 1.6, land: true });
+        }
         scene.setDiscard(e.card, e.color);
+        if (isWild(e.card) && !fast) scene.shockwave(COLOR_HEX[e.color]);
+        if (POWER_KIND[e.card.kind]) await fx.power(POWER_KIND[e.card.kind], { p: e.p, color: e.color });
         break;
       case 'draw':
-        for (let i = 0; i < e.n; i++) {
-          sfx.draw();
-          await fly({ from: DRAW_POS.clone().setY(0.3), to: scene.seatPos(e.p), duration: dur(bp(260, e.p)), arc: 0.8 });
+        scene.react(e.p, 'oops', dur(600));
+        {
+          const flights = [];
+          for (let i = 0; i < e.n; i++) {
+            sfx.draw();
+            if (e.p === viewer && !handHidden()) { drawFromNext = scene.screenOf(DRAW_POS); await sleep(120); continue; }
+            flights.push(fly({ from: DRAW_POS.clone().setY(0.3), to: scene.seatPos(e.p), duration: dur(bp(260, e.p)), arc: 0.8 }));
+            await sleep(bp(120, e.p)); // cartes une à une
+          }
+          await Promise.all(flights);
         }
         if (e.penalty) toast(solo() ? 'Oups, tu pioches 1 carte' : `Oups ${name}, tu pioches 1 carte`, 1800);
         else if (e.byCard) toast(`${g.players[e.p].emoji} ${soloMe(e.p) ? 'Tu pioches' : name + ' pioche'} ${e.n} carte${e.n > 1 ? 's' : ''}`, bp(1600, e.p));
         break;
       case 'skip':
-        sfx.special();
+        sfx.special(); scene.react(e.p, 'oops', dur(700));
         toast(soloMe(e.p) ? 'Tu passes ton tour' : `${name} passe son tour`, bp(1400, e.p));
         await sleep(bp(450, e.p));
         break;
       case 'reverse':
-        sfx.special(); scene.setDir(e.dir); toast('Sens inverse !', bp(1400, e.p)); await sleep(bp(350, e.p));
+        sfx.special(); scene.setDir(e.dir); toast('Sens inverse !', bp(1400, e.p)); scene.boostDir(dur(1000)); await sleep(bp(250, e.p));
         break;
       case 'uno':
-        sfx.uno(); toast(`${soloMe(e.p) ? 'Toi' : name} : Uno !`, bp(1400, e.p)); if (g.players[e.p].human) speak('Uno !');
+        sfx.uno(); fx.uno(soloMe(e.p) ? 'Toi' : name); fx.unoText(e.p); toast(`${soloMe(e.p) ? 'Toi' : name} : Uno !`, bp(1400, e.p)); if (g.players[e.p].human) speak('Uno !');
         break;
       case 'unoForgot':
-        sfx.oops(); toast(e.penalty ? 'Il fallait dire Uno ! Tu piocheras 1 carte.' : 'N\'oublie pas de dire Uno ! La prochaine fois.', 2200);
+        sfx.oops(); fx.bubble(e.p, e.penalty ? 'Oups, il fallait dire Uno ! Tu piocheras 1 carte.' : 'Pense à dire Uno la prochaine fois !');
         await sleep(600);
         break;
       case 'reshuffle':
@@ -143,7 +165,14 @@ function release() { const w = waiting; waiting = null; if (w) w(); }
 async function doHumanPlay(card, color) {
   if (!myTurn()) return false;
   busy = true;
-  document.querySelector(`.card[data-id="${card.id}"]`)?.classList.add('gone');
+  const el = document.querySelector(`.card[data-id="${card.id}"]`);
+  if (el) {
+    const r = el.getBoundingClientRect();
+    flyFromScreen = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    launchCard(el);
+    await sleep(120);
+    el.classList.add('gone');
+  }
   const ev = play(g, card.id, { color, uno: armedUno });
   armedUno = false;
   await applyEvents(ev);
@@ -193,6 +222,7 @@ async function botTurn() {
   busy = true;
   refreshViews();
   $('status').textContent = `${g.players[p].emoji} ${g.players[p].name} réfléchit…`;
+  scene.react(p, 'think', dur(bp(850, p)));
   await sleep(bp(850, p));
   let d = botDecision(g);
   if (d.action === 'draw') {
@@ -246,7 +276,8 @@ async function finish(id) {
   if (id !== run) return;
   const winner = g.players[g.winner];
   const humanWon = winner.human;
-  showRanking(g.ranking, humanWon, humanWon && !solo() ? `Bravo ${winner.name} !` : undefined);
+  scene.react(g.winner, 'win', dur(1800));
+  showRanking(g.ranking, humanWon, humanWon && !solo() ? `Bravo ${winner.name} !` : undefined, (em) => avatarSrc[em]);
   if (humanWon) { sfx.win(); confetti(90); speak(solo() ? 'Bravo, tu as gagné !' : `Bravo ${winner.name} !`); }
   else { sfx.lose(); confetti(30); speak(`${g.players[g.winner].name} a gagné. Bien joué !`); }
 }
@@ -278,9 +309,14 @@ renderSeats($('seat-list'), settings.seats, settings.players, () => {});
 $('btn-ready').addEventListener('click', () => ready());
 setChips('opt-diff', (v) => { settings.difficulty = v; });
 setChips('opt-say', (v) => { settings.sayCards = v === '1'; if (!settings.sayCards) stopSpeech(); });
+loadImage('table').then((im) => { if (im) scene.setTable(im); });
+['🦊:av-renard', '🐼:av-panda', '🐨:av-koala', '🦉:av-hibou'].forEach((kv) => {
+  const [emoji, key] = kv.split(':');
+  loadImage(key).then((im) => { if (im) { avatarSrc[emoji] = im.src; scene.setAvatarImages({ [emoji]: im }); } });
+});
 loadImage('titre').then((im) => { if (im) { $('hero').src = im.src; $('hero').classList.remove('hidden'); } });
-$('btn-play').addEventListener('click', () => { fast = false; startGame(); });
-$('btn-again').addEventListener('click', () => { fast = false; startGame(); });
+$('btn-play').addEventListener('click', () => { fast = false; setHandFast(false); startGame(); });
+$('btn-again').addEventListener('click', () => { fast = false; setHandFast(false); startGame(); });
 $('btn-home').addEventListener('click', () => { run++; ready(); $('end').classList.add('hidden'); $('home').classList.remove('hidden'); });
 $('btn-menu').addEventListener('click', () => { run++; ready(); busy = false; waiting = null; $('home').classList.remove('hidden'); });
 $('btn-rules').addEventListener('click', () => speak(rulesText()));
@@ -308,7 +344,26 @@ window.__uno = {
   get game() { return g; },
   settings,
   start: (o) => { startGame(o); return window.__uno.state(); },
-  setFast: (b = true) => { fast = !!b; },
+  setFast: (b = true) => { fast = !!b; setHandFast(fast); },
+  // déclenche un effet par script : skip {p}, reverse {dir}, draw2, draw4, wild {color}, uno {p}, podium
+  fx: async (name, o = {}) => {
+    const p = o.p ?? 1;
+    if (name === 'skip') return fx.power('skip', { p, color: o.color || 'R' });
+    if (name === 'reverse') { scene.setDir(o.dir ?? -1); scene.boostDir(1000); return fx.power('reverse', { p, color: o.color || 'B' }); }
+    if (name === 'draw2') return fx.power('draw2', { p, color: o.color || 'Y' });
+    if (name === 'draw4') return fx.power('draw4', { p, color: o.color || 'G' });
+    if (name === 'wild') { scene.shockwave(COLOR_HEX[o.color || 'B']); return fx.power('wild', { p, color: o.color || 'B' }); }
+    if (name === 'unotext') return fx.unoText(p);
+    if (name === 'uno') return fx.uno(g?.players[p]?.name || 'Toi');
+    if (name === 'chooser') { $('chooser').classList.remove('hidden'); return true; }
+    if (name === 'bubble') return fx.bubble(p, o.text || 'Pense à dire Uno !');
+    if (name === 'podium') {
+      const list = g.players.map((pl, i) => ({ p: i, name: pl.name, emoji: pl.emoji, left: pl.hand.length, human: pl.human })).sort((a, b) => a.left - b.left);
+      showRanking(list, list[0].human, undefined, (em) => avatarSrc[em]);
+      return true;
+    }
+    return false;
+  },
   isMyTurn: () => myTurn(),
   refresh: () => refreshViews(),
   legal: () => (g ? legalMoves(g, viewer).map((c) => c.id) : []),

@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import { createAvatars } from './avatars.js';
 import { faceCanvas, backCanvas, cardKey, COLOR_HEX } from './cardart.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
-const SEATS = { 1: [[0, -3.3]], 2: [[-3.2, -0.7], [3.2, -0.7]], 3: [[-3.2, 0.1], [0, -3.3], [3.2, 0.1]] };
+const SEATS = { 1: [[0, -3.4]], 2: [[-3.3, -0.7], [3.3, -0.7]], 3: [[-3.4, 0.1], [0, -3.4], [3.4, 0.1]] };
 export const HUMAN_POS = new THREE.Vector3(0, 0.6, 4.4);
 export const DISCARD_POS = new THREE.Vector3(1.1, 0, 0);
 export const DRAW_POS = new THREE.Vector3(-1.1, 0, 0);
@@ -36,7 +37,7 @@ function labelSprite() {
   const cv = document.createElement('canvas'); cv.width = 320; cv.height = 96;
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false }));
-  s.scale.set(1.95, 0.585, 1); s.renderOrder = 10;
+  s.scale.set(1.75, 0.525, 1); s.renderOrder = 10;
   s.userData = { cv, t };
   return s;
 }
@@ -49,8 +50,6 @@ function drawLabel(sprite, emoji, name, count, active) {
   x.fillStyle = '#2b2d42'; x.textBaseline = 'middle';
   x.font = '48px sans-serif'; x.textAlign = 'left'; x.fillText(emoji, 20, 50);
   x.font = '800 36px "Trebuchet MS", Arial, sans-serif'; x.fillText(name, 82, 50);
-  x.textAlign = 'right'; x.font = '900 40px "Trebuchet MS", Arial, sans-serif';
-  x.fillStyle = '#c0392b'; x.fillText(String(count), 296, 52);
   t.needsUpdate = true;
 }
 
@@ -69,7 +68,8 @@ export function createScene(stage, canvas) {
   scene.add(sun);
 
   // table
-  const felt = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.3, 64), new THREE.MeshStandardMaterial({ color: 0x1f9d6b, roughness: 0.95 }));
+  const feltMat = new THREE.MeshStandardMaterial({ color: 0x1f9d6b, roughness: 0.95 });
+  const felt = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 4.8, 0.3, 64), [new THREE.MeshStandardMaterial({ color: 0x1f9d6b, roughness: 0.95 }), feltMat, new THREE.MeshStandardMaterial({ color: 0x1f9d6b })]);
   felt.position.y = -0.16; felt.receiveShadow = true; scene.add(felt);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(4.8, 0.2, 16, 80), new THREE.MeshStandardMaterial({ color: 0x8a4b2a, roughness: 0.6 }));
   rim.rotation.x = Math.PI / 2; rim.position.y = -0.02; scene.add(rim);
@@ -130,6 +130,7 @@ export function createScene(stage, canvas) {
   function clearDiscard() { discardMeshes.forEach((m) => scene.remove(m)); discardMeshes = []; }
 
   // sièges des robots
+  const avatars = createAvatars(scene);
   let seats = [];
   function clearSeats() { seats.forEach((s) => scene.remove(s.group)); seats = []; }
   function setupSeats(players) {
@@ -141,11 +142,12 @@ export function createScene(stage, canvas) {
       group.rotation.y = Math.atan2(-x, -z); // le +z local regarde le centre
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.06, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 }));
       ring.rotation.x = Math.PI / 2; ring.position.y = 0.02; group.add(ring);
-      const fan = new THREE.Group(); group.add(fan);
-      const label = labelSprite(); label.position.set(0, 0.9, -1.15); group.add(label);
+      const fan = new THREE.Group(); fan.position.z = 0.45; group.add(fan);
+      const label = labelSprite(); group.add(label);
       scene.add(group);
       seats.push({ group, fan, ring, label, pl, count: -1, active: false, world: new THREE.Vector3(x, 0.3, z) });
     });
+    avatars.setup(seats, players);
   }
   function setBotCount(i, n, active) {
     const s = seats[i]; if (!s) return;
@@ -153,13 +155,14 @@ export function createScene(stage, canvas) {
       s.fan.clear();
       const shown = Math.min(n, 12);
       for (let k = 0; k < shown; k++) {
-        const m = cardMesh(null); m.scale.setScalar(0.62);
+        const m = cardMesh(null); m.scale.setScalar(0.5);
         const t = shown === 1 ? 0 : k / (shown - 1) - 0.5;
         m.position.set(t * Math.min(2.2, shown * 0.32), 0.05 + k * 0.012, -Math.cos(t * 1.4) * 0.1);
         m.rotation.y = -t * 0.9;
         s.fan.add(m);
       }
     }
+    avatars.setCount(i, n, active);
     if (s.count !== n || s.active !== active) drawLabel(s.label, s.pl.emoji, s.pl.name, n, active);
     s.count = n; s.active = active;
   }
@@ -167,11 +170,12 @@ export function createScene(stage, canvas) {
 
   // vols de cartes
   const flights = [];
-  function fly({ from, to, card = null, duration = 420, spin = 0, arc = 1.2 }) {
+  function fly({ from, to, card = null, duration = 420, spin = 0, arc = 1.2, land = false }) {
     return new Promise((resolve) => {
       if (duration <= 0) { resolve(); return; }
       const m = cardMesh(card); scene.add(m);
-      flights.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, t0: performance.now(), resolve });
+      m.userData.hex = card && card.color ? COLOR_HEX[card.color] : '#ffd23f';
+      flights.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, land, t0: performance.now(), resolve });
     });
   }
   function updateFlights(now) {
@@ -182,8 +186,77 @@ export function createScene(stage, canvas) {
       f.m.position.y += Math.sin(k * Math.PI) * f.arc;
       f.m.rotation.y = f.spin * e;
       f.m.rotation.x = Math.sin(k * Math.PI) * 0.4;
-      if (k >= 1) { scene.remove(f.m); flights.splice(i, 1); f.resolve(); }
+      if (k >= 1) {
+        scene.remove(f.m); flights.splice(i, 1);
+        if (f.land) { burst(f.to, f.m.userData.hex); landFx = { t0: now }; }
+        f.resolve();
+      }
     }
+  }
+
+  // particules (pool) et atterrissage en squash
+  const pGeo = new THREE.SphereGeometry(0.06, 6, 6);
+  const pool = Array.from({ length: 28 }, () => {
+    const m = new THREE.Mesh(pGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }));
+    m.visible = false; scene.add(m); return { m, v: new THREE.Vector3(), life: 0 };
+  });
+  function burst(at, hex) {
+    let n = 0;
+    for (const p of pool) {
+      if (p.life > 0 || n >= 14) continue;
+      n++;
+      const a = Math.random() * Math.PI * 2, sp = 1.2 + Math.random() * 1.6;
+      p.v.set(Math.cos(a) * sp, 1.8 + Math.random() * 1.6, Math.sin(a) * sp);
+      p.m.position.set(at.x, 0.25, at.z); p.m.material.color.set(Math.random() < 0.5 ? hex : '#ffffff');
+      p.m.visible = true; p.life = 0.6;
+    }
+  }
+  let landFx = null;
+  let boost = 0;
+  const boostDir = (ms) => { boost = ms / 1000; };
+  const shock = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+  shock.rotation.x = -Math.PI / 2; shock.position.set(DISCARD_POS.x, 0.07, DISCARD_POS.z); shock.visible = false; scene.add(shock);
+  let shockT0 = -1;
+  function shockwave(hex) { shock.material.color.set(hex || '#ffffff'); shockT0 = performance.now(); shock.visible = true; }
+  function updateFx(now, dt) {
+    for (const p of pool) {
+      if (p.life <= 0) continue;
+      p.life -= dt; p.v.y -= 7 * dt; p.m.position.addScaledVector(p.v, dt);
+      p.m.material.opacity = Math.max(0, p.life / 0.6); p.m.scale.setScalar(Math.max(0.2, p.life / 0.6));
+      if (p.life <= 0) p.m.visible = false;
+    }
+    if (shockT0 >= 0) {
+      const k = Math.min(1, (now - shockT0) / 800);
+      shock.scale.setScalar(0.6 + 8 * ease(k)); shock.material.opacity = 0.85 * (1 - k);
+      if (k >= 1) { shockT0 = -1; shock.visible = false; }
+    }
+    const top = discardMeshes[discardMeshes.length - 1];
+    if (landFx && top) {
+      const k = Math.min(1, (now - landFx.t0) / 260);
+      const q = Math.sin(k * Math.PI) * (1 - k);
+      top.scale.set(1 + 0.22 * q, 1 + 3 * q, 1 + 0.22 * q);
+      if (k >= 1) { top.scale.set(1, 1, 1); landFx = null; }
+    }
+  }
+
+  // point 3D sous un point de l'écran (plan horizontal à la hauteur y) ; null si hors portée
+  function worldFromScreen(sx, sy, y = 1) {
+    const r = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((sx - r.left) / r.width) * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+    const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, camera);
+    const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), new THREE.Vector3());
+    return hit && hit.distanceTo(camera.position) < 40 ? hit : null;
+  }
+
+  // table : texture du plateau (recadrage carré au centre de l'image)
+  function setTable(img) {
+    const t = new THREE.Texture(img);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    const ratio = img.width / img.height;
+    const z = 0.86; // zoom : le plateau de l'image remplit le disque
+    t.repeat.set(z / ratio, z); t.offset.set((1 - z / ratio) / 2, (1 - z) / 2);
+    t.needsUpdate = true;
+    feltMat.map = t; feltMat.color.set(0xffffff); feltMat.needsUpdate = true;
   }
 
   // cadrage selon le ratio
@@ -191,7 +264,7 @@ export function createScene(stage, canvas) {
     const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    const elev = 62 * Math.PI / 180;
+    const elev = (camera.aspect < 0.9 ? 78 : 62) * Math.PI / 180;
     const t = Math.tan((camera.fov * Math.PI) / 360);
     const needH = 5.3 / (t * camera.aspect) ;
     const needV = (5.3 * Math.sin(elev) + 1.0) / t;
@@ -205,7 +278,8 @@ export function createScene(stage, canvas) {
   let pulse = 0;
   function render(now = performance.now()) {
     const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; pulse += dt;
-    dirRing.rotation.y -= dir * dt * 0.6;
+    boost = Math.max(0, boost - dt);
+    dirRing.rotation.y -= dir * dt * (0.6 + 6 * Math.min(1, boost));
     if (popT0 >= 0) {
       const k = Math.min(1, (now - popT0) / 400);
       dirRing.scale.setScalar(1 + 0.25 * ease(k < 0.5 ? k * 2 : 2 - k * 2));
@@ -213,6 +287,8 @@ export function createScene(stage, canvas) {
     }
     seats.forEach((s) => { s.ring.material.opacity = s.active ? 0.55 + Math.sin(pulse * 6) * 0.35 : 0; });
     updateFlights(now);
+    updateFx(now, dt);
+    avatars.update(now);
     renderer.render(scene, camera);
   }
 
@@ -222,7 +298,7 @@ export function createScene(stage, canvas) {
   }
 
   return {
-    renderer, scene, camera, resize, render, fly, seatPos, setupSeats, setBotCount, setDiscard, clearDiscard, setColor, setDrawCount,
+    renderer, scene, camera, resize, render, fly, worldFromScreen, boostDir, shockwave, centerPos: () => new THREE.Vector3(0, 0, 0), setTable, react: avatars.react, setAvatarImages: avatars.setImages, seatPos, setupSeats, setBotCount, setDiscard, clearDiscard, setColor, setDrawCount,
     setDir, screenOf, drawPos: DRAW_POS, discardPos: DISCARD_POS,
   };
 }

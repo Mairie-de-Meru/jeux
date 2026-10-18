@@ -1,6 +1,4 @@
-import { faceURL } from '../render/cardart.js';
 import { defaultSeatName, MAX_NAME } from '../logic/turns.js';
-import { fitCardWidth } from '../logic/layout.js';
 import { COLOR_NAMES } from '../logic/game.js';
 
 export const $ = (id) => document.getElementById(id);
@@ -24,44 +22,7 @@ export function cardLabel(card, color) {
   }
 }
 
-const sortKey = (c) => ({ R: 0, B: 1, G: 2, Y: 3 }[c.color] ?? 4) * 100 + (c.kind === 'num' ? c.value : 20 + ['skip', 'rev', 'draw2', 'wild', 'wild4'].indexOf(c.kind));
-
-export function renderHand(container, hand, { legalIds, highlight, onTap }) {
-  container.textContent = '';
-  const sorted = [...hand].sort((a, b) => sortKey(a) - sortKey(b));
-  for (const card of sorted) {
-    const b = document.createElement('button');
-    b.className = 'card';
-    b.dataset.id = card.id;
-    b.setAttribute('aria-label', cardLabel(card, null).replace(/ null$/, ''));
-    if (highlight) b.classList.add(legalIds.has(card.id) ? 'playable' : 'dim');
-    const img = document.createElement('img');
-    img.src = faceURL(card); img.alt = ''; img.draggable = false;
-    b.appendChild(img);
-    b.addEventListener('click', () => onTap(card, b));
-    container.appendChild(b);
-  }
-  fitHand(container);
-  if (!container._ro && window.ResizeObserver) {
-    container._ro = new ResizeObserver(() => fitHand(container));
-    container._ro.observe(container);
-  }
-}
-
-// Ajuste --card-w pour que la main tienne sans défilement (rétrécit avant de passer en 2e rangée).
-export function fitHand(container) {
-  const n = container.children.length;
-  container.style.removeProperty('--card-w');
-  if (!n) return;
-  const cs = getComputedStyle(container);
-  const px = (v) => parseFloat(v) || 0;
-  const boxW = container.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight);
-  const boxH = container.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom);
-  const maxW = container.firstElementChild.offsetWidth;
-  if (boxW <= 0 || boxH <= 0 || !maxW) return;
-  const w = fitCardWidth({ n, boxW, boxH, gap: px(cs.columnGap) || 6, maxW, minW: 36 });
-  if (w < maxW) container.style.setProperty('--card-w', w + 'px');
-}
+export const sortKey = (c) => ({ R: 0, B: 1, G: 2, Y: 3 }[c.color] ?? 4) * 100 + (c.kind === 'num' ? c.value : 20 + ['skip', 'rev', 'draw2', 'wild', 'wild4'].indexOf(c.kind));
 
 export function setChips(groupId, onPick) {
   const g = $(groupId);
@@ -72,7 +33,26 @@ export function setChips(groupId, onPick) {
   });
 }
 
-export function showRanking(list, winnerHuman, title) {
+// Podium : colonnes 2-1-3(-4), marches qui montent, avatars (image ou emoji).
+export function renderPodium(box, list, avatarOf) {
+  box.textContent = '';
+  const order = list.length >= 3 ? [1, 0, 2, 3] : [1, 0];
+  const heights = [100, 72, 52, 38];
+  order.forEach((idx) => {
+    const r = list[idx]; if (!r) return;
+    const col = document.createElement('div'); col.className = 'pod-col'; col.dataset.place = idx + 1;
+    const src = avatarOf && avatarOf(r.emoji);
+    const av = document.createElement('div'); av.className = 'pod-av';
+    if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; av.appendChild(im); } else av.textContent = r.emoji;
+    const nm = document.createElement('div'); nm.className = 'pod-name'; nm.textContent = r.name;
+    const st = document.createElement('div'); st.className = 'pod-step'; st.textContent = ['🥇', '🥈', '🥉', '4'][idx];
+    st.style.setProperty('--h', heights[idx] + 'px'); st.style.setProperty('--d', (3 - Math.min(idx, 3)) * 0.35 + 's');
+    col.append(av, nm, st); box.appendChild(col);
+  });
+}
+
+export function showRanking(list, winnerHuman, title, avatarOf) {
+  renderPodium($('podium'), list, avatarOf);
   const medals = ['🥇', '🥈', '🥉', '🏅'];
   $('ranking').textContent = '';
   list.forEach((r, i) => {

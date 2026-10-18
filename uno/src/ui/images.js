@@ -1,5 +1,12 @@
 // Manifeste des images présentes (aucune requête pour un fichier absent).
-export const IMAGES = { titre: './assets/img/titre.jpg' };
+export const IMAGES = {
+  titre: './assets/img/titre.jpg',
+  table: './assets/img/table.jpg',
+  'av-renard': './assets/img/av-renard.png',
+  'av-panda': './assets/img/av-panda.png',
+  'av-koala': './assets/img/av-koala.png',
+  'av-hibou': './assets/img/av-hibou.png',
+};
 
 export function loadImage(key) {
   return new Promise((resolve) => {
