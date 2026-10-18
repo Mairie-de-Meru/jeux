@@ -57,7 +57,6 @@ export function createScene(canvas, container) {
   base.position.y = -0.25; base.receiveShadow = true; board.add(base);
   const inner = SIZE - 2 * TILE_H;
   const centerCv = centerCanvas(); const centerTex = new THREE.CanvasTexture(centerCv); centerTex.colorSpace = THREE.SRGBColorSpace; centerTex.anisotropy = 4;
-  getImage('mascotte').then((img) => { if (!img) return; const x = centerCv.getContext('2d'); const k = 190 / Math.max(img.width, img.height) * 1.25; x.drawImage(img, 290 - img.width * k / 2, 730 - img.height * k / 2, img.width * k, img.height * k); centerTex.needsUpdate = true; });
   const center = new THREE.Mesh(new THREE.PlaneGeometry(inner, inner), new THREE.MeshStandardMaterial({ map: centerTex, roughness: 0.8 }));
   center.rotation.x = -Math.PI / 2; center.position.y = 0.012; center.receiveShadow = true; board.add(center);
 
@@ -128,9 +127,9 @@ export function createScene(canvas, container) {
     const dist = Math.min(30, Math.max(7, 8.5 / (Math.tan(rad(19)) * aspect * free.w)));
     const p = pawns[cam.follow]; const pk = cam.peek && performance.now() < cam.peek.until ? cam.peek : null;
     if (pk) return { tx: pk.x, tz: pk.z, dist: Math.min(30, Math.max(7, 7 / (Math.tan(rad(19)) * aspect * free.w))), el: rad(58), ox: free.cx, oy: free.cy };
-    if (free.H > free.W) { // portrait : vue plus plongeante, cible ramenée vers le centre pour que le plateau remplisse l'écran
+    if (free.H > free.W) { // portrait : vue plus plongeante, pion au centre de la zone libre
       const pd = Math.min(36, Math.max(7, 10.5 / (Math.tan(rad(19)) * aspect * free.w)));
-      return { tx: p ? p.position.x * 0.75 : 0, tz: p ? p.position.z * 0.5 : 0, dist: pd, el: rad(66), ox: free.cx, oy: free.cy + free.h * 0.14 };
+      return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist: pd, el: rad(66), ox: free.cx, oy: free.cy };
     }
     return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist, el: rad(54), ox: free.cx, oy: free.cy };
   }

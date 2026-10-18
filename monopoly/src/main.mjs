@@ -218,6 +218,10 @@ async function toast(text, ms = 700) {
   // pastille juste sous la barre des joueurs (qui peut faire deux lignes en portrait)
   const tb = $('#topbar').getBoundingClientRect(); const ov = $('#overlay').getBoundingClientRect();
   t.style.top = `${Math.round(tb.bottom - ov.top + 6)}px`; t.classList.add('on');
+  // reste lisible après l'action (≥ 2,6 s, plus si long) sans ralentir le jeu ; un nouveau message remplace l'ancien
+  clearTimeout(G.toastTimer);
+  const linger = G.fast ? ms : Math.max(2600, text.length * 70) * (G.pace || 1);
+  G.toastTimer = setTimeout(() => t.classList.remove('on'), linger);
   await sleep(ms);
 }
 
@@ -260,7 +264,6 @@ async function playEvents(events, prev, next) {
       default: if (e.text) { sfx('click'); await toast(e.text, 600); }
     }
   }
-  $('#toast').classList.remove('on');
   G.scene.placePawns(next);
 }
 

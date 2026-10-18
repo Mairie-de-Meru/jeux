@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 
 export const AVATAR_KEYS = { '🦊': 'av-renard', '🐼': 'av-panda', '🐨': 'av-koala', '🦉': 'av-hibou' };
-const BASE = 2.32;       // hauteur du sprite (unités monde)
+const BASE = 1.95;       // hauteur du sprite (unités monde)
 const EDGE = 4.15;       // rayon du bord de la table où se tiennent les avatars
 
 function avatarCanvas(img, emoji) {

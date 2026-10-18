@@ -91,12 +91,13 @@ function renderHand() {
   let hcw;
   if (window.matchMedia && window.matchMedia('(orientation: landscape)').matches) {
     // paysage : au plus 2 rangées en éventail, cartes limitées par la hauteur disponible
-    const rows = n > 5 ? 2 : 1;
+    const low = window.matchMedia('(max-height: 500px)').matches; // paysage bas : une seule ligne, cartes qui se chevauchent
+    const rows = !low && n > 5 ? 2 : 1;
     const perRow = Math.ceil(n / rows);
     const byW = Math.floor(W / (0.84 * perRow + 0.16));
     const availH = window.innerHeight - 44 - 60 - 64 - 54 - 28;
     const byH = Math.floor((availH - 16 - (rows - 1) * 4) / (1.4 * rows));
-    hcw = Math.max(34, Math.min(72, byW, byH));
+    hcw = Math.max(low ? 22 : 34, Math.min(72, byW, byH));
   } else hcw = Math.max(30, Math.min(46, Math.floor(W / (0.84 * n + 0.16))));
   hand.style.setProperty('--hcw', hcw + 'px');
   const myTurn = humanTurn();
