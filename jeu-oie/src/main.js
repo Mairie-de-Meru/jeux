@@ -105,17 +105,23 @@ function showAnswers(list) {
     a.appendChild(b);
   }
 }
+let bubbleTok = 0;
 async function showBubble(kind, ms = 2600, ownerName = '') {
   const s = SPECIALS[kind];
   const b = $('bubble');
   b.querySelector('.b-emoji').textContent = s.emoji;
   b.querySelector('.b-title').textContent = s.title;
   b.querySelector('.b-text').textContent = s.say;
+  // pastille translucide en haut du plateau, fondu court ; un nouveau message remplace l'ancien
+  const tok = ++bubbleTok;
   b.classList.remove('hidden');
+  requestAnimationFrame(() => { if (tok === bubbleTok) b.classList.add('on'); });
   sfx.special();
   say((ownerName ? ownerName + ' : ' : '') + s.say);
   await sleep(ms);
-  b.classList.add('hidden');
+  if (tok !== bubbleTok) return;
+  b.classList.remove('on');
+  setTimeout(() => { if (tok === bubbleTok) b.classList.add('hidden'); }, 200);
 }
 function confetti() {
   const em = ['🎉', '⭐', '🌟', '🎈', '🦆'];
@@ -392,7 +398,7 @@ function startGame(o = {}) {
   dice.setCount(G.diceCount);
   showAnswers(null);
   showCounter(null);
-  $('bubble').classList.add('hidden');
+  $('bubble').classList.add('hidden'); $('bubble').classList.remove('on'); bubbleTok++;
   showTurnBar(null);
   $('menu').classList.add('hidden');
   $('end').classList.add('hidden');
