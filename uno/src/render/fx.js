@@ -75,7 +75,7 @@ export function createFx({ root, scene, dur, avatarOf }) {
 
   function uno(name) {
     if (off()) return;
-    const el = mk('fx-uno', `<div class="rays"></div><div class="word">${['U', 'N', 'O', '!'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join('')}</div><small>${name || ''}</small>`, 1250);
+    const el = mk('fx-uno', `<div class="word">${['U', 'N', 'O', '!'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join('')}</div>`, 1250);
     const r = el.getBoundingClientRect();
     burst({ x: r.width / 2, y: r.height / 2 }, 22, Math.min(r.width, r.height) * 0.4);
   }
@@ -84,7 +84,12 @@ export function createFx({ root, scene, dur, avatarOf }) {
   function unoText(p) {
     if (off()) return;
     const el = mk('fx-unotext', ['U', 'N', 'O', '!'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join(''), 1500);
-    placeAt(el, seatPoint(p, p === 0 ? -34 : -14));
+    if (p === 0) return placeAt(el, seatPoint(0, -34));
+    // robot du haut : à côté de l'avatar, au-delà de la bulle ; robots de côté : au-dessus de la tête, vers le centre
+    const pt = seatPoint(p, 0), side = pt.x > innerWidth / 2 ? -1 : 1;
+    const r = el.getBoundingClientRect(), w = r.width / 2 + 8, top = pt.y < innerHeight * 0.3;
+    const x = top ? pt.x + side * (60 + w) : pt.x + side * 40;
+    placeAt(el, { x: Math.max(w, Math.min(innerWidth - w, x)), y: top ? pt.y + 10 : Math.max(r.height / 2 + 60, pt.y - 40) });
   }
 
   function bubble(p, text, ms = 2200) {
