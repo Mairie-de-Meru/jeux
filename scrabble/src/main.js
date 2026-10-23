@@ -4,6 +4,7 @@ import { createGame, setBigDict, HUMAN_AVATARS, evaluateMove, applyMove, passTur
 import { PALIERS } from './logic/board.js';
 import { pointsOf } from './logic/bag.js';
 import { playableCells } from './logic/targets.js';
+import { autoZoomWanted, zoomAnchor } from './logic/zoom.js';
 import { sounds, setMuted } from './audio.js';
 import * as speech from './speech.js';
 import { $, showMsg, showPop, seg, confetti } from './ui/ui.js';
@@ -24,7 +25,7 @@ fetch('./assets/lexique.txt').then((r) => (r.ok ? r.text() : Promise.reject(new 
   if (S.game) setBigDict(S.game, lex.set);
 }).catch((err) => console.warn('lexique indisponible, liste enfant seule', err));
 
-const S = { shown: 0, passScreen: false, game: null, pending: [], selected: null, view: [], busy: true, lastCells: [], token: 0, hint: null, swapSel: new Set(), drag: null };
+const S = { shown: 0, passScreen: false, game: null, pending: [], selected: null, view: [], busy: true, lastCells: [], token: 0, hint: null, swapSel: new Set(), drag: null, autoZoom: false };
 
 const view = new BoardView($('c'), $('stage'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -137,24 +138,51 @@ function recallAll(silent = false) {
   refresh();
 }
 
-function focusCells() { return S.pending.length ? S.pending.map((p) => [p.r, p.c]) : S.lastCells; }
-function syncZoomUi() { $('btn-zoom').textContent = view.focus ? '🗺' : '🔍'; $('pan').classList.toggle('hidden', !view.focus); }
+// Cases à montrer en zoom : lettres en cours, dernier mot, étoile, sinon cases jouables proches du centre.
+function focusCells() {
+  const g = S.game;
+  const playable = !S.pending.length && !S.lastCells.length && !g.firstMove ? playableCells(g.grid, [], g.center, false) : [];
+  return zoomAnchor({ pending: S.pending, lastCells: S.lastCells, firstMove: g.firstMove, center: g.center, playable });
+}
+// Bouton 🔍/🗺 masqué quand le plateau entier est déjà assez grand ; flèches visibles en zoom.
+function syncZoomUi() {
+  $('btn-zoom').classList.toggle('hidden', !view.zoomUseful() && !view.focus);
+  $('btn-zoom').textContent = view.focus ? '🗺' : '🔍';
+  $('pan').classList.toggle('hidden', !view.focus);
+}
+view.onResize = syncZoomUi;
 function refocus() { if (view.focus) view.setFocus(true, focusCells()); }
+// Zoom automatique sur petit écran quand l'enfant prend une lettre (sélection ou glisser).
+function autoZoomIn() {
+  if (view.focus || !autoZoomWanted(view.fullPx) || S.busy || !isHumanTurn()) return;
+  view.setFocus(true, focusCells());
+  S.autoZoom = view.focus;
+  syncZoomUi();
+}
+// Retour à la vue d'ensemble (après Valider, Reprendre ou en fin de tour), seulement si le zoom était automatique.
+function autoZoomOut() {
+  if (!S.autoZoom) return;
+  S.autoZoom = false;
+  view.setFocus(false);
+  syncZoomUi();
+}
 
 function tapRack(idx) {
   if (S.busy || !isHumanTurn()) return;
   sounds.tap();
   S.selected = S.selected === idx ? null : idx;
   renderRack();
+  if (S.selected !== null) autoZoomIn();
 }
 
 function boardTap(x, y) {
-  if (S.busy || !isHumanTurn()) return;
+  if (S.busy || !isHumanTurn()) return 'none';
   const hit = view.pickCell(x, y, isFree, 40);
-  if (S.selected !== null && hit) { placePending(hit.r, hit.c, S.selected); return; }
+  if (S.selected !== null && hit) { placePending(hit.r, hit.c, S.selected); return 'place'; }
   const mine = view.pickExact(x, y, (r, c) => S.pending.some((p) => p.r === r && p.c === c), 28);
-  if (mine) { removePending(mine.r, mine.c); return; }
-  if (S.selected === null) showMsg('Choisis une lettre en bas, puis touche une case.', { ms: 2800 });
+  if (mine) { removePending(mine.r, mine.c); return 'remove'; }
+  if (S.selected === null) { showMsg('Choisis une lettre en bas, puis touche une case.', { ms: 2800 }); return 'msg'; }
+  return 'none';
 }
 
 // ---------- tour de l'enfant ----------
@@ -183,10 +211,11 @@ async function submit() {
     S.busy = true; renderButtons();
     const t = ++S.token;
     await sleep(900);
-    if (t === S.token) { recallAll(true); S.busy = false; refresh(); }
+    if (t === S.token) { recallAll(true); autoZoomOut(); S.busy = false; refresh(); }
     return res;
   }
   S.busy = true;
+  autoZoomOut();
   const cells = S.pending.map((p) => [p.r, p.c]);
   const out = applyMove(S.game, placements);
   S.pending = [];
@@ -220,6 +249,7 @@ function celebrate(out, who) {
 
 function afterTurn() {
   S.token++;
+  autoZoomOut();
   if (S.game.over) return endGame();
   refresh();
   const cur = S.game.players[S.game.turn];
@@ -418,7 +448,7 @@ function startGame(opts = {}) {
   const seats = legacy ? null : (opts.seats || seatsForGame());
   S.game = createGame({ palier: settings.palier, bots: settings.bots, difficulty: settings.difficulty, seed: opts.seed ?? (Date.now() & 0x7fffffff), allBots: !!opts.allBots, seats, bigDict: lex.set });
   S.shown = 0; S.passScreen = false; $('pass').classList.add('hidden');
-  S.pending = []; S.selected = null; S.lastCells = []; S.hint = null;
+  S.pending = []; S.selected = null; S.lastCells = []; S.hint = null; S.autoZoom = false;
   view.setupBoard(S.game.size, S.game.premium);
   syncZoomUi();
   resetView();
@@ -487,12 +517,12 @@ $('btn-voice').onclick = () => {
   speech.setEnabled(on);
   setMuted(false);
 };
-$('btn-zoom').onclick = () => { sounds.tap(); view.setFocus(!view.focus, focusCells()); syncZoomUi(); };
+$('btn-zoom').onclick = () => { sounds.tap(); S.autoZoom = false; view.setFocus(!view.focus, focusCells()); syncZoomUi(); };
 for (const [id, dr, dc] of [['pan-up', -3, 0], ['pan-down', 3, 0], ['pan-left', 0, -3], ['pan-right', 0, 3]]) {
   $(id).onclick = () => { sounds.tap(); view.panFocus(dr, dc); };
 }
 $('btn-ok').onclick = submit;
-$('btn-recall').onclick = () => { if (!S.busy) recallAll(); };
+$('btn-recall').onclick = () => { if (!S.busy) { recallAll(); autoZoomOut(); } };
 $('btn-shuffle').onclick = shuffleRack;
 $('btn-swap').onclick = openSwap;
 $('btn-hint').onclick = hint;
@@ -502,15 +532,67 @@ $('swap-cancel').onclick = () => $('swap').classList.add('hidden');
 $('end-again').onclick = () => { sounds.tap(); startGame(); };
 $('end-menu').onclick = () => { $('end').classList.add('hidden'); $('btn-resume').classList.add('hidden'); $('home').classList.remove('hidden'); };
 
-// tap sur le plateau
+// tap sur le plateau ; double-tap = zoom sur la case ; deux doigts = pincement (zoom / vue d'ensemble)
 let tapStart = null;
+let lastTap = null;
+let pinch = null;
+const ptrs = new Map();
 const cv = $('c');
-cv.addEventListener('pointerdown', (e) => { tapStart = { x: e.clientX, y: e.clientY }; });
+const pdist = () => { const [a, b] = [...ptrs.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
+function cancelDrag() {
+  const d = S.drag;
+  if (!d) return;
+  S.drag = null;
+  if (d.active) { d.el.remove(); view.clearGhosts(); view.setMarker(null); }
+  try { rackEl.releasePointerCapture(d.id); } catch (err) { /* ok */ }
+}
+function toggleZoomAt(x, y) {
+  if (!view.zoomUseful() && !view.focus) return;
+  sounds.tap();
+  S.autoZoom = false;
+  if (view.focus) view.setFocus(false);
+  else { const cell = view.pickCell(x, y, () => true, 80); if (cell) view.zoomAt(cell.r, cell.c); }
+  syncZoomUi();
+}
+cv.addEventListener('pointerdown', (e) => {
+  if (e.isPrimary) ptrs.clear(); // pointeur principal : aucun autre doigt actif, on oublie d'éventuels restes
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (ptrs.size === 1 && !(S.drag && e.pointerType !== 'mouse')) { tapStart = { x: e.clientX, y: e.clientY }; return; }
+  // deuxième pointeur (ou doigt posé pendant un glisser) : geste, on annule la sélection et le glisser
+  tapStart = null;
+  lastTap = null;
+  cancelDrag();
+  if (S.selected !== null) { S.selected = null; renderRack(); }
+  view.setMarker(null);
+  pinch = ptrs.size >= 2 ? { d0: pdist(), done: false } : null;
+});
+cv.addEventListener('pointermove', (e) => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (!pinch || pinch.done || ptrs.size < 2 || !(pinch.d0 > 0)) return;
+  const k = pdist() / pinch.d0;
+  const [a, b] = [...ptrs.values()];
+  if (k > 1.25 && !view.focus) { pinch.done = true; toggleZoomAt((a.x + b.x) / 2, (a.y + b.y) / 2); }
+  else if (k < 0.8 && view.focus) { pinch.done = true; toggleZoomAt(0, 0); }
+});
+const ptrEnd = (e) => { ptrs.delete(e.pointerId); if (!ptrs.size) pinch = null; };
+cv.addEventListener('pointercancel', (e) => { ptrEnd(e); tapStart = null; });
 cv.addEventListener('pointerup', (e) => {
+  ptrEnd(e);
   if (!tapStart) return;
   const moved = Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y);
   tapStart = null;
-  if (moved < 12) boardTap(e.clientX, e.clientY);
+  if (moved >= 12) return;
+  const did = boardTap(e.clientX, e.clientY);
+  // double-tap : seulement si le premier tap n'a ni posé ni repris de lettre (aucune gêne pour la pose)
+  const now = performance.now();
+  if ((did === 'none' || did === 'msg') && lastTap && now - lastTap.t < 350 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+    if (lastTap.msg || did === 'msg') showMsg('');
+    lastTap = null;
+    toggleZoomAt(e.clientX, e.clientY);
+    return;
+  }
+  lastTap = did === 'none' || did === 'msg' ? { t: now, x: e.clientX, y: e.clientY, msg: did === 'msg' } : null;
 });
 // survol souris : marqueur sur la case sous le curseur quand une lettre est choisie
 cv.addEventListener('pointermove', (e) => {
@@ -540,6 +622,7 @@ rackEl.addEventListener('pointermove', (e) => {
     document.body.appendChild(d.el);
     S.selected = d.idx;
     renderRack();
+    autoZoomIn();
   }
   if (d.active) {
     const off = dragOffset(e);
@@ -617,6 +700,11 @@ window.__scrabble = {
   lexique: () => ({ loaded: lex.loaded, size: lex.set ? lex.set.size : 0 }),
   targets: () => targetCells.map(([r, c]) => [r, c]),
   cellPx: () => view.cellPx(),
+  get fullPx() { return view.fullPx; },
+  get focus() { return view.focus; },
+  get autoZoom() { return S.autoZoom; },
+  zoomAt: (r, c) => { S.autoZoom = false; view.zoomAt(r, c); syncZoomUi(); },
+  overview: () => { S.autoZoom = false; view.setFocus(false); syncZoomUi(); },
   pan: (dr, dc) => view.panFocus(dr, dc),
   waitIdle: async () => { for (let i = 0; i < 200 && S.busy; i++) await sleep(100); return !S.busy; },
   endGame,

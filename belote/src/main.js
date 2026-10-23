@@ -324,6 +324,7 @@ async function humanStep() {
 }
 window.__belote = {
   get game() { return g; },
+  scene,
   settings,
   start: (o) => { startGame(o); return state(); },
   state,

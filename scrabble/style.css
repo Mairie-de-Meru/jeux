@@ -33,8 +33,8 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 #panel { padding: 4px 8px 8px; background: rgba(30, 20, 80, 0.55); display: flex; flex-direction: column; gap: 6px; align-items: center; }
 #status { min-height: 20px; color: #fff; font-weight: 700; font-size: 15px; text-align: center; }
 #rack { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 6px; border-radius: 14px; background: #8a5426; box-shadow: inset 0 3px 8px rgba(0,0,0,0.4); max-width: 100%; }
-.tile { position: relative; width: clamp(48px, 9vmin, 70px); height: clamp(48px, 9vmin, 70px); border: 0; border-radius: 12px; background: linear-gradient(145deg, #fbe3a8, #efc476); border-bottom: 4px solid #c9964a; color: #4a2a10; font: 900 clamp(26px, 5.4vmin, 40px)/1 "Trebuchet MS", system-ui, sans-serif; cursor: grab; touch-action: none; padding: 0; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
-.tile small { position: absolute; right: 5px; bottom: 3px; font-size: 12px; font-weight: 800; }
+.tile { --t: min(70px, max(9vmin, calc((100vw - 34px) / 7))); position: relative; width: var(--t); height: var(--t); border: 0; border-radius: 12px; background: linear-gradient(145deg, #fbe3a8, #efc476); border-bottom: 4px solid #c9964a; color: #4a2a10; font: 900 max(22px, calc(var(--t) * 0.56))/1 "Trebuchet MS", system-ui, sans-serif; cursor: grab; touch-action: none; padding: 0; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
+.tile small { position: absolute; right: 4px; bottom: 2px; font-size: 14px; font-weight: 800; line-height: 1; }
 .tile.sel { transform: translateY(-6px); background: linear-gradient(145deg, #fff6b5, #ffd75c); border-bottom-color: #f08a1c; box-shadow: 0 0 0 3px #ff9f1c, 0 6px 10px rgba(0,0,0,0.35); }
 .tile.used { opacity: 0.22; pointer-events: none; }
 .tile.hint { box-shadow: 0 0 0 4px #22c55e, 0 0 16px #22c55e; animation: bob 0.8s ease-in-out infinite; }
@@ -76,15 +76,24 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 
 @media (min-width: 560px) { .chip .nm { display: inline; } }
 @media (max-height: 500px) and (orientation: landscape) {
-  #main { flex-direction: row; }
-  #panel { width: 262px; flex: none; overflow-y: auto; padding: 4px 6px; gap: 4px; justify-content: flex-start; }
-  #rack { display: grid; grid-template-columns: repeat(4, 48px); justify-content: center; }
-  .tile { width: 48px; height: 48px; font-size: 28px; }
+  /* paysage téléphone : plateau sur toute la hauteur, barre du haut et chevalet dans la colonne de droite */
+  #app { --side: clamp(304px, 40vw, 360px); display: grid; grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: auto minmax(0, 1fr); }
+  #main { display: contents; }
+  #topbar { grid-column: 2; grid-row: 1; justify-content: center; gap: 4px 6px; }
+  #stage { grid-column: 1; grid-row: 1 / span 2; }
+  #panel { grid-column: 2; grid-row: 2; min-height: 0; overflow-y: auto; padding: 4px 6px; gap: 4px; justify-content: flex-start; }
+  #rack { flex-wrap: nowrap; gap: 2px; padding: 4px; }
+  #rack .tile { --t: calc((var(--side) - 32px) / 7); }
+  .icon { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
+  #tools { gap: 4px; }
+  .chip .nm { display: none; }
+  .chip .av { font-size: 20px; }
+  .chip b { font-size: 16px; }
   #actions { gap: 4px; }
   .btn { font-size: 13px; padding: 4px; }
   #status { font-size: 13px; min-height: 16px; }
-  .chip { min-height: 36px; padding: 1px 8px 1px 4px; }
-  #topbar { padding: 2px 8px; }
+  .chip { min-height: 36px; padding: 1px 6px 1px 3px; gap: 2px; }
+  #topbar { padding: 2px 6px; }
   .panel { padding: 8px 12px; }
   .panel h1 { font-size: 30px; }
   .panel h3 { margin: 4px 0 2px; font-size: 13px; }

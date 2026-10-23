@@ -2,8 +2,10 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { boardTexture, tileTexture, woodTexture, backgroundTexture } from './textures.js';
+import { focusSpan, zoomUseful } from '../logic/zoom.js';
 
 const TILE_H = 0.3;
+const FRAME_M = 0.22; // marge de cadre en bois montrée autour des cases en vue d'ensemble
 const PENDING_LIFT = 0.1;
 const ease = {
   outCubic: (k) => 1 - Math.pow(1 - k, 3),
@@ -74,10 +76,13 @@ export class BoardView {
     this.focus = false;
     this.rect = null;
     this.target = new THREE.Vector3();
+    this.fullPx = 0; // px par case en vue d'ensemble (mesuré à chaque recadrage)
+    this.onResize = null; // rappel après recadrage (interface du zoom)
 
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(container);
     window.addEventListener('resize', () => this.resize());
+    window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 200));
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -120,6 +125,7 @@ export class BoardView {
     this.boardGroup.add(surf);
     this.focus = false;
     this.focusPan = null;
+    this.measureFull();
     this.fit();
   }
 
@@ -274,11 +280,38 @@ export class BoardView {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    // petit écran : caméra plus plongeante (cases plus grandes, moins de fuite) ; 74° sur grand écran
+    const k = Math.max(0, Math.min(1, (Math.min(w, h) - 380) / 320));
+    this.elev = ((82 - 8 * k) * Math.PI) / 180;
+    this.measureFull();
+    if (this.focus && !this.zoomUseful()) this.focus = false;
+    this.fit();
+    if (this.onResize) this.onResize();
+  }
+
+  // Mesure les px par case du plateau entier, sans changer le cadrage courant.
+  measureFull() {
+    if (!this.camera) return;
+    const f = this.focus;
+    this.focus = false;
+    this.fit();
+    this.fullPx = this.cellPx();
+    this.focus = f;
+  }
+
+  zoomUseful() { return zoomUseful(this.fullPx); }
+
+  // Zoom centré sur une case (double-tap, pincement).
+  zoomAt(r, c) {
+    if (!this.zoomUseful()) return;
+    this.focus = true;
+    this.focusCells = [[r, c]];
+    this.focusPan = null;
     this.fit();
   }
 
   setFocus(on, cells) {
-    this.focus = !!on;
+    this.focus = !!on && this.zoomUseful();
     this.focusCells = cells || [];
     this.focusPan = null; // un nouveau cadrage automatique annule le déplacement manuel
     this.fit();
@@ -303,11 +336,12 @@ export class BoardView {
     this.fit();
   }
 
-  focusSpan() { return Math.min(7, this.size); }
+  // Nombre de cases visibles en zoom : cases d'environ 40 px CSS, entre 5 et la taille du plateau.
+  focusSpan() { return focusSpan(this.fullPx, this.size, { frame: this.size + 2 * FRAME_M }); }
 
   currentRect() {
     const n = this.size;
-    const m = n / 2 + 0.55;
+    const m = n / 2 + FRAME_M;
     if (!this.focus) return { x0: -m, x1: m, z0: -m, z1: m };
     const span = this.focusSpan();
     const lim = Math.max(0, n / 2 + 0.3 - span / 2);

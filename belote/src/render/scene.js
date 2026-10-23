@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import { faceCanvas, backCanvas, cardKey, drawSuit, SUIT_COLOR } from './cardart.js';
-import { cameraDistance } from '../logic/layout.js';
+import { TABLE, keyPoints, frameCamera } from '../logic/layout.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
 // places : 0 bas (toi), 1 droite, 2 haut, 3 gauche
-export const SEAT_POS = [[0, 3.55], [3.45, 0], [0, -3.55], [-3.45, 0]];
-const LABEL_POS = [[0, 0.8, 4.35], [3.25, 0.8, -1.7], [0, 0.8, -4.3], [-3.25, 0.8, -1.7]];
-const SLOT_POS = [[0, 1.15], [1.3, 0.05], [0, -1.05], [-1.3, 0.05]];
-const HALF_W = 4.5, HALF_D = 4.7;
+// plan rapproché et cadrage serré : voir TABLE et frameCamera dans logic/layout.js
+export const SEAT_POS = TABLE.seat;
+const LABEL_POS = TABLE.label;
+const SLOT_POS = TABLE.slot;
+const TRICK_S = TABLE.trickScale, TURNED_S = TABLE.turnedScale, FAN_S = TABLE.fanScale;
+const FRAME_POINTS = keyPoints();
+const ELEV_DEG = 72;
 
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const sideMat = new THREE.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.7 });
@@ -35,24 +38,29 @@ function cardMesh(card) {
 }
 
 function labelSprite() {
-  const cv = document.createElement('canvas'); cv.width = 320; cv.height = 96;
+  const cv = document.createElement('canvas'); cv.width = 260; cv.height = 96;
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false }));
-  s.scale.set(2.4, 0.72, 1); s.renderOrder = 10;
+  s.scale.set(TABLE.labelSize[0], TABLE.labelSize[1], 1); s.renderOrder = 10;
   s.userData = { cv, t };
   return s;
 }
 function drawLabel(sprite, emoji, name, { active, taker, count }) {
   const { cv, t } = sprite.userData; const x = cv.getContext('2d');
-  x.clearRect(0, 0, 320, 96);
+  const W = 260;
+  x.clearRect(0, 0, W, 96);
   x.fillStyle = active ? '#ffd23f' : 'rgba(255,255,255,0.92)';
-  x.beginPath(); x.roundRect(4, 8, 312, 80, 40); x.fill();
+  x.beginPath(); x.roundRect(3, 4, W - 6, 88, 44); x.fill();
   x.lineWidth = 5; x.strokeStyle = taker ? '#e07a00' : active ? '#e07a00' : 'rgba(40,40,80,0.35)'; x.stroke();
   x.fillStyle = '#2b2d42'; x.textBaseline = 'middle';
-  x.font = '46px sans-serif'; x.textAlign = 'left'; x.fillText(emoji, 18, 50);
-  x.font = '800 34px "Trebuchet MS", Arial, sans-serif'; x.fillText(name.slice(0, 9), 76, 50);
-  if (taker) { x.textAlign = 'right'; x.font = '44px sans-serif'; x.fillStyle = '#e07a00'; x.fillText('★', 300, 50); }
-  else if (count != null) { x.textAlign = 'right'; x.font = '900 36px "Trebuchet MS", Arial, sans-serif'; x.fillStyle = '#c0392b'; x.fillText(String(count), 296, 52); }
+  x.font = '44px sans-serif'; x.textAlign = 'left'; x.fillText(emoji, 14, 50);
+  // prénom aussi grand que possible dans la place restante (étoile du preneur à droite)
+  const room = W - 66 - (taker || count != null ? 44 : 16);
+  let fs = 44; const nm = name.slice(0, 9);
+  do { x.font = `800 ${fs}px "Trebuchet MS", Arial, sans-serif`; } while (x.measureText(nm).width > room && --fs > 20);
+  x.fillText(nm, 64, 50);
+  if (taker) { x.textAlign = 'right'; x.font = '40px sans-serif'; x.fillStyle = '#e07a00'; x.fillText('★', W - 12, 50); }
+  else if (count != null) { x.textAlign = 'right'; x.font = '900 36px "Trebuchet MS", Arial, sans-serif'; x.fillStyle = '#c0392b'; x.fillText(String(count), W - 14, 52); }
   t.needsUpdate = true;
 }
 
@@ -81,8 +89,8 @@ export function createScene(stage, canvas) {
   // pastille d'atout
   const trumpCv = document.createElement('canvas'); trumpCv.width = trumpCv.height = 128;
   const trumpTex = new THREE.CanvasTexture(trumpCv); trumpTex.colorSpace = THREE.SRGBColorSpace;
-  const trumpDisc = new THREE.Mesh(new THREE.CircleGeometry(0.55, 40), new THREE.MeshBasicMaterial({ map: trumpTex, transparent: true }));
-  trumpDisc.rotation.x = -Math.PI / 2; trumpDisc.position.set(-2.95, 0.04, 2.75); trumpDisc.visible = false; scene.add(trumpDisc);
+  const trumpDisc = new THREE.Mesh(new THREE.CircleGeometry(TABLE.trumpR, 40), new THREE.MeshBasicMaterial({ map: trumpTex, transparent: true }));
+  trumpDisc.rotation.x = -Math.PI / 2; trumpDisc.position.set(TABLE.trump[0], 0.05, TABLE.trump[1]); trumpDisc.visible = false; scene.add(trumpDisc);
   function setTrump(suit) {
     trumpDisc.visible = !!suit;
     if (!suit) return;
@@ -98,7 +106,7 @@ export function createScene(stage, canvas) {
   function setTurned(card) {
     if (turnedMesh) { scene.remove(turnedMesh); turnedMesh = null; }
     if (!card) return;
-    turnedMesh = cardMesh(card); turnedMesh.position.set(0, 0.07, 0); turnedMesh.rotation.y = 0.12;
+    turnedMesh = cardMesh(card); turnedMesh.scale.setScalar(TURNED_S); turnedMesh.position.set(0, 0.08, 0); turnedMesh.rotation.y = 0.12;
     scene.add(turnedMesh);
   }
 
@@ -109,7 +117,7 @@ export function createScene(stage, canvas) {
     SEAT_POS.forEach(([x, z], i) => {
       const group = new THREE.Group(); group.position.set(x, 0, z);
       group.rotation.y = Math.atan2(-x, -z); // le +z local regarde le centre
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.06, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(TABLE.ringR, 0.05, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 }));
       ring.rotation.x = Math.PI / 2; ring.position.y = 0.02; group.add(ring);
       const fan = new THREE.Group(); group.add(fan);
       scene.add(group);
@@ -124,9 +132,10 @@ export function createScene(stage, canvas) {
         s.fan.clear();
         const shown = hidden ? 0 : Math.min(n, 8);
         for (let k = 0; k < shown; k++) {
-          const m = cardMesh(null); m.scale.setScalar(0.6);
+          const m = cardMesh(null); m.scale.setScalar(FAN_S);
           const t = shown === 1 ? 0 : k / (shown - 1) - 0.5;
-          m.position.set(t * Math.min(2.3, shown * 0.34), 0.05 + k * 0.012, -Math.cos(t * 1.4) * 0.1);
+          const f = FAN_S / 0.6; // écart proportionnel à la taille des cartes
+          m.position.set(t * Math.min(2.3, shown * 0.34) * f, 0.05 + k * 0.012, -Math.cos(t * 1.4) * 0.1 * f);
           m.rotation.y = -t * 0.9;
           s.fan.add(m);
         }
@@ -150,16 +159,17 @@ export function createScene(stage, canvas) {
   // animations
   const anims = [];
   const pops = [];
-  function animate({ m, from, to, duration = 420, spin = 0, arc = 1.1, shrink = false, remove = false }) {
+  // échelle : de s0 (échelle actuelle par défaut) à s1 ; shrink = arrivée à la moitié
+  function animate({ m, from, to, duration = 420, spin = 0, arc = 1.1, shrink = false, remove = false, s0 = m.scale.x, s1 = shrink ? s0 * 0.5 : s0 }) {
     return new Promise((resolve) => {
-      if (duration <= 0) { m.position.copy(to); if (remove) scene.remove(m); resolve(); return; }
-      anims.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, shrink, remove, t0: performance.now(), resolve });
+      if (duration <= 0) { m.position.copy(to); m.scale.setScalar(s1); if (remove) scene.remove(m); resolve(); return; }
+      anims.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, s0, s1, remove, t0: performance.now(), resolve });
     });
   }
-  function fly({ from, to, card = null, duration = 420, spin = 0, arc = 1.1 }) {
+  function fly({ from, to, card = null, duration = 420, spin = 0, arc = 1.1, s0 = 1, s1 = 1 }) {
     if (duration <= 0) return Promise.resolve();
-    const m = cardMesh(card); scene.add(m);
-    return animate({ m, from, to, duration, spin, arc, remove: true });
+    const m = cardMesh(card); m.scale.setScalar(s0); scene.add(m);
+    return animate({ m, from, to, duration, spin, arc, remove: true, s0, s1 });
   }
   function updateAnims(now) {
     for (let i = anims.length - 1; i >= 0; i--) {
@@ -169,14 +179,15 @@ export function createScene(stage, canvas) {
       f.m.position.y += Math.sin(k * Math.PI) * f.arc;
       f.m.rotation.x = Math.sin(k * Math.PI) * 0.35;
       if (f.spin) f.m.rotation.y = f.spin * e;
-      if (f.shrink) f.m.scale.setScalar(1 - 0.5 * e);
+      if (f.s0 !== f.s1) f.m.scale.setScalar(f.s0 + (f.s1 - f.s0) * e);
       if (k >= 1) { if (f.remove) scene.remove(f.m); f.m.rotation.x = 0; anims.splice(i, 1); f.resolve(); }
     }
     for (let i = pops.length - 1; i >= 0; i--) {
       const p = pops[i], k = Math.min(1, (now - p.t0) / 260);
       const sq = 1 + 0.25 * Math.sin(k * Math.PI);
-      p.m.scale.set(sq, 1 - 0.5 * Math.sin(k * Math.PI), sq);
-      if (k >= 1) { p.m.scale.set(1, 1, 1); pops.splice(i, 1); }
+      const b = p.base;
+      p.m.scale.set(b * sq, b * (1 - 0.5 * Math.sin(k * Math.PI)), b * sq);
+      if (k >= 1) { p.m.scale.setScalar(b); pops.splice(i, 1); }
     }
   }
 
@@ -185,15 +196,15 @@ export function createScene(stage, canvas) {
   const slot = (seat, n = 0) => new THREE.Vector3(SLOT_POS[seat][0], 0.06 + n * 0.02, SLOT_POS[seat][1]);
   function placeTrick(seat, card, pop = true) {
     const old = trickMeshes.get(seat); if (old) scene.remove(old);
-    const m = cardMesh(card);
+    const m = cardMesh(card); m.scale.setScalar(TRICK_S);
     m.position.copy(slot(seat, trickMeshes.size)); m.rotation.y = ((seat * 37) % 11 - 5) * 0.025;
     scene.add(m); trickMeshes.set(seat, m);
-    if (pop) pops.push({ m, t0: performance.now() });
+    if (pop) pops.push({ m, base: TRICK_S, t0: performance.now() });
     return m;
   }
   async function playCard(seat, card, duration = 420) {
     const to = slot(seat, trickMeshes.size);
-    await fly({ from: seatPos(seat).setY(0.4), to: to.clone().setY(0.5), card, duration, spin: 0.2, arc: 1.0 });
+    await fly({ from: seatPos(seat).setY(0.4), to: to.clone().setY(0.5), card, duration, spin: 0.2, arc: 1.0, s0: FAN_S * 1.4, s1: TRICK_S });
     placeTrick(seat, card, duration > 0);
   }
   function clearTrick() { trickMeshes.forEach((m) => scene.remove(m)); trickMeshes.clear(); }
@@ -213,10 +224,11 @@ export function createScene(stage, canvas) {
     const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    const elevDeg = 60, elev = elevDeg * Math.PI / 180;
-    const d = cameraDistance({ aspect: camera.aspect, fovDeg: camera.fov, elevDeg, halfW: HALF_W, halfD: HALF_D });
-    camera.position.set(0, Math.sin(elev) * d, Math.cos(elev) * d + 0.2);
-    camera.lookAt(0, 0, 0.2);
+    // marges en px : 6 autour, 30 en bas (compte des points du palier 1)
+    const margin = { x: 12 / w, top: 12 / h, bottom: 60 / h };
+    const f = frameCamera({ points: FRAME_POINTS, aspect: camera.aspect, fovDeg: camera.fov, elevDeg: ELEV_DEG, margin });
+    camera.position.set(...f.position);
+    camera.lookAt(...f.target);
     camera.updateProjectionMatrix();
   }
 
