@@ -1,6 +1,7 @@
 // Damier 3D : cadre bois, cases, pions (LatheGeometry), dames couronnées, picking et animations maison.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { FRAME, cameraFor, nearestTarget } from '../logic/layout.js';
 
 export const COLORS = { white: 0xf4ead2, black: 0xe23b3b };
 const TOP = 0.06; // hauteur de la surface de jeu
@@ -16,10 +17,11 @@ export const ease = {
 // ---------- géométries et matériaux partagés ----------
 const profile = [[0, 0], [0.34, 0], [0.385, 0.03], [0.4, 0.08], [0.4, 0.15], [0.385, 0.19], [0.34, 0.22], [0.29, 0.22], [0.26, 0.19], [0, 0.19]].map(([x, y]) => new THREE.Vector2(x, y));
 const pieceGeo = new THREE.LatheGeometry(profile, 36);
-const crownBase = new THREE.CylinderGeometry(0.2, 0.22, 0.1, 20);
-const crownTip = new THREE.ConeGeometry(0.055, 0.15, 10);
-const discGeo = new THREE.CircleGeometry(0.25, 28).rotateX(-Math.PI / 2);
+const crownBase = new THREE.CylinderGeometry(0.14, 0.16, 0.1, 20);
+const crownTip = new THREE.ConeGeometry(0.045, 0.14, 10);
+const discGeo = new THREE.CircleGeometry(0.27, 28).rotateX(-Math.PI / 2);
 const ringGeo = new THREE.RingGeometry(0.42, 0.52, 36).rotateX(-Math.PI / 2);
+const kingRingGeo = new THREE.RingGeometry(0.29, 0.335, 36).rotateX(-Math.PI / 2); // anneau doré sur la face supérieure des dames
 const quadGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
 const cellGeo = new THREE.BoxGeometry(1, 0.06, 1);
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.02, ...extra });
@@ -36,7 +38,7 @@ const crownGeos = (() => {
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
     const t = new THREE.Mesh(crownTip, goldMat);
-    t.position.set(Math.cos(a) * 0.16, 0.17, Math.sin(a) * 0.16);
+    t.position.set(Math.cos(a) * 0.11, 0.17, Math.sin(a) * 0.11);
     g.add(t);
   }
   return g;
@@ -49,6 +51,8 @@ function makePiece(color, king) {
   if (king) {
     const top = new THREE.Mesh(pieceGeo, pieceMat[color]);
     top.position.y = PIECE_H; top.castShadow = true; g.add(top);
+    const ring = new THREE.Mesh(kingRingGeo, goldMat);
+    ring.position.y = PIECE_H * 2 + 0.004; g.add(ring);
     const crown = crownGeos.clone();
     crown.position.y = PIECE_H * 2;
     crown.name = 'crown';
@@ -97,7 +101,7 @@ export function createScene(stage, canvas) {
 
   function buildBoard() {
     staticGroup.clear();
-    const frame = new THREE.Mesh(new RoundedBoxGeometry(size + 1.1, 0.5, size + 1.1, 4, 0.22), woodMat);
+    const frame = new THREE.Mesh(new RoundedBoxGeometry(size + FRAME, 0.5, size + FRAME, 4, 0.2), woodMat);
     frame.position.y = -0.25 + 0.0;
     frame.receiveShadow = true;
     staticGroup.add(frame);
@@ -117,10 +121,11 @@ export function createScene(stage, canvas) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    const half = (size + 1.1) / 2, inner = size / 2;
+    const half = (size + FRAME) / 2, inner = size / 2;
+    const cam = cameraFor(w, h, window.innerWidth, window.innerHeight);
     const pts = [];
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) { pts.push([sx * half, -0.5, sz * half], [sx * half, 0, sz * half], [sx * inner, 0.95, sz * inner]); }
-    const elev = (w / h < 1 ? 62 : 56) * Math.PI / 180;
+    const elev = cam.elev * Math.PI / 180;
     const dir = new THREE.Vector3(0, Math.sin(elev), Math.cos(elev));
     const target = new THREE.Vector3(0, 0, 0);
     const fits = (d) => {
@@ -128,7 +133,7 @@ export function createScene(stage, canvas) {
       camera.lookAt(target);
       camera.updateMatrixWorld(true);
       camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
-      return pts.every((p) => { tmp.set(p[0], p[1], p[2]).project(camera); return Math.abs(tmp.x) <= 0.97 && Math.abs(tmp.y) <= 0.96; });
+      return pts.every((p) => { tmp.set(p[0], p[1], p[2]).project(camera); return Math.abs(tmp.x) <= cam.mx && Math.abs(tmp.y) <= cam.my; });
     };
     const dist = (tz) => {
       target.z = tz;
@@ -144,8 +149,13 @@ export function createScene(stage, canvas) {
     for (let i = 0; i < 12; i++) { const m1 = a + (b - a) / 3, m2 = b - (b - a) / 3; if (dist(m1) < dist(m2)) b = m2; else a = m1; }
     const tz = (a + b) / 2; dist(tz); // laisse la caméra sur la dernière position valide
   }
-  new ResizeObserver(() => fit()).observe(stage);
-  window.addEventListener('resize', fit);
+  // recadrage au redimensionnement et à la rotation (regroupé sur une image)
+  let fitQueued = false;
+  const refit = () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fit(); }); };
+  new ResizeObserver(refit).observe(stage);
+  window.addEventListener('resize', refit);
+  window.addEventListener('orientationchange', () => { refit(); setTimeout(refit, 250); });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', refit);
 
   // ---------- pièces ----------
   function clearPieces() {
@@ -166,12 +176,14 @@ export function createScene(stage, canvas) {
   }
 
   // ---------- marques ----------
+  let pickTargets = [];
   function setMarks({ selected = null, targets = [], mids = [], must = [], last = [] } = {}) {
     marksGroup.clear(); pulsers = [];
+    pickTargets = [...targets, ...mids];
     const put = (geo, m, sq, y) => { const o = new THREE.Mesh(geo, m); o.position.copy(cellPos(sq, y)); marksGroup.add(o); return o; };
     for (const sq of last) put(quadGeo, markMat.last, sq, TOP + 0.004);
     if (selected !== null) put(quadGeo, markMat.sel, selected, TOP + 0.006);
-    for (const sq of targets) { const o = put(discGeo, markMat.target, sq, TOP + 0.01); o.scale.setScalar(1.15); pulsers.push({ o, base: 1.15, amp: 0.1, sp: 5 }); }
+    for (const sq of targets) { const o = put(discGeo, markMat.target, sq, TOP + 0.01); o.scale.setScalar(1.3); pulsers.push({ o, base: 1.3, amp: 0.1, sp: 5 }); }
     for (const sq of mids) { const o = put(discGeo, markMat.mid, sq, TOP + 0.012); o.scale.setScalar(1.5); pulsers.push({ o, base: 1.5, amp: 0.14, sp: 6 }); }
     for (const sq of must) { const o = put(ringGeo, markMat.ring, sq, TOP + 0.014); pulsers.push({ o, base: 1, amp: 0.1, sp: 6 }); }
     for (const [sq, g] of pieces) lifts.set(g, sq === selected ? 0.28 : 0);
@@ -263,12 +275,15 @@ export function createScene(stage, canvas) {
     ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -(((clientY - rect.top) / rect.height) * 2 - 1));
     ray.setFromCamera(ndc, camera);
     board.updateMatrixWorld(true);
-    const hits = ray.intersectObjects(piecesGroup.children, true);
-    for (const h of hits) { let o = h.object; while (o && o.userData.sq === undefined) o = o.parent; if (o) return o.userData.sq; }
     // plan du damier, en repère local (gère le damier tourné)
     plane.constant = -TOP;
-    if (!ray.ray.intersectPlane(plane, hit)) return null;
-    board.worldToLocal(hit);
+    const onPlane = !!ray.ray.intersectPlane(plane, hit);
+    if (onPlane) board.worldToLocal(hit);
+    // toucher tolérant : un tap près d'une case cible surlignée la choisit
+    if (onPlane && pickTargets.length) { const t = nearestTarget(hit.x, hit.z, pickTargets, size, 0.6); if (t !== null) return t; }
+    const hits = ray.intersectObjects(piecesGroup.children, true);
+    for (const h of hits) { let o = h.object; while (o && o.userData.sq === undefined) o = o.parent; if (o) return o.userData.sq; }
+    if (!onPlane) return null;
     const c = Math.floor(hit.x + size / 2), r = Math.floor(hit.z + size / 2);
     if (c < 0 || c >= size || r < 0 || r >= size) return null;
     return r * size + c;

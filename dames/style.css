@@ -3,13 +3,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 .hidden { display: none !important; }
 
 #app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: radial-gradient(ellipse at 50% 35%, #4f8fd8 0%, #2f5fa8 55%, #182c5c 100%); }
-#hud { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 8px; padding-top: max(6px, env(safe-area-inset-top)); }
+#hud { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 8px; padding-top: max(6px, env(safe-area-inset-top)); }
 .round { width: 48px; height: 48px; border-radius: 50%; border: 0; background: #fff; font-size: 24px; font-weight: 900; color: #2b2d42; cursor: pointer; flex: none; box-shadow: 0 3px 0 rgba(0,0,0,.25); display: grid; place-items: center; padding: 0; }
 .round:active { transform: translateY(2px); box-shadow: none; }
 .round:disabled { opacity: .4; }
 
-#counters { flex: 1; min-width: 0; display: flex; gap: 6px; }
-.cnt { flex: 1 1 0; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 24px; border: 3px solid transparent; font-weight: 800; font-size: clamp(14px, 3.6vmin, 18px); transition: box-shadow .2s, border-color .2s, opacity .2s; opacity: .8; }
+#hud .side { display: contents; } /* portrait et grand écran : une seule rangée */
+.cnt { flex: 1 1 0; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 24px; border: 3px solid transparent; font-weight: 800; font-size: clamp(14px, 3.6vmin, 18px); transition: box-shadow .2s, border-color .2s, opacity .2s; opacity: .8; }
 #cnt-white { background: #f4ead2; color: #3a2e1a; }
 #cnt-black { background: #e23b3b; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
 .cnt .nm { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -24,7 +24,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 
 #stage { position: relative; flex: 1 1 auto; min-height: 0; }
 #c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-#toast { position: absolute; left: 50%; top: calc(4px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); background: rgba(20,24,40,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: clamp(.85rem, 2.6vmin, .95rem); line-height: 1.25; box-shadow: 0 2px 8px rgba(0,0,0,.18); opacity: 0; transition: opacity .18s; pointer-events: none; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; z-index: 5; }
+#toast { position: absolute; left: 50%; top: calc(4px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); background: rgba(20,24,40,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: clamp(.85rem, 2.6vmin, .95rem); line-height: 1.25; box-shadow: 0 2px 8px rgba(0,0,0,.18); opacity: 0; transition: opacity .18s; pointer-events: none; max-width: calc(100% - 16px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; z-index: 5; }
 #toast.show { opacity: 1; }
 
 .btn { min-height: 52px; padding: 8px 16px; border-radius: 28px; border: 0; background: #ffd23f; color: #2b2d42; font: 800 clamp(16px, 4.2vmin, 22px) "Trebuchet MS", Arial, sans-serif; cursor: pointer; box-shadow: 0 4px 0 #c99200; }
@@ -72,7 +72,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
   .hero { margin-bottom: 4px; }
   #home .row { position: static; margin: 6px 0 0; padding: 0; box-shadow: none; background: none; }
   #btn-swap { margin-bottom: 2px; }
-  #hud { padding: 3px 8px; gap: 6px; }
+  /* téléphone en paysage : HUD en deux colonnes latérales, la scène prend toute la hauteur */
+  #app { flex-direction: row; }
+  #hud { display: contents; }
+  #hud .side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; flex: none; width: clamp(84px, 13vw, 120px); padding: max(6px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom)); }
+  #hud .side.left { order: 0; padding-left: max(6px, env(safe-area-inset-left)); }
+  #stage { order: 1; flex: 1 1 auto; min-width: 0; }
+  #hud .side.right { order: 2; padding-right: max(6px, env(safe-area-inset-right)); }
+  #hud .side .cnt { flex: none; width: 100%; min-height: 84px; flex-direction: column; justify-content: center; gap: 2px; padding: 4px; border-radius: 20px; font-size: 14px; text-align: center; }
+  #hud .side .cnt .nm { max-width: 100%; }
+  #hud .side .cnt .n { margin: 0; font-size: 1.7em; line-height: 1; }
   .seat input { height: 48px; }
   .seat .chip { min-height: 48px; }
   .btn { min-height: 48px; padding: 6px 12px; font-size: 16px; }

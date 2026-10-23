@@ -16,13 +16,15 @@
 <body>
 <div id="app">
   <header id="hud">
+    <div class="side left">
     <button id="btn-menu" class="round" aria-label="Menu">☰</button>
-    <div id="counters">
-      <div class="cnt" id="cnt-white"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
-      <div class="cnt" id="cnt-black"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
+    <div class="cnt" id="cnt-white"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
     </div>
+    <div class="side right">
+    <div class="cnt" id="cnt-black"><span class="nm"></span><b class="n"></b><span class="kg"></span></div>
     <button id="btn-undo" class="round" aria-label="Annuler le dernier coup"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2b2d42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
     <button id="btn-voice" class="round" aria-label="Lire la règle à voix haute">🔊</button>
+    </div>
   </header>
   <main id="stage">
     <canvas id="c"></canvas>
