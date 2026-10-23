@@ -4,6 +4,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CASES, ESCALIERS, ECURIES, CENTRE, positionCheval } from './plateau.js';
 import { createRng } from './rng.js';
 
+// échelle des pions sur le plateau (+26 % par rapport à 1.15)
+const TAILLE = 1.45;
 export const COL = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047];
 const PALE = [0xffcdd2, 0xbbdefb, 0xfff59d, 0xc8e6c9];
 const css = (n) => '#' + n.toString(16).padStart(6, '0');
@@ -155,6 +157,8 @@ export function creerScene(canvas, conteneur) {
   const matBase = COL.map((c) => new THREE.MeshStandardMaterial({ color: new THREE.Color(c).multiplyScalar(0.65), roughness: 0.6 }));
   const matCrin = new THREE.MeshStandardMaterial({ color: 0x4e342e, roughness: 0.7 });
   const matMuseau = new THREE.MeshStandardMaterial({ color: 0xfff3e0, roughness: 0.6 });
+  // contour « coque inversée » : faces arrière sombres légèrement agrandies
+  const matContour = new THREE.MeshBasicMaterial({ color: 0x22232e, side: THREE.BackSide });
   const matOeil = new THREE.MeshStandardMaterial({ color: 0x1b1b1b, roughness: 0.3 });
   const g = {
     base: new THREE.CylinderGeometry(0.3, 0.34, 0.1, 24),
@@ -165,19 +169,27 @@ export function creerScene(canvas, conteneur) {
     oeil: new THREE.SphereGeometry(0.035, 8, 6),
     oreille: new THREE.ConeGeometry(0.06, 0.17, 10),
     crin: new THREE.SphereGeometry(0.075, 10, 8),
+    liseré: new THREE.TorusGeometry(0.335, 0.03, 8, 32),
   };
   const add = (parent, geo, mat, x, y, z, sx = 1, sy = 1, sz = 1, rx = 0) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.rotation.x = rx; m.castShadow = true;
     parent.add(m); return m;
   };
+  const contour = (parent, m, k = 1.1) => {
+    const o = new THREE.Mesh(m.geometry, matContour);
+    o.position.copy(m.position); o.rotation.copy(m.rotation); o.scale.copy(m.scale).multiplyScalar(k);
+    parent.add(o);
+  };
+  const liseré = (grp) => { const l = add(grp, g.liseré, matContour, 0, 0.02, 0); l.rotation.x = Math.PI / 2; l.castShadow = false; };
   let modele = null; // modèle GLB optionnel
   function chevalPrimitives(c) {
     const grp = new THREE.Group();
     add(grp, g.base, matBase[c], 0, 0.05, 0);
-    add(grp, g.corps, matPion[c], 0, 0.38, -0.02, 0.9, 0.95, 1.2);
-    add(grp, g.cou, matPion[c], 0, 0.64, 0.17, 1, 1, 1, Math.PI / 5);
-    add(grp, g.tete, matPion[c], 0, 0.86, 0.3, 0.9, 0.9, 1.35, Math.PI / 12);
+    contour(grp, add(grp, g.corps, matPion[c], 0, 0.38, -0.02, 0.9, 0.95, 1.2), 1.06);
+    contour(grp, add(grp, g.cou, matPion[c], 0, 0.64, 0.17, 1, 1, 1, Math.PI / 5), 1.1);
+    contour(grp, add(grp, g.tete, matPion[c], 0, 0.86, 0.3, 0.9, 0.9, 1.35, Math.PI / 12), 1.08);
+    liseré(grp);
     add(grp, g.museau, matMuseau, 0, 0.8, 0.46, 1, 0.9, 1.1);
     add(grp, g.oeil, matOeil, 0.09, 0.9, 0.38);
     add(grp, g.oeil, matOeil, -0.09, 0.9, 0.38);
@@ -192,6 +204,7 @@ export function creerScene(canvas, conteneur) {
   function chevalModele(c) {
     const grp = new THREE.Group();
     add(grp, g.base, matBase[c], 0, 0.05, 0);
+    liseré(grp);
     const m = modele.clone(true);
     m.traverse((o) => { if (o.isMesh) { o.material = matPion[c]; o.castShadow = true; } });
     grp.add(m);
@@ -237,7 +250,7 @@ export function creerScene(canvas, conteneur) {
     state.joueurs.forEach((jo, j) => jo.chevaux.forEach((p, h) => {
       const hc = chevaux[j][h];
       const q = positionCheval(j, p, h);
-      hc.s = p === 61 ? 0.8 : 1.15;
+      hc.s = p === 61 ? 0.8 : TAILLE;
       hc.grp.scale.setScalar(hc.s);
       hc.grp.rotation.x = 0;
       poser(hc, q.x, q.z, 0);
@@ -248,7 +261,7 @@ export function creerScene(canvas, conteneur) {
           const dx = lst.length === 2 ? (i === 0 ? -0.2 : 0.2) : (i % 2 ? 0.2 : -0.2);
           const dz = lst.length === 2 ? 0 : (i < 2 ? -0.2 : 0.2);
           hc.grp.position.x += dx; hc.grp.position.z += dz;
-          hc.s = 0.85; hc.grp.scale.setScalar(0.85);
+          hc.s = 1; hc.grp.scale.setScalar(1);
         }
       }
       orienterVersCentre(hc);
@@ -288,7 +301,7 @@ export function creerScene(canvas, conteneur) {
 
   async function deplacer(j, h, cases, { compter = false, onPas = null } = {}) {
     const hc = chevaux[j][h];
-    hc.s = 1.15; hc.grp.scale.setScalar(1.15);
+    hc.s = TAILLE; hc.grp.scale.setScalar(TAILLE);
     for (let i = 0; i < cases.length; i++) {
       const from = posGrille(hc);
       const to = positionCheval(j, cases[i], h);
@@ -303,15 +316,16 @@ export function creerScene(canvas, conteneur) {
   }
   async function prise(j, h) {
     const hc = chevaux[j][h];
-    hc.s = 1.15; hc.grp.scale.setScalar(1.15);
+    hc.s = TAILLE; hc.grp.scale.setScalar(TAILLE);
     await saut(hc, posGrille(hc), positionCheval(j, -1, h), 2.2, 0.95, true);
   }
 
   // ---- dé ----
+  const DE_Y = 0.62;
   const matsDe = VALEUR_FACE.map((v) => new THREE.MeshStandardMaterial({ map: textureFace(v), roughness: 0.4 }));
-  const de = new THREE.Mesh(new RoundedBoxGeometry(0.9, 0.9, 0.9, 4, 0.14), matsDe);
+  const de = new THREE.Mesh(new RoundedBoxGeometry(1.2, 1.2, 1.2, 4, 0.18), matsDe);
   de.castShadow = true;
-  de.position.set(0, 0.46, 0);
+  de.position.set(0, DE_Y, 0);
   scene.add(de);
   const qFinal = new THREE.Quaternion(), qAxe = new THREE.Quaternion(), qYaw = new THREE.Quaternion();
   const vAxe = new THREE.Vector3(), vHaut = new THREE.Vector3(0, 1, 0), vNorm = new THREE.Vector3();
@@ -336,18 +350,20 @@ export function creerScene(canvas, conteneur) {
       qAxe.setFromAxisAngle(vAxe, angle * (1 - e));
       de.quaternion.copy(qFinal).premultiply(qAxe);
       const k = Math.sin(u * Math.PI);
-      de.position.set(dx * k, 0.46 + 2.2 * k * (1 - 0.3 * u), dz * k);
+      de.position.set(dx * k, DE_Y + 2.2 * k * (1 - 0.3 * u), dz * k);
     });
   }
 
   // ---- surlignage des coups ----
-  const geoAnneau = new THREE.RingGeometry(0.5, 0.72, 32);
-  const matAnneau = new THREE.MeshBasicMaterial({ color: 0xfff176, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
+  const geoAnneau = new THREE.RingGeometry(0.56, 0.86, 32);
+  const matAnneau = new THREE.MeshBasicMaterial({ color: 0xffee58, transparent: true, opacity: 1, side: THREE.DoubleSide, depthWrite: false });
+  const geoBord = new THREE.RingGeometry(0.86, 0.95, 32);
+  const matBord = new THREE.MeshBasicMaterial({ color: 0xef6c00, side: THREE.DoubleSide, depthWrite: false, transparent: true });
   const geoMarq = new THREE.CircleGeometry(0.42, 24);
   const matMarq = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.75, depthWrite: false });
   const anneaux = [], marqueurs = [];
   for (let i = 0; i < 4; i++) {
-    const a = new THREE.Mesh(geoAnneau, matAnneau); a.rotation.x = -Math.PI / 2; a.visible = false; scene.add(a); anneaux.push(a);
+    const a = new THREE.Mesh(geoAnneau, matAnneau); a.rotation.x = -Math.PI / 2; a.visible = false; a.add(new THREE.Mesh(geoBord, matBord)); scene.add(a); anneaux.push(a);
     const m = new THREE.Mesh(geoMarq, matMarq); m.rotation.x = -Math.PI / 2; m.visible = false; scene.add(m); marqueurs.push(m);
   }
   let surlignes = []; // [{hc, mx, mz}]
@@ -371,49 +387,67 @@ export function creerScene(canvas, conteneur) {
     const pulse = 1 + 0.14 * Math.sin(t * 7);
     for (let i = 0; i < surlignes.length; i++) {
       const s = surlignes[i];
-      s.hc.grp.position.y = 0.1 * Math.abs(Math.sin(t * 4));
+      s.hc.grp.position.y = 0.2 * Math.abs(Math.sin(t * 4));
       anneaux[i].position.set(s.hc.grp.position.x, 0.2, s.hc.grp.position.z);
       anneaux[i].scale.setScalar(pulse);
       if (s.marq) { marqueurs[i].position.set(s.mx, 0.17, s.mz); marqueurs[i].scale.setScalar(pulse); }
     }
-    if (invite) { de.position.y = 0.46 + 0.12 * Math.abs(Math.sin(t * 4)); de.rotation.y += 0; }
+    if (invite) { de.position.y = DE_Y + 0.12 * Math.abs(Math.sin(t * 4)); de.rotation.y += 0; }
   }
 
   // ---- caméra ----
-  const EL = 60 * Math.PI / 180;
+  // Ajustement serré : boîte du plateau (dessus et dessous du bois) + têtes des chevaux du fond.
+  // Plongée plus verticale en portrait ; centre de projection décalé sous la pastille de messages.
+  const MARGE = 0.985; // ≈ 1,5 % de marge par bord
+  const RESERVE_HAUT = 44; // px occupés par la pastille translucide en portrait
   const pts = [];
-  for (const x of [-7.9, 7.9]) for (const z of [-7.9, 7.9]) for (const y of [-0.5, 1.1]) pts.push(new THREE.Vector3(x, y, z));
+  for (const x of [-7.9, 7.9]) for (const z of [-7.9, 7.9]) for (const y of [-0.5, 0]) pts.push(new THREE.Vector3(x, y, z));
+  for (const x of [-6.5, 6.5]) pts.push(new THREE.Vector3(x, 1.7, -6.5));
   const vp = new THREE.Vector3();
+  function placer(el, d) {
+    camera.position.set(0, Math.sin(el) * d, Math.cos(el) * d);
+    camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld(true);
+  }
   function ajuster() {
     const w = conteneur.clientWidth, h = conteneur.clientHeight;
     if (!w || !h) return;
+    const portrait = h > w;
+    // portrait étroit : plongée plus verticale (75°) pour employer la hauteur libre
+    const el = (portrait ? ((h - Math.min(RESERVE_HAUT, h * 0.08)) / w > 1.15 ? 75 : 70) : 60) * Math.PI / 180;
+    const margeX = portrait ? 0.98 : MARGE; // bords gauche/droit : marge ≥ 1 %
+    const haut = portrait ? Math.min(RESERVE_HAUT, h * 0.08) : 0; // bande utile : [haut, h]
+    const hu = h - haut;
     camera.clearViewOffset();
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
+    camera.aspect = w / hu;
     camera.updateProjectionMatrix();
-    let lo = 6, hi = 90;
-    for (let it = 0; it < 22; it++) {
+    let lo = 4, hi = 90;
+    for (let it = 0; it < 24; it++) {
       const d = (lo + hi) / 2;
-      camera.position.set(0, Math.sin(EL) * d, Math.cos(EL) * d);
-      camera.lookAt(0, 0, 0);
-      camera.updateMatrixWorld(true);
-      let ok = true;
+      placer(el, d);
+      // largeur symétrique ; hauteur jugée sur l'étendue (le décalage vertical recentre ensuite)
+      let ok = true, ymin = 9, ymax = -9;
       for (const p of pts) {
         vp.copy(p).project(camera);
-        if (Math.abs(vp.x) > 0.985 || Math.abs(vp.y) > 0.985) { ok = false; break; }
+        if (Math.abs(vp.x) > margeX || vp.z > 1) { ok = false; break; }
+        ymin = Math.min(ymin, vp.y); ymax = Math.max(ymax, vp.y);
       }
+      if (ok && ymax - ymin > 2 * MARGE) ok = false;
       if (ok) hi = d; else lo = d;
     }
-    camera.position.set(0, Math.sin(EL) * hi, Math.cos(EL) * hi);
-    camera.lookAt(0, 0, 0);
-    camera.updateMatrixWorld(true);
-    // centre le plateau verticalement
+    placer(el, hi);
+    // centre le plateau dans la bande utile, puis étend la vue à tout le canvas
     let mn = 9, mx = -9;
     for (const p of pts) { vp.copy(p).project(camera); mn = Math.min(mn, vp.y); mx = Math.max(mx, vp.y); }
-    camera.setViewOffset(w, h, 0, -((mx + mn) / 2) * h / 2, w, h);
+    const cy = -((mx + mn) / 2) * hu / 2; // décalage px pour centrer dans la bande
+    // le cadrage (aspect w/hu) devient la « vue complète » ; la fenêtre affichée w×h remonte de `haut`
+    camera.setViewOffset(w, hu, 0, cy - haut, w, h);
   }
   new ResizeObserver(ajuster).observe(conteneur);
   window.addEventListener('resize', ajuster);
+  window.addEventListener('orientationchange', () => setTimeout(ajuster, 150));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', ajuster);
   ajuster();
 
   function projeter(j, h, out) {
@@ -424,7 +458,7 @@ export function creerScene(canvas, conteneur) {
     return out;
   }
   function projeterDe(out) {
-    tmpV.set(0, 0.5, 0).project(camera);
+    tmpV.set(0, DE_Y, 0).project(camera);
     out.x = (tmpV.x * 0.5 + 0.5) * canvas.clientWidth;
     out.y = (-tmpV.y * 0.5 + 0.5) * canvas.clientHeight;
     return out;
@@ -486,10 +520,19 @@ export function creerScene(canvas, conteneur) {
     finally { if (r) { r.dispose(); r.forceContextLoss(); } }
   }
 
+  // taille à l'écran (px) d'une case au centre du plateau, pour la sélection tolérante
+  function pxParCase() {
+    tmpV.set(0, 0.6, 0).project(camera); const x0 = tmpV.x;
+    tmpV.set(1, 0.6, 0).project(camera);
+    return Math.abs(tmpV.x - x0) * 0.5 * canvas.clientWidth;
+  }
+
   return {
-    rendreAvatars, setJoueurs, sync, deplacer, sortie, prise, lancerDe, surligner, effacer,
+    rendreAvatars, pxParCase,
+    // débogage : points du cadrage projetés en px écran
+    cadre: () => pts.map((p) => { vp.copy(p).project(camera); return [Math.round((vp.x + 1) / 2 * canvas.clientWidth), Math.round((1 - vp.y) / 2 * canvas.clientHeight)]; }), setJoueurs, sync, deplacer, sortie, prise, lancerDe, surligner, effacer,
     projeter, projeterDe, chargerModele, ajuster,
-    deInvite(v) { invite = v; if (!v) de.position.y = 0.46; },
+    deInvite(v) { invite = v; if (!v) de.position.y = DE_Y; },
     setVitesse(x) { vitesse = Math.max(0.1, x); },
     getVitesse() { return vitesse; },
     stats() { return { appels: renderer.info.render.calls, triangles: renderer.info.render.triangles }; },

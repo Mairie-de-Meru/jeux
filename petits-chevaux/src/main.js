@@ -196,7 +196,7 @@ canvas.addEventListener('pointerdown', (e) => {
   } else if (attenteChoix) {
     const j = etat.courant;
     const pts = etat.coups.map((m, i) => { const p = scene.projeter(j, m.cheval, {}); p.id = i; return p; });
-    const hit = plusProche(pts, px, py, 40);
+    const hit = plusProche(pts, px, py, Math.max(40, Math.min(72, 0.8 * scene.pxParCase())));
     if (hit) { sons.clic(); jouerCoup(hit.id); } else ui.toast('Touche un autre cheval !', 1500);
   }
 });
