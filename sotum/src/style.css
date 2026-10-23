@@ -64,7 +64,7 @@ button { font: inherit; cursor: pointer; border: 0; touch-action: manipulation; 
 .pal { min-height: 64px; border-radius: 18px; color: #fff; font-weight: 800; font-size: clamp(17px, 4.6vw, 22px); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 6px 12px; box-shadow: 0 5px 0 rgba(0,0,0,.22); }
 .pal small { font-size: .7em; font-weight: 700; opacity: .95; }
 .pal:active { transform: translateY(2px); }
-.pal[data-l="1"] { background: #22b573; } .pal[data-l="2"] { background: #f08a24; } .pal[data-l="3"] { background: #8a4fe0; }
+.pal[data-l="1"] { background: #22b573; } .pal[data-l="2"] { background: #f08a24; } .pal[data-l="3"] { background: #8a4fe0; } .pal[data-l="4"] { background: #d63a6a; }
 .btn { min-height: 52px; padding: 0 18px; border-radius: 16px; background: var(--key); color: var(--ink); font-weight: 800; font-size: clamp(15px, 4vw, 20px); box-shadow: 0 4px 0 #aaa5ec; }
 .btn.go { background: var(--green); color: #fff; box-shadow: 0 4px 0 #14804f; }
 .btn.ghost { background: transparent; box-shadow: none; text-decoration: underline; }
@@ -74,8 +74,9 @@ button { font: inherit; cursor: pointer; border: 0; touch-action: manipulation; 
 .mini { width: 40px; height: 40px; flex: none; display: grid; place-items: center; font-weight: 900; color: #fff; border-radius: 8px; }
 .mini.c { background: var(--red); } .mini.a { background: var(--dimblue); color: #b9c9ee; border-radius: 10px; }
 .mini.p { background: var(--yellow); color: var(--ink); border-radius: 50%; }
-#endWord { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; margin: 6px 0; }
-#endWord .ltile { width: clamp(34px, 10vmin, 52px); height: clamp(34px, 10vmin, 52px); font-size: clamp(20px, 6vmin, 30px); }
+#endWord { display: flex; gap: 4px; justify-content: center; flex-wrap: nowrap; margin: 6px 0; }
+/* Tuiles rétrécissables : un mot de 10 lettres tient sur une ligne en 375 px de large. */
+#endWord .ltile { flex: 0 1 clamp(34px, 10vmin, 52px); min-width: 0; width: auto; height: auto; aspect-ratio: 1; font-size: clamp(20px, 6vmin, 30px); }
 #endStars { font-size: clamp(28px, 8vmin, 44px); min-height: 1.2em; }
 
 #confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
@@ -94,7 +95,7 @@ button { font: inherit; cursor: pointer; border: 0; touch-action: manipulation; 
   .card h2 { margin: 0 0 4px; font-size: 20px; }
   .card p { margin: 2px 0; font-size: 14px; }
   .ltile { width: 38px; height: 38px; font-size: 22px; }
-  #endWord .ltile { width: 34px; height: 34px; font-size: 20px; }
+  #endWord .ltile { flex-basis: 34px; font-size: 20px; }
   #homeStats { margin: 0 0 4px; }
   #modes { margin-bottom: 6px; }
   #paliers { flex-direction: row; gap: 6px; margin-bottom: 4px; }

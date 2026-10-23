@@ -1,5 +1,8 @@
+# Usage : python3 -I tools/gen-dico.py <dossier contenant fr.dic et fr.aff> src/dico.js
+# Source : https://github.com/LibreOffice/dictionaries/tree/master/fr_FR/dictionaries (fr.dic, fr.aff)
 import re, sys, unicodedata
 D = sys.argv[1]
+LENS = range(4, 11)
 rules = {}
 lines = open(f'{D}/fr.aff', encoding='utf-8').read().split('\n')
 i = 0
@@ -33,19 +36,19 @@ for l in open(f'{D}/fr.dic', encoding='utf-8').read().split('\n')[1:]:
                 forms.add(w[:len(w)-len(strip)] + add)
     for f in forms:
         n = norm(f)
-        if re.fullmatch(r'[a-z]{4,8}', n): out.add(n)
+        if re.fullmatch(r'[a-z]{4,10}', n): out.add(n)
 
-print(len(out), sum(len(x)==4 for x in out), sum(len(x)==5 for x in out), sum(len(x)==6 for x in out), sum(len(x)==7 for x in out), sum(len(x)==8 for x in out))
+print(len(out), {n: sum(len(x) == n for x in out) for n in LENS})
 
 # --- Filtre 5-8 ans puis écriture de src/dico.js ---
 EXACT = set('''con cons conne connes connard merde merdes merder pute putes putain bite bites zob zobs teub cul culs chier chie chies chiez chiait pisse pisses pisser salope salaud salauds nique niques niquer baiser baise baises sexe sexes sexy porno pornos viol viols violer viole violee violes nazi nazis drogue drogues droguer vodka whisky biere bieres cidre cidres alcool tuer tueur tueurs tueuse mort morte morts mortes mourir meurt meurs crime crimes arme armes guerre fusil fusils bombe bombes obus duel duels poison cadavre cancer sida suicide pedale pede pedes gouine negre negres youpin garce garces pine pines nichon tapette enfoire diable prison bandit punir hache epee epees otage otages tirs crack heroine cocain penis vagin anus sperme orgie fion pubis cocu cocus catin pouffe poufs neuneu teton tetons bander negro bicot fiotte shit pipe pipes idiot idiote idiots'''.split())
 PREFIX = ('merd', 'putai', 'couill', 'salop', 'enculer', 'encule', 'connar', 'foutr', 'branl', 'bordel', 'niqu', 'chiott', 'suicid', 'meurtr', 'cadavr', 'cocain', 'pedop', 'bougnoul', 'tarlou', 'bamboul', 'trouduc', 'enfoir', 'emmerd', 'nazi', 'drogu', 'zizi', 'debil', 'cretin', 'abrut', 'gogol', 'imbecil', 'pouffi', 'sperm', 'orgi', 'vagin', 'penis', 'connass', 'sodom', 'prostitu', 'assassin', 'massacr', 'torture', 'poignar', 'pistol', 'revolv', 'guillot', 'egorg', 'terroris', 'pedoph', 'pornogr', 'erotiq', 'masturb', 'ejacul', 'erecti', 'fellat', 'sadique', 'tortion', 'mutiler', 'violent', 'hurlant')
 keep = sorted(w for w in out if w not in EXACT and not w.startswith(PREFIX) and not re.search(r'(.)\1\1', w))  # sans onomatopées (zzzz, brrr)
-by = {n: [w for w in keep if len(w) == n] for n in (4, 5, 6, 7, 8)}
+by = {n: [w for w in keep if len(w) == n] for n in LENS}
 js = ('// Mots acceptés tirés du dictionnaire Grammalecte 7.7 (Olivier R., dicollecte), MPL 2.0 :\n'
       '// https://github.com/LibreOffice/dictionaries/tree/master/fr_FR — fichier généré par tools/gen-dico.py, ne pas éditer.\n'
       '// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.\n'
       '// If a copy of the MPL was not distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/.\n'
-      'export const DICO = `\n' + '\n'.join(' '.join(by[n]) for n in (4, 5, 6, 7, 8)) + '\n`;\n')
+      'export const DICO = `\n' + '\n'.join(' '.join(by[n]) for n in LENS) + '\n`;\n')
 open(sys.argv[2], 'w', encoding='utf-8').write(js)
 print('gardés', len(keep), {n: len(v) for n, v in by.items()})

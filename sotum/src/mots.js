@@ -640,6 +640,663 @@ epaules|Elles relient les bras au corps.
 muscles|Ils nous rendent forts.
 orteils|Les doigts de pied.
 gencive|Elle tient les dents dans la bouche.
+ange|Un petit être du ciel avec des ailes, dans les contes.
+banc|On s'assoit dessus dans le parc.
+café|Une boisson chaude et noire que boivent les grands.
+coin|L'endroit où deux murs se rencontrent.
+dame|Une femme, ou une carte du jeu avec le roi.
+dodo|Le mot des petits pour dire dormir.
+dune|Une colline de sable dans le désert.
+fils|Le garçon de son papa et de sa maman.
+four|On y fait cuire les gâteaux.
+golf|Un sport où l'on pousse une petite balle dans un trou.
+houx|Un arbuste aux feuilles piquantes et aux boules rouges.
+idée|Quand on pense à quelque chose de nouveau.
+judo|Un sport sur un tapis, en kimono blanc.
+kaki|Un fruit orange, et aussi une couleur vert-brun.
+loto|Un jeu où l'on tire des numéros au hasard.
+lynx|Un grand chat sauvage aux oreilles pointues.
+menu|La liste des plats au restaurant.
+mime|Il raconte des histoires avec des gestes, sans parler.
+mont|Une très haute colline.
+mule|Un animal entre l'âne et le cheval.
+mûre|Un petit fruit noir des ronces.
+nain|Un petit personnage des contes, comme ceux de Blanche-Neige.
+noël|La fête de décembre avec le sapin et les cadeaux.
+parc|Un jardin public avec des arbres et des jeux.
+poli|Il dit bonjour, merci et s'il te plaît.
+roux|Une couleur de cheveux orange.
+seau|On le remplit de sable ou d'eau à la plage.
+sofa|Un grand siège moelleux du salon.
+sole|Un poisson plat de la mer.
+tipi|Une tente pointue des Amérindiens.
+tuba|Un tube pour respirer sous l'eau en nageant.
+tutu|La jupe légère des danseuses.
+yoga|Une gymnastique douce pour s'étirer et respirer.
+bobo|Le mot des petits pour un petit mal.
+cage|Une maison à barreaux pour un oiseau.
+coco|La noix au lait blanc qui pousse sur le palmier.
+fève|Une petite graine cachée dans la galette des rois.
+gong|Un grand disque de métal qui résonne quand on le frappe.
+goût|Le sens qui dit si c'est sucré ou salé.
+mage|Un magicien des contes.
+mine|Le bout du crayon qui écrit.
+page|Une feuille d'un livre.
+paix|Quand tout le monde est calme et s'entend bien.
+pneu|Le caoutchouc qui entoure la roue.
+rail|Le train roule dessus.
+rang|Une ligne d'élèves les uns derrière les autres.
+soda|Une boisson sucrée avec des bulles.
+stop|Le panneau rouge qui dit de s'arrêter.
+vrai|Ce qui n'est pas faux.
+lime|Un petit outil pour les ongles.
+bouc|Le papa de la chèvre, avec une barbiche.
+faon|Le petit de la biche.
+note|Un son de musique, comme do, ré, mi.
+surf|Glisser sur les vagues debout sur une planche.
+bond|Un grand saut.
+saut|Un bond en l'air.
+grue|Un grand oiseau, ou un engin de chantier.
+cinq|Le nombre après quatre.
+cent|Dix fois dix.
+brun|La couleur du chocolat.
+avril|Le mois du poisson.
+jeudi|Le jour après mercredi.
+lundi|Le premier jour de la semaine.
+mardi|Le jour après lundi.
+olive|Un petit fruit vert ou noir qui donne de l'huile.
+pizza|Une galette ronde avec tomate et fromage, cuite au four.
+ruche|La maison des abeilles.
+pelle|On s'en sert pour creuser le sable.
+malle|Un grand coffre pour ranger des affaires.
+taupe|Un petit animal qui creuse des galeries sous la terre.
+merle|Un oiseau noir au bec jaune.
+bijou|Une jolie bague ou un collier.
+bisou|Un baiser tout doux sur la joue.
+lilas|Un arbuste aux fleurs violettes qui sentent bon.
+duvet|Les plumes toutes douces des poussins.
+valse|Une danse qui tourne à trois temps.
+bœuf|Un gros animal de la ferme, cousin de la vache.
+conte|Une histoire avec des fées, des princes et des dragons.
+drôle|Ce qui fait rire.
+fable|Une petite histoire avec des animaux qui parlent.
+farce|Une blague pour rire.
+gilet|Un petit vêtement avec des boutons.
+hamac|Un lit de toile suspendu entre deux arbres.
+hôtel|On y dort en vacances.
+huile|Un liquide doré pour la cuisine.
+igloo|La maison de glace des Inuits.
+kayak|Un petit bateau qu'on fait avancer avec une pagaie.
+lasso|Une corde avec une boucle pour attraper les chevaux.
+lutin|Un petit personnage malicieux des contes.
+marin|Il navigue sur la mer.
+morse|Un gros animal des mers froides avec deux longues dents.
+moule|Un coquillage noir, ou un plat pour les gâteaux.
+nœud|On le fait avec les lacets.
+nappe|Le tissu que l'on met sur la table.
+palme|Elle aide à nager vite, au pied.
+pente|Une descente ou une montée.
+poche|Un petit sac cousu au pantalon.
+poêle|On y fait cuire les crêpes.
+purée|Des pommes de terre écrasées.
+renne|Il tire le traîneau du père Noël.
+sabot|La chaussure en bois, ou le pied du cheval.
+saule|Un arbre aux branches qui pendent vers l'eau.
+stade|Le grand terrain où l'on joue au foot.
+usine|Un grand bâtiment où l'on fabrique des choses.
+veste|Un vêtement chaud avec des manches.
+vigne|La plante qui donne le raisin.
+vitre|Le verre de la fenêtre.
+wagon|Une voiture du train.
+aigle|Un grand oiseau qui vole très haut.
+algue|Une plante qui pousse dans la mer.
+barbe|Les poils sur le menton des messieurs.
+botte|Une grande chaussure pour la pluie.
+bouée|Elle aide à flotter dans l'eau.
+cacao|La poudre brune du chocolat.
+canoë|Un petit bateau léger avec des pagaies.
+carré|Une forme avec quatre côtés pareils.
+colle|Elle sert à faire tenir le papier.
+dîner|Le repas du soir.
+écran|On y regarde des dessins animés.
+épice|Elle donne du goût, comme la cannelle.
+fouet|Il sert à battre les œufs.
+héron|Un grand oiseau à longues pattes qui pêche.
+lacet|Il ferme la chaussure.
+loupe|Elle fait voir les choses en plus gros.
+métro|Un train qui roule sous la ville.
+musée|On y regarde des tableaux et des statues.
+niche|La petite maison du chien.
+noyau|Le gros pépin au milieu de la pêche.
+pause|Un petit moment de repos.
+roche|Une grosse pierre.
+rugby|Un sport avec un ballon ovale.
+scène|L'endroit où jouent les acteurs.
+selle|Le siège sur le dos du cheval ou du vélo.
+short|Un pantalon court pour l'été.
+tissu|On coud des vêtements avec.
+trois|Le nombre après deux.
+douze|Le nombre après onze.
+seize|Le nombre après quinze.
+mille|Dix fois cent.
+mauve|Un violet très clair.
+chiot|Le petit du chien.
+maman|Elle s'occupe de toi, avec papa.
+météo|Le bulletin qui dit le temps qu'il fera.
+bocal|Un pot en verre.
+orque|Un grand animal marin noir et blanc.
+bison|Un gros bœuf sauvage à bosse.
+chêne|Un grand arbre qui donne des glands.
+frigo|Il garde les aliments au frais.
+talon|L'arrière du pied.
+câlin|Se serrer fort dans les bras.
+maçon|Il construit les murs avec des briques.
+bille|Une petite boule de verre pour jouer.
+ananas|Un gros fruit jaune avec une couronne de feuilles.
+otarie|Un animal marin qui ressemble au phoque.
+phoque|Un animal marin à moustaches qui vit sur la glace.
+chaton|Le petit du chat.
+tulipe|Une fleur en forme de coupe, au printemps.
+mangue|Un fruit des pays chauds, jaune orangé et juteux.
+masque|On le met sur le visage pour se déguiser.
+miette|Un tout petit morceau de pain.
+paille|On boit avec, ou les vaches dorment dessus.
+flaque|Un peu d'eau de pluie par terre.
+gaufre|Un gâteau en forme de grille.
+goûter|Le petit repas de quatre heures.
+légume|La carotte et le poireau en sont.
+menthe|Une plante qui sent frais.
+moufle|Un gant sans doigts séparés.
+pilote|Il conduit l'avion.
+statue|Une personne en pierre ou en bronze qui ne bouge pas.
+tétine|Le bébé la suce pour se calmer.
+tonton|Le frère de papa ou de maman.
+torche|Une lampe de poche.
+truite|Un poisson des rivières.
+quatre|Le nombre après trois.
+treize|Le nombre après douze.
+samedi|Le jour après vendredi.
+domino|Un jeu de petits rectangles avec des points.
+basket|Un sport où l'on lance le ballon dans un panier.
+bouton|Il ferme la chemise.
+bureau|La table pour travailler.
+carton|Une boîte en papier épais.
+castor|Un animal qui construit des barrages avec des branches.
+chemin|Un petit passage dans la forêt.
+cinéma|On y regarde des films sur un grand écran.
+coffre|Une grande boîte pour garder des trésors.
+comète|Un astre avec une longue traînée lumineuse.
+étable|La maison des vaches à la ferme.
+farine|Une poudre blanche pour faire le pain.
+grotte|Un trou dans la montagne, comme une caverne.
+hochet|Un jouet de bébé qui fait du bruit.
+hublot|La petite fenêtre ronde du bateau.
+jambon|Une tranche de viande rose pour les sandwichs.
+kimono|La tenue blanche du judo.
+lavabo|On s'y lave les mains.
+limace|Elle ressemble à l'escargot, sans coquille.
+manège|Des chevaux de bois qui tournent à la fête.
+moulin|Ses ailes tournent avec le vent.
+navire|Un grand bateau.
+ourson|Le petit de l'ours.
+paquet|Un colis bien emballé.
+pinson|Un petit oiseau qui chante gaiement.
+poivre|Une épice noire qui pique un peu.
+potion|Une boisson magique de sorcier.
+puzzle|Des pièces à assembler pour faire une image.
+quille|On la renverse avec une boule au bowling.
+tennis|Un sport avec une raquette et une balle jaune.
+têtard|Le bébé de la grenouille.
+tiroir|On le tire pour ranger dans la commode.
+trèfle|Une petite plante à trois feuilles.
+carnet|Un petit cahier.
+gourde|Une bouteille pour boire en promenade.
+saumon|Un poisson rose qui remonte les rivières.
+ventre|Le milieu du corps, avec le nombril.
+voyage|Partir loin, en vacances.
+doudou|Le jouet tout doux pour dormir.
+compas|Il sert à tracer des cercles.
+classe|La salle de l'école où l'on apprend.
+calcul|Faire des additions et des soustractions.
+lionne|La femelle du roi des animaux.
+toupie|Un jouet qui tourne sur sa pointe.
+amande|Un fruit sec en forme de goutte.
+persil|Une petite herbe verte pour la cuisine.
+toucan|Un oiseau au très grand bec coloré.
+méduse|Un animal transparent de la mer, qui pique.
+homard|Un gros crustacé bleu avec des pinces.
+iguane|Un grand lézard vert.
+jaguar|Un grand félin tacheté d'Amérique.
+fennec|Un petit renard du désert aux grandes oreilles.
+alpaga|Un cousin du lama à la laine douce.
+jument|La maman du poulain.
+narine|Un trou du nez pour respirer.
+mollet|L'arrière de la jambe, sous le genou.
+langue|Elle est dans la bouche et sert à goûter.
+amitié|Ce qui unit deux amis.
+feutre|Un crayon à encre pour colorier.
+donjon|La plus haute tour du château.
+pivert|Un oiseau qui tape sur les arbres avec son bec.
+canari|Un petit oiseau jaune qui chante.
+faucon|Un oiseau rapide qui chasse en piqué.
+faisan|Un bel oiseau à longue queue.
+éclair|Un trait de lumière dans le ciel pendant l'orage.
+verger|Un jardin plein d'arbres fruitiers.
+râteau|Un outil à dents pour ramasser les feuilles.
+grange|Le grand bâtiment de la ferme où l'on range le foin.
+peigne|Il sert à démêler les cheveux.
+brosse|Elle sert à se coiffer ou à frotter.
+canapé|Un long siège du salon pour s'asseoir à plusieurs.
+garage|On y range la voiture.
+dictée|L'exercice où l'on écrit ce que dit la maîtresse.
+timbre|On le colle sur l'enveloppe.
+cornet|La glace se met dedans.
+quiche|Une tarte salée aux œufs et aux lardons.
+berger|Il garde les moutons.
+rigolo|Très drôle.
+gentil|Il est doux et aide les autres.
+laisse|La corde pour promener le chien.
+poussin|Le petit de la poule.
+hamster|Un petit rongeur qui court dans sa roue.
+collier|Un bijou autour du cou.
+cravate|Elle se noue autour du cou, sur la chemise.
+dessert|Le plat sucré à la fin du repas.
+gamelle|L'assiette du chien.
+tablier|On le met pour cuisiner sans se salir.
+poulain|Le petit du cheval.
+vanille|Un parfum doux pour les glaces et les gâteaux.
+chemise|Un vêtement avec un col et des boutons.
+marmite|Une grosse casserole de sorcière.
+biberon|La bouteille de lait du bébé.
+planche|Un morceau de bois long et plat.
+robinet|On le tourne pour avoir de l'eau.
+tambour|Un instrument sur lequel on tape.
+serpent|Un long animal sans pattes qui rampe.
+clavier|Les touches de l'ordinateur ou du piano.
+cerceau|Un grand anneau que l'on fait tourner.
+costume|Un habit pour se déguiser.
+dînette|De la petite vaisselle pour jouer.
+épinard|Un légume vert à feuilles.
+écolier|Un enfant qui va à l'école.
+fanfare|Un groupe de musiciens qui jouent en marchant.
+feuille|Elle pousse sur les branches des arbres.
+grimace|Une drôle de tête que l'on fait pour rire.
+gruyère|Un fromage avec des trous.
+journal|On y lit les nouvelles.
+lampion|Une petite lanterne en papier.
+lecture|Le moment où l'on lit un livre.
+lessive|On lave le linge avec.
+marteau|Un outil pour taper sur les clous.
+panneau|Il montre la route ou interdit de passer.
+pinceau|On peint avec.
+plateau|Un grand plat pour porter les assiettes.
+sifflet|On souffle dedans pour faire tuut.
+tonneau|Un grand baril en bois.
+torchon|Un tissu pour essuyer la vaisselle.
+velours|Un tissu tout doux.
+peluche|Un doudou tout doux.
+équerre|Une règle en forme de triangle.
+caneton|Le petit du canard.
+chamois|Une chèvre sauvage des montagnes.
+belette|Un petit animal mince et rapide.
+caribou|Un renne d'Amérique.
+lombric|Un ver de terre.
+grillon|Un insecte qui chante dans l'herbe la nuit.
+luciole|Un insecte qui brille dans la nuit.
+oreille|Elle sert à entendre.
+cerveau|Il est dans la tête et sert à penser.
+nombril|Le petit rond au milieu du ventre.
+asperge|Un légume long, vert ou blanc.
+brocoli|Un légume vert en forme de petit arbre.
+potiron|Une grosse courge orange.
+pruneau|Une prune séchée.
+basilic|Une herbe qui sent bon, pour la tomate.
+lasagne|Des couches de pâtes et de sauce au four.
+écharpe|Elle tient chaud au cou en hiver.
+étagère|Une planche au mur pour ranger.
+lavande|Une fleur violette qui sent bon.
+manchot|Un oiseau noir et blanc qui ne vole pas.
+chariot|Un caddie pour les courses.
+semaine|Sept jours de suite.
+trophée|Une coupe pour le gagnant.
+charade|Un jeu de devinette en plusieurs parties.
+sablier|Il mesure le temps avec du sable qui coule.
+parasol|Un grand parapluie contre le soleil, à la plage.
+maillot|Le vêtement pour se baigner.
+palmier|Un arbre des pays chauds avec de grandes feuilles.
+blouson|Une veste chaude.
+commode|Un meuble à tiroirs pour ranger les vêtements.
+placard|Un rangement fermé par une porte.
+ampoule|Elle éclaire quand on allume.
+royaume|Le pays d'un roi.
+matelot|Un marin du bateau.
+colibri|Le plus petit oiseau, ses ailes battent très vite.
+mésange|Un petit oiseau à tête bleue ou noire.
+colombe|Un oiseau blanc, symbole de la paix.
+sandale|Une chaussure ouverte pour l'été.
+collant|Il couvre les jambes sous la jupe.
+bermuda|Un short long.
+portail|La grande porte du jardin.
+ketchup|Une sauce rouge à la tomate.
+terrier|La maison sous la terre du lapin.
+nichoir|Une petite maison pour les oiseaux.
+caresse|Un geste tout doux avec la main.
+imagier|Un livre d'images pour les petits.
+amusant|Qui fait rire ou plaire.
+heureux|Content, plein de joie.
+content|Heureux, plein de joie.
+médecin|Le docteur qui soigne.
+autruche|Un très grand oiseau qui court vite mais ne vole pas.
+mammouth|Un éléphant poilu de la préhistoire.
+nounours|Un ours en peluche.
+pingouin|Un oiseau noir et blanc des pays froids.
+pistache|Un petit fruit sec vert.
+soucoupe|La petite assiette sous la tasse.
+trottoir|Le chemin des piétons au bord de la rue.
+chausson|Une chaussure douce pour la maison.
+alphabet|Toutes les lettres de A à Z.
+addition|Quand on ajoute des nombres.
+dentiste|Le docteur des dents.
+raquette|On tape la balle avec, au tennis.
+biscotte|Une tranche de pain grillé et sec.
+mascotte|Un personnage porte-bonheur d'une équipe.
+aquarium|Un bassin en verre pour les poissons.
+arrosoir|Il sert à donner de l'eau aux fleurs.
+bergerie|La maison des moutons.
+berceuse|Une chanson douce pour s'endormir.
+brouette|Un chariot à une roue pour le jardin.
+carrosse|Une voiture tirée par des chevaux, dans les contes.
+cheminée|Le feu y crépite l'hiver.
+cocotier|Le palmier qui donne les noix de coco.
+couronne|Le roi la porte sur la tête.
+myrtille|Une petite baie bleue.
+nageoire|Elle aide le poisson à nager.
+plongeon|Un saut dans l'eau, la tête la première.
+pyramide|Un grand monument pointu d'Égypte.
+quatorze|Le nombre après treize.
+sorcière|Une magicienne des contes, avec un chapeau pointu.
+triangle|Une forme à trois côtés.
+violette|Une petite fleur mauve.
+lentille|Une petite graine ronde qu'on cuisine.
+cannelle|Une épice brune qui sent bon dans les gâteaux.
+couscous|Des graines de semoule avec des légumes.
+porcelet|Le petit du cochon.
+blaireau|Un animal de la forêt avec des rayures sur la tête.
+caméléon|Un lézard qui change de couleur.
+suricate|Un petit animal du désert qui se tient debout pour guetter.
+scarabée|Un insecte à carapace brillante.
+danseuse|Une femme qui danse.
+pianiste|Il joue du piano.
+acrobate|Il fait des pirouettes au cirque.
+jongleur|Il lance des balles en l'air sans les faire tomber.
+dompteur|Il dresse les lions au cirque.
+camarade|Un ami de classe.
+gommette|Une petite étiquette colorée à coller.
+caravane|Une petite maison sur roues.
+passager|Une personne qui voyage dans un véhicule.
+nénuphar|Une grande feuille ronde qui flotte sur la mare.
+éventail|Il fait du vent quand on l'agite.
+peuplier|Un grand arbre très droit.
+tondeuse|Une machine pour couper l'herbe.
+tabouret|Une petite chaise sans dossier.
+sonnette|On appuie dessus pour dire qu'on est devant la porte.
+saladier|Un grand bol pour la salade.
+paupière|Elle ferme l'œil.
+mâchoire|L'os qui tient les dents.
+fossette|Un petit creux sur la joue quand on sourit.
+surprise|Quelque chose d'inattendu qui étonne.
+patience|Savoir attendre sans s'énerver.
+aventure|Un voyage plein de surprises.
+natation|Le sport où l'on nage.
+escalade|Grimper sur un mur ou une montagne.
+patinage|Glisser sur la glace avec des patins.
+football|Un sport où l'on tape dans le ballon avec le pied.
+champion|Celui qui gagne la course.
+médaille|On la reçoit quand on gagne.
+victoire|Quand on gagne.
+épicerie|Un petit magasin où l'on achète à manger.
+classeur|Un dossier à anneaux pour ranger les feuilles.
+trombone|Un petit fil de fer qui tient les feuilles, ou un instrument.
+boussole|Elle montre le nord.
+barrière|Elle ferme le champ ou le jardin.
+glissade|Quand on glisse sur la neige ou la glace.
+esquimau|Une glace sur un bâton.
+sucrerie|Un bonbon ou une douceur.
+tablette|Une barre de chocolat ou un petit écran.
+moutarde|Une sauce jaune qui pique.
+raclette|Du fromage fondu sur des pommes de terre.
+cavalier|Une personne qui monte à cheval.
+chaudron|La grosse marmite de la sorcière.
+grimoire|Le livre des formules magiques.
+farfadet|Un petit lutin malicieux.
+équipage|Toutes les personnes du bateau.
+plongeur|Il nage sous l'eau avec une bouteille.
+albatros|Un grand oiseau de mer aux très longues ailes.
+roitelet|Un tout petit oiseau.
+alouette|Un petit oiseau des champs qui chante en volant.
+ceinture|Elle tient le pantalon.
+fromager|Il fait ou vend le fromage.
+horloger|Il répare les horloges et les montres.
+couvreur|Il répare les toits.
+aviateur|Il pilote un avion.
+opticien|Il vend des lunettes.
+barbecue|On y fait griller la viande dehors.
+comptine|Une petite chanson pour les enfants.
+généreux|Il aime partager.
+gourmand|Il aime bien manger des bonnes choses.
+moelleux|Tout doux et mou, comme un bon gâteau.
+écriture|L'art de tracer les lettres.
+crocodile|Un grand reptile aux dents pointues qui vit dans le fleuve.
+dinosaure|Un animal géant qui vivait il y a très longtemps.
+kangourou|Un animal d'Australie qui saute, avec une poche sur le ventre.
+perroquet|Un oiseau coloré qui peut répéter des mots.
+chimpanzé|Un singe très malin.
+cochonnet|La petite boule de la pétanque.
+libellule|Un insecte aux ailes fines qui vole au-dessus de l'eau.
+moustique|Un petit insecte qui pique et fait bzz.
+renardeau|Le petit du renard.
+louveteau|Le petit du loup.
+marcassin|Le petit du sanglier.
+chevreuil|Un animal gracieux de la forêt, cousin du cerf.
+paresseux|Un animal très lent qui dort accroché aux branches.
+bouquetin|Une chèvre sauvage aux grandes cornes.
+langouste|Un crustacé de la mer avec de longues antennes.
+parapluie|On l'ouvre quand il pleut.
+casquette|Un chapeau avec une visière.
+chaussure|On la met au pied pour marcher dehors.
+pantoufle|Une chaussure confortable pour la maison.
+trompette|Un instrument doré dans lequel on souffle.
+harmonica|Un petit instrument à souffler, avec des trous.
+xylophone|Un instrument avec des lames de couleur que l'on frappe.
+accordéon|Un instrument que l'on étire et que l'on serre.
+princesse|La fille du roi et de la reine.
+chevalier|Il porte une armure et monte à cheval.
+capitaine|Le chef du bateau.
+boulanger|Il fait le pain et les croissants.
+cuisinier|Il prépare les repas au restaurant.
+infirmier|Il soigne les malades avec le docteur.
+jardinier|Il plante les fleurs et les légumes.
+menuisier|Il travaille le bois pour faire des meubles.
+fleuriste|Il vend des bouquets de fleurs.
+chanteuse|Une femme qui chante.
+maîtresse|Elle fait la classe aux élèves.
+directeur|Le chef de l'école.
+téléphone|On l'utilise pour appeler quelqu'un.
+coloriage|Un dessin à remplir avec des couleurs.
+ambulance|Elle emmène les malades à l'hôpital.
+autoroute|Une grande route pour aller vite.
+parachute|Une grande toile qui freine la chute.
+tournesol|Une grande fleur jaune qui suit le soleil.
+jonquille|Une fleur jaune du printemps.
+primevère|Une petite fleur jaune qui annonce le beau temps.
+printemps|La saison des fleurs.
+télescope|Une longue lunette pour regarder les étoiles.
+satellite|Il tourne autour de la Terre.
+serviette|On s'essuie avec après le bain.
+noisetier|L'arbuste qui donne les noisettes.
+clairière|Un endroit sans arbres au milieu de la forêt.
+porcherie|La maison des cochons.
+baignoire|On y prend son bain.
+shampoing|Il lave les cheveux.
+ascenseur|Il monte et descend les étages.
+casserole|On y fait chauffer la soupe.
+cafetière|Elle sert à faire le café.
+confiture|On l'étale sur la tartine.
+croissant|Une viennoiserie en forme de lune.
+madeleine|Un petit gâteau en forme de coquillage.
+clafoutis|Un gâteau aux cerises.
+grenadine|Un sirop rouge.
+chantilly|Une crème fouettée légère.
+cacahuète|Une petite graine grillée, dans sa coque.
+spaghetti|Des pâtes longues et fines.
+camembert|Un fromage rond dans une boîte en bois.
+hamburger|Un pain rond avec un steak.
+concombre|Un légume vert, long et frais.
+aubergine|Un légume violet.
+artichaut|Un légume vert aux feuilles serrées.
+betterave|Un légume rouge foncé.
+cornichon|Un petit concombre au vinaigre.
+courgette|Un légume vert et long, cousin du concombre.
+châtaigne|Un fruit brun dans une bogue qui pique, à griller en automne.
+mandarine|Un petit agrume orange facile à éplucher.
+framboise|Un petit fruit rouge et doux.
+groseille|Une petite baie rouge en grappe.
+mirabelle|Une petite prune jaune.
+friandise|Une petite douceur, comme un bonbon.
+moustache|Les poils au-dessus de la bouche.
+politesse|Dire bonjour, merci et s'il te plaît.
+tendresse|Beaucoup de douceur et d'amour.
+curiosité|L'envie de tout découvrir.
+promenade|Une balade à pied.
+spectacle|Des artistes qui jouent sur scène pour le public.
+batterie|Un instrument fait de tambours et de cymbales.
+saxophone|Un instrument à vent doré et recourbé.
+tambourin|Un petit tambour avec des grelots.
+orchestre|Un grand groupe de musiciens.
+partition|La feuille où sont écrites les notes.
+ballerine|Une danseuse classique.
+aquarelle|Une peinture à l'eau.
+guirlande|Une décoration qui pend au sapin de Noël.
+devinette|Une petite énigme à trouver.
+badminton|Un sport avec un volant et des raquettes.
+rossignol|Un petit oiseau qui chante très bien.
+étourneau|Un oiseau noir tacheté qui vole en grands groupes.
+orangeade|Une boisson à l'orange.
+pharmacie|Le magasin des médicaments.
+chauffeur|Il conduit le bus ou le camion.
+marchande|Une femme qui vend au marché.
+randonnée|Une longue promenade à pied.
+enveloppe|On met la lettre dedans.
+débardeur|Un tee-shirt sans manches.
+étincelle|Une toute petite flamme qui saute.
+bijoutier|Il vend des bagues et des colliers.
+serrurier|Il répare les serrures et ouvre les portes.
+ingénieur|Il invente et construit des machines.
+inventeur|Il crée des choses nouvelles.
+chercheur|Il fait des découvertes.
+astronome|Il observe les étoiles.
+sauveteur|Il aide les gens en danger.
+mangeoire|Là où les animaux viennent manger.
+abreuvoir|Là où les animaux viennent boire.
+croquette|Un petit biscuit pour chien ou chat.
+aboiement|Le cri du chien.
+courageux|Il n'a pas peur.
+délicieux|Très bon à manger.
+jardinage|Planter, arroser et soigner les plantes.
+coccinelle|Une petite bête rouge à points noirs.
+hirondelle|Un oiseau qui annonce le printemps.
+sauterelle|Un insecte vert qui saute très loin.
+dromadaire|Un animal du désert avec une seule bosse.
+rhinocéros|Un gros animal avec une corne sur le nez.
+grenouille|Elle saute et fait coa-coa près de la mare.
+hippocampe|Un petit poisson en forme de cheval.
+salamandre|Un petit animal jaune et noir qui aime l'humidité.
+balançoire|Elle va et vient dans le jardin, accrochée à des cordes.
+magicienne|Une femme qui fait des tours de magie.
+astronaute|Il voyage dans l'espace dans une fusée.
+pharmacien|Il vend les médicaments.
+mécanicien|Il répare les voitures.
+architecte|Il dessine les plans des maisons.
+récréation|Le moment pour jouer dans la cour.
+ordinateur|Une machine avec un écran et un clavier.
+télévision|On y regarde des émissions et des dessins animés.
+calendrier|Il montre les jours et les mois de l'année.
+bicyclette|Un vélo à deux roues et des pédales.
+locomotive|Elle tire les wagons du train.
+pelleteuse|Une machine qui creuse la terre.
+marguerite|Une fleur blanche au cœur jaune.
+coquelicot|Une fleur rouge des champs.
+champignon|Il pousse dans la forêt après la pluie.
+brouillard|Un nuage tout bas qui empêche de voir loin.
+cosmonaute|Il flotte dans la fusée, en route vers les étoiles.
+coquillage|On le ramasse sur la plage, il vient de la mer.
+marronnier|Le grand arbre qui donne des marrons.
+citronnier|L'arbre qui donne des citrons.
+poulailler|La maison des poules.
+cuisinière|Le four et les plaques pour cuire les repas.
+aspirateur|Il aspire la poussière.
+lampadaire|Une grande lampe dans la rue ou le salon.
+couverture|On la met sur le lit pour avoir chaud.
+chaussette|On la met au pied avant la chaussure.
+dentifrice|La pâte pour se brosser les dents.
+savonnette|Un petit savon.
+fourchette|On pique les aliments avec.
+bouilloire|Elle fait chauffer l'eau.
+tartelette|Une petite tarte.
+citronnade|Une boisson au citron.
+clémentine|Un petit agrume sans pépins, en hiver.
+ciboulette|Une herbe fine pour la cuisine.
+chatouille|Ce qui fait rire quand on touche sous les bras.
+clarinette|Un instrument à vent noir.
+trampoline|Une toile sur laquelle on rebondit.
+tourniquet|Un manège qu'on fait tourner au parc.
+équitation|Le sport où l'on monte à cheval.
+citrouille|Une grosse courge orange pour Halloween.
+labyrinthe|Un chemin plein de détours où l'on se perd.
+aventurier|Il part découvrir des pays lointains.
+abricotier|L'arbre qui donne les abricots.
+pâtisserie|Une boutique de gâteaux.
+restaurant|On y mange des plats préparés par le cuisinier.
+conducteur|Il conduit le train.
+infirmière|Elle soigne les malades.
+boulangère|Elle vend le pain.
+jardinière|Une grande caisse pour planter des fleurs au balcon.
+musicienne|Une femme qui joue de la musique.
+directrice|La cheffe de l'école.
+maternelle|La première école des petits.
+professeur|Il fait la classe aux grands.
+calculette|Une petite machine pour compter.
+mappemonde|Une carte du monde entier.
+mayonnaise|Une sauce jaune aux œufs.
+choucroute|Du chou avec des saucisses.
+forteresse|Un château très solide.
+gouvernail|La barre qui dirige le bateau.
+espadrille|Une chaussure en toile pour l'été.
+nourriture|Tout ce que l'on mange.
+confiserie|Le magasin des bonbons.
+invitation|Une carte pour dire : viens à ma fête.
+décoration|Ce qui rend la maison jolie pour la fête.
+apiculteur|Il s'occupe des abeilles et du miel.
+couturière|Elle coud des vêtements.
+cordonnier|Il répare les chaussures.
+secouriste|Il aide les gens qui ont un petit accident.
+camionneur|Il conduit un gros camion.
+chrysalide|La petite maison où la chenille devient papillon.
+taupinière|Un petit tas de terre fait par la taupe.
+miaulement|Le cri du chat.
+gazouillis|Le chant léger des oiseaux.
+abécédaire|Un livre pour apprendre les lettres.
+personnage|Un héros d'une histoire.
+magnifique|Très très beau.
+formidable|Super, génial !
+tranquille|Calme, sans bruit.
+silencieux|Qui ne fait pas de bruit.
+soif|L'envie de boire.
+faim|L'envie de manger.
+polo|Un tee-shirt avec un petit col.
+gnou|Une grosse antilope d'Afrique à barbe.
+amie|Une copine.
+ibis|Un oiseau à long bec courbé.
 `;
 
 // Mots acceptés en plus des solutions (sans définition).
@@ -931,10 +1588,13 @@ zebus zeros zeste zincs zones zooms
 zebres zenith zephyr zestes zouave
 `;
 
-const clean = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+// Normalisation : minuscules sans accents, ligatures œ -> oe et æ -> ae (les mots à trait
+// d'union ou apostrophe sont ensuite écartés par le filtre /^[a-z]+$/).
+const clean = (s) => s.toLowerCase().replace(/œ/g, 'oe').replace(/æ/g, 'ae').normalize('NFD').replace(/[̀-ͯ]/g, '');
+export const LENGTHS = [4, 5, 6, 7, 8, 9, 10];
 
 const DEFS = {};
-export const SOLUTIONS = { 4: [], 5: [], 6: [], 7: [], 8: [] };
+export const SOLUTIONS = Object.fromEntries(LENGTHS.map((n) => [n, []]));
 for (const line of SOLUTIONS_TXT.split('\n')) {
   const t = line.trim();
   if (!t) continue;
@@ -944,12 +1604,20 @@ for (const line of SOLUTIONS_TXT.split('\n')) {
   DEFS[w] = t.slice(i + 1).trim();
   SOLUTIONS[w.length].push(w);
 }
-for (const n of [4, 5, 6, 7, 8]) SOLUTIONS[n].sort();
+for (const n of LENGTHS) SOLUTIONS[n].sort();
 
-const EXTRA_WORDS = EXTRA_TXT.split(/\s+/).map(clean).filter((w) => /^[a-z]+$/.test(w) && w.length >= 4 && w.length <= 8);
+const EXTRA_WORDS = EXTRA_TXT.split(/\s+/).map(clean).filter((w) => /^[a-z]+$/.test(w) && w.length >= 4 && w.length <= 10);
 
 const DICO_WORDS = DICO.split(/\s+/).filter(Boolean);
 export const ACCEPTED = new Set([...Object.keys(DEFS), ...EXTRA_WORDS, ...DICO_WORDS]);
+
+// Lignes brutes de SOLUTIONS_TXT (pour les tests : format, doublons, mots écartés par le filtre).
+export function solutionEntries() {
+  return SOLUTIONS_TXT.split('\n').map((l) => l.trim()).filter(Boolean).map((t) => {
+    const i = t.indexOf('|');
+    return { src: t, word: i < 0 ? '' : clean(t.slice(0, i)), def: i < 0 ? '' : t.slice(i + 1).trim() };
+  });
+}
 
 export function definition(word) { return DEFS[word] || ''; }
 export function isAccepted(word) { return ACCEPTED.has(word); }

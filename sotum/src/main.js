@@ -75,12 +75,12 @@ function renderHome() {
   $('homeStats').innerHTML = `<span>⭐ ${stats.stars}</span><span>🔥 Série ${stats.streak}</span><span>🏆 Record ${stats.best}</span>`;
   const key = G.dateKey();
   $('paliers').innerHTML = '';
-  for (const l of [1, 2, 3]) {
+  for (const l of Object.keys(G.PALIERS).map(Number)) {
     const c = G.PALIERS[l];
     const done = mode === 'jour' && stats.daily[`${key}:${l}`];
     const b = document.createElement('button');
     b.className = 'pal'; b.dataset.l = l;
-    b.innerHTML = `<span>Palier ${l}</span><small>${c.lens[0]}-${c.lens[c.lens.length - 1]} lettres · ${c.tries} essais${c.hint ? ' · 💡' : ''}${done ? ' · ✅ fait' : ''}</small>`;
+    b.innerHTML = `<span>Palier ${l}${l === 4 ? ' · Expert' : ''}</span><small>${c.lens[0]}-${c.lens[c.lens.length - 1]} lettres · ${c.tries} essais${c.hint ? ' · 💡' : ''}${done ? ' · ✅ fait' : ''}</small>`;
     b.addEventListener('click', () => startGame(l, mode));
     $('paliers').appendChild(b);
   }

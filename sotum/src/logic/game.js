@@ -5,8 +5,9 @@ export const PALIERS = {
   1: { lens: [4, 5], tries: 7, hint: true },
   2: { lens: [5, 6, 7], tries: 6, hint: false },
   3: { lens: [6, 7, 8], tries: 5, hint: false },
+  4: { lens: [8, 9, 10], tries: 6, hint: false },
 };
-export const MIN_LEN = 4, MAX_LEN = 8;
+export const MIN_LEN = 4, MAX_LEN = 10;
 export const MAX_HINTS = 2;
 
 export function mulberry32(seed) {
