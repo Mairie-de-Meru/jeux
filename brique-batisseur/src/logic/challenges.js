@@ -77,8 +77,111 @@ function relief(rows, depth = 2) {
   return model(rows.slice().reverse().map((row) => Array(depth).fill(row)));
 }
 
+/**
+ * Modèle donné pièce par pièce, dans l'ordre de construction : [type, couleur, x, z, rot].
+ * y est calculé en rejouant les pièces sur un plateau (chaque pièce repose sur les précédentes).
+ */
+function build(specs) {
+  const b = new Board();
+  const list = [];
+  for (const spec of specs) place(b, list, spec);
+  return list;
+}
+
+// Série « facile » (niveau 0) : guidée brique par brique (steps), 4 à 15 pièces.
+// Repères : x = gauche → droite, z = profondeur, b1x2 rot 0 = 1 case en x × 2 en z, b2x4 rot 1 = 4 en x × 2 en z.
+const EASY = [
+  {
+    id: 'tour', title: 'La tour', emoji: '🗼',
+    pieces: build([
+      ['b2x2', 'rouge', 0, 0], ['b2x2', 'jaune', 0, 0], ['b2x2', 'bleu', 0, 0], ['b2x2', 'vert', 0, 0],
+    ]),
+  },
+  {
+    id: 'lettre-l', title: 'La lettre L', emoji: '🔤',
+    pieces: build([
+      ['b2x4', 'bleu', 0, 0, 1],
+      ['b2x2', 'rouge', 0, 0], ['b2x2', 'jaune', 0, 0], ['b2x2', 'vert', 0, 0], ['b2x2', 'violet', 0, 0],
+    ]),
+  },
+  {
+    id: 'pont', title: 'Le pont', emoji: '🌉',
+    pieces: build([
+      ['b1x2', 'bleu', 0, 0], ['b1x2', 'bleu', 3, 0],
+      ['b1x2', 'bleu', 0, 0], ['b1x2', 'bleu', 3, 0],
+      ['b2x4', 'rouge', 0, 0, 1],
+    ]),
+  },
+  {
+    id: 'escalier', title: "L'escalier", emoji: '🪜',
+    pieces: build([
+      ['b2x2', 'orange', 0, 0], ['b2x2', 'orange', 2, 0], ['b2x2', 'orange', 4, 0],
+      ['b2x2', 'jaune', 2, 0], ['b2x2', 'jaune', 4, 0],
+      ['b2x2', 'vert', 4, 0],
+    ]),
+  },
+  {
+    id: 'arbre', title: "L'arbre", emoji: '🌳',
+    pieces: build([
+      ['b2x2', 'orange', 1, 0], ['b2x2', 'orange', 1, 0],
+      ['b2x4', 'vert', 0, 0, 1], ['b2x4', 'vert', 0, 0, 1],
+      ['b2x2', 'vert', 1, 0],
+      ['b1x2', 'rouge', 1, 0],
+    ]),
+  },
+  {
+    id: 'petite-voiture', title: 'La petite voiture', emoji: '🚙',
+    pieces: build([
+      ['b1x2', 'bleu', 0, 0], ['b1x2', 'bleu', 5, 0],
+      ['b2x4', 'rouge', 0, 0, 1], ['b2x2', 'rouge', 4, 0],
+      ['b2x4', 'blanc', 1, 0, 1], ['b1x2', 'jaune', 5, 0],
+      ['b2x4', 'rouge', 1, 0, 1],
+    ]),
+  },
+  {
+    id: 'petite-maison', title: 'La petite maison', emoji: '🏡',
+    pieces: build([
+      ['b2x4', 'jaune', 0, 0, 1],
+      ['b1x2', 'jaune', 0, 0], ['b1x2', 'orange', 1, 0], ['b1x2', 'bleu', 2, 0], ['b1x2', 'jaune', 3, 0],
+      ['b2x4', 'jaune', 0, 0, 1],
+      ['r2x2', 'rouge', 0, 0, 3], ['r2x2', 'rouge', 2, 0, 1],
+    ]),
+  },
+  {
+    id: 'petite-fleur', title: 'La petite fleur', emoji: '🌼',
+    pieces: build([
+      ['b2x4', 'orange', 0, 0, 1],
+      ['b2x2', 'vert', 1, 0], ['b2x2', 'vert', 1, 0],
+      ['b2x4', 'rose', 0, 0, 1],
+      ['b1x2', 'rose', 0, 0], ['b2x2', 'jaune', 1, 0], ['b1x2', 'rose', 3, 0],
+      ['b2x4', 'rose', 0, 0, 1],
+    ]),
+  },
+  {
+    id: 'petit-bateau', title: 'Le petit bateau', emoji: '🚤',
+    pieces: build([
+      ['b2x4', 'rouge', 1, 0, 1],
+      ['b2x2', 'rouge', 0, 0], ['b2x2', 'rouge', 2, 0], ['b2x2', 'rouge', 4, 0],
+      ['b2x2', 'blanc', 1, 0], ['b1x2', 'orange', 3, 0],
+      ['b1x2', 'blanc', 2, 0], ['b1x2', 'orange', 3, 0],
+      ['b1x2', 'bleu', 3, 0],
+    ]),
+  },
+  {
+    id: 'petit-robot', title: 'Le petit robot', emoji: '🤖',
+    pieces: build([
+      ['b1x2', 'bleu', 0, 0], ['b1x2', 'bleu', 3, 0],
+      ['b1x2', 'bleu', 0, 0], ['b1x2', 'bleu', 3, 0],
+      ['b2x4', 'rouge', 0, 0, 1], ['b2x4', 'rouge', 0, 0, 1],
+      ['b2x2', 'blanc', 1, 0],
+      ['b1x1', 'jaune', 1, 0], ['b1x1', 'jaune', 2, 1],
+    ]),
+  },
+].map((c) => ({ ...c, level: 0, guide: true, steps: true }));
+
 // Du plus simple au plus complexe (ordre = progression du mode Défi).
 export const CHALLENGES = [
+  ...EASY,
   {
     id: 'fleur', title: 'La fleur', emoji: '🌷', level: 1, guide: true,
     pieces: relief([

@@ -2,10 +2,10 @@
 import { PIECES, footprint } from './pieces.js';
 
 export const SIZE = 16;
-export const PLATE_SIZES = [16, 24, 32];
+export const PLATE_SIZES = [16, 24, 32, 40, 48];
 export const MAX_H = 36;
 
-/** Taille de plaque suivante dans le cycle 16 → 24 → 32 → 16. */
+/** Taille de plaque suivante dans le cycle 16 → 24 → 32 → 40 → 48 → 16. */
 export function nextPlateSize(size) {
   const i = PLATE_SIZES.indexOf(size);
   return PLATE_SIZES[(i + 1) % PLATE_SIZES.length];
@@ -141,6 +141,32 @@ export class Board {
     return { ok: false, reason };
   }
 
+  /** Où tomberait la pièce uid si on la déplaçait en (x,z) avec la rotation rot ? → { ok, y, reason } */
+  moveCheck(uid, x, z, rot) {
+    const piece = this.pieces.find((q) => q.uid === uid);
+    if (!piece) return { ok: false, y: 0, reason: 'missing' };
+    if (!canRemove(this, uid)) return { ok: false, y: piece.y, reason: 'covered' };
+    const others = { size: this.size, pieces: this.pieces.filter((q) => q !== piece) };
+    return placement(others, piece.type, rot ?? piece.rot, x, z);
+  }
+
+  /**
+   * Déplace une pièce du dessus en (x,z) (rotation éventuelle), y recalculé.
+   * Refuse sans rien changer si c'est impossible ; une entrée d'historique 'move'. → { ok, piece, reason }
+   */
+  move(uid, x, z, rot) {
+    const piece = this.pieces.find((q) => q.uid === uid);
+    if (!piece) return { ok: false, reason: 'missing' };
+    const r = this.moveCheck(uid, x, z, rot);
+    if (!r.ok) return { ok: false, reason: r.reason };
+    const nrot = rot ?? piece.rot;
+    if (x === piece.x && z === piece.z && nrot === piece.rot && r.y === piece.y) return { ok: true, piece, same: true };
+    const before = { x: piece.x, z: piece.z, rot: piece.rot, y: piece.y };
+    Object.assign(piece, { x, z, rot: nrot, y: r.y });
+    this._push({ kind: 'move', piece, before });
+    return { ok: true, piece };
+  }
+
   /** Change la taille de la plaque. Refuse si une pièce dépasserait. → { ok, reason } */
   resize(size) {
     if (!Number.isInteger(size) || size < 1) return { ok: false, reason: 'size' };
@@ -169,7 +195,7 @@ export class Board {
       if (i >= 0) this.pieces.splice(i, 1);
     } else if (e.kind === 'remove') {
       this.pieces.splice(Math.min(e.index, this.pieces.length), 0, e.piece);
-    } else if (e.kind === 'rotate') {
+    } else if (e.kind === 'rotate' || e.kind === 'move') {
       Object.assign(e.piece, e.before);
     } else if (e.kind === 'clear') {
       this.pieces = e.pieces;

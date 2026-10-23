@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { PIECES, colorById, footprint } from '../logic/pieces.js';
 import { SIZE } from '../logic/board.js';
 import { PLATE, STUD_H, pieceGeometry, studGeometry } from './geometry.js';
-import { solidMaterial, holoMaterial, ghostMaterial } from './materials.js';
+import { solidMaterial, holoMaterial, ghostMaterial, fadedMaterial, stepMaterial } from './materials.js';
 import { easeInCubic, clamp01 } from './ease.js';
 
 const HALF_PI = Math.PI / 2;
@@ -43,7 +43,8 @@ export class Stage {
     c.minDistance = 5;
     c.maxDistance = this.size * 2.9;
     c.screenSpacePanning = false;
-    c.mouseButtons.RIGHT = null; // clic droit = retirer une pièce, pas de panoramique
+    c.mouseButtons.RIGHT = THREE.MOUSE.ROTATE; // glisser au clic droit = tourner le terrain (clic court = retirer, géré par main.js)
+    c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; // 1 doigt = orbite, 2 doigts = zoom + déplacement
     c.rotateSpeed = 0.8;
     c.update();
 
@@ -67,6 +68,14 @@ export class Stage {
     this.holo = new THREE.Group();
     this.scene.add(this.holo);
     this.holoTimer = 0;
+
+    this.step = new THREE.Mesh(pieceGeometry('b2x2'), stepMaterial);
+    this.step.visible = false;
+    this.step.renderOrder = 4;
+    this.stepType = 'b2x2';
+    this.stepTime = 0;
+    this.scene.add(this.step);
+    this.thumbs = new Map(); // id → dataURL
 
     this._buildPreview();
     this.previewEl = null;
@@ -113,14 +122,19 @@ export class Stage {
     this._disposeBase();
     this._buildBase();
     this._fitSun();
+    this.controls.maxDistance = n * 2.9;
+    this.resetView();
+    this.pickList = [this.plate, ...this.meshes.values()];
+  }
+
+  /** Remet la caméra au cadrage de départ pour la taille de plaque courante. */
+  resetView() {
     const c = this.controls;
-    const h = n / 2;
-    c.maxDistance = n * 2.9;
+    const n = this.size, h = n / 2;
     c.target.set(h, 0.8, h);
     this.camera.position.set(h + 11 * n / 16, 20 * n / 16, h + 17 * n / 16);
     this.zoomTo = null;
     c.update();
-    this.pickList = [this.plate, ...this.meshes.values()];
   }
 
   _disposeBase() {
@@ -297,6 +311,28 @@ export class Stage {
     g.visible = true;
   }
 
+  // ---- brique suivante (mode pas à pas) ----------------------------------------
+  /** Affiche la brique à poser, pulsante, à sa place exacte. */
+  showStep(p) {
+    const m = this.step;
+    if (p.type !== this.stepType) { m.geometry = pieceGeometry(p.type); this.stepType = p.type; }
+    placeMesh(m, p);
+    m.userData.baseY = m.position.y;
+    const hex = colorById(p.color)?.hex ?? '#ffffff';
+    stepMaterial.color.set(hex);
+    stepMaterial.emissive.set(hex);
+    this.stepTime = 0;
+    m.visible = true;
+  }
+
+  clearStep() { this.step.visible = false; }
+
+  /** Pièce posée semi-transparente (pendant qu'on la déplace) ou normale. */
+  setFaded(uid, on, colorId) {
+    const mesh = this.meshes.get(uid);
+    if (mesh) mesh.material = on ? fadedMaterial(colorId) : solidMaterial(colorId);
+  }
+
   // ---- hologramme ------------------------------------------------------------
   /** Affiche les pièces en translucide. seconds > 0 : disparaît tout seul. */
   showHologram(pieces, seconds = 0) {
@@ -359,11 +395,12 @@ export class Stage {
 
   // ---- sélection par rayon -----------------------------------------------------
   /** → { cx, cz, uid, onBoard } (objet réutilisé) ou null si rien n'est touché. */
-  pick(clientX, clientY) {
+  pick(clientX, clientY, excludeUid = null) {
     const rect = this.canvas.getBoundingClientRect();
     this._ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(this._ndc, this.camera);
-    const hits = this.raycaster.intersectObjects(this.pickList, false);
+    const list = excludeUid == null ? this.pickList : this.pickList.filter((o) => o.userData.uid !== excludeUid);
+    const hits = this.raycaster.intersectObjects(list, false);
     if (!hits.length) return null;
     const h = hits[0];
     const n = this._n.copy(h.face.normal).transformDirection(h.object.matrixWorld);
@@ -395,6 +432,64 @@ export class Stage {
     return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
   }
 
+  /** Point écran (px CSS) du centre du dessus de la case (x,z) à la hauteur y (en plaques). */
+  screenOfCell(x, z, y = 0) {
+    const v = new THREE.Vector3(x + 0.5, y * PLATE, z + 0.5).project(this.camera);
+    const r = this.canvas.getBoundingClientRect();
+    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+  }
+
+  // ---- vignettes des cartes ----------------------------------------------------
+  /** Image (dataURL, 2× pour 170×150 CSS) du modèle, rendue hors écran et mise en cache par id. */
+  thumbnail(id, pieces, w = 170, h = 150) {
+    if (this.thumbs.has(id)) return this.thumbs.get(id);
+    let url = null;
+    try {
+      if (!this._thumb) {
+        const canvas = document.createElement('canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setPixelRatio(2);
+        renderer.setSize(w, h, false);
+        renderer.setClearColor(0x000000, 0);
+        const scene = new THREE.Scene();
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xcfd8ff, 1.2));
+        const d = new THREE.DirectionalLight(0xffffff, 1.8);
+        d.position.set(5, 10, 6);
+        scene.add(d);
+        const group = new THREE.Group();
+        scene.add(group);
+        this._thumb = { renderer, scene, group, camera: new THREE.PerspectiveCamera(35, w / h, 0.1, 120) };
+      }
+      const { renderer, scene, group, camera } = this._thumb;
+      group.clear();
+      let minX = 99, minZ = 99, maxX = -99, maxZ = -99, maxY = 0;
+      for (const p of pieces) {
+        const fp = footprint(p.type, p.rot);
+        minX = Math.min(minX, p.x); minZ = Math.min(minZ, p.z);
+        maxX = Math.max(maxX, p.x + fp.w); maxZ = Math.max(maxZ, p.z + fp.d);
+        maxY = Math.max(maxY, (p.y + PIECES[p.type].h) * PLATE);
+      }
+      const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
+      for (const p of pieces) {
+        const mesh = new THREE.Mesh(pieceGeometry(p.type), solidMaterial(p.color));
+        placeMesh(mesh, p);
+        mesh.position.x -= cx;
+        mesh.position.z -= cz;
+        group.add(mesh);
+      }
+      group.rotation.y = 0.5;
+      const r = Math.max(maxX - minX, maxZ - minZ, maxY) * 0.5 + 0.6;
+      const dist = r * 3.1;
+      camera.position.set(dist * 0.45, maxY / 2 + dist * 0.45, dist * 0.85);
+      camera.lookAt(0, maxY / 2, 0);
+      renderer.render(scene, camera);
+      url = renderer.domElement.toDataURL('image/png');
+      group.clear();
+    } catch { url = null; }
+    this.thumbs.set(id, url);
+    return url;
+  }
+
   // ---- boucle ---------------------------------------------------------------
   update(dt) {
     if (this.zoomTo != null) {
@@ -416,6 +511,15 @@ export class Stage {
       if (this.holoTimer <= 0) this.hideHologram();
     }
     if (this.previewActive) this.previewPivot.rotation.y += dt * 0.6;
+    if (this.step.visible) {
+      this.stepTime += dt;
+      const k = 0.5 + 0.5 * Math.sin(this.stepTime * 5);
+      stepMaterial.opacity = 0.35 + 0.35 * k;
+      stepMaterial.emissiveIntensity = 0.2 + 0.4 * k;
+      const s = 1.02 + 0.04 * k;
+      this.step.scale.set(s, 1 + 0.02 * k, s);
+      this.step.position.y = this.step.userData.baseY + 0.12 * k;
+    }
   }
 
   render() {

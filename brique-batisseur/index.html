@@ -45,7 +45,8 @@
         <button class="tool" id="btn-eraser" aria-label="Gomme">🧽</button>
         <button class="tool" id="btn-undo" aria-label="Annuler">↩️</button>
         <button class="tool" id="btn-clear" aria-label="Tout effacer">🗑️</button>
-        <button class="tool" id="btn-plate" aria-label="Taille du terrain">🔲</button>
+        <button class="tool" id="btn-plate" aria-label="Taille du terrain">🔲<small id="plate-size">16</small></button>
+        <button class="tool" id="btn-hints" aria-label="Astuces" aria-pressed="true" hidden>💡</button>
       </div>
       <div id="bubble"></div>
       <div id="zoom">
@@ -58,11 +59,12 @@
         <button class="tool small" id="act-close" aria-label="Fermer">✖️</button>
       </div>
       <div id="fiche" hidden>
-        <div id="fiche-head"><span id="fiche-pic"></span><b id="fiche-title"></b></div>
+        <div id="fiche-head" role="button" aria-label="Replier la fiche"><span id="fiche-pic"></span><b id="fiche-title"></b></div>
         <div id="fiche-view"></div>
       </div>
       <button id="btn-finish" class="big green" hidden>✅ J'ai fini !</button>
       <div id="bottom">
+        <div id="step" hidden><span id="step-ico" class="ico"></span><b id="step-label"></b><span id="step-count"></span></div>
         <div id="palette"></div>
         <div id="colors"></div>
       </div>

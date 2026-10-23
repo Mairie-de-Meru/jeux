@@ -55,15 +55,36 @@ export function dotsHtml(level) {
   return '●'.repeat(level) + '○'.repeat(3 - level);
 }
 
-export function buildCards(challenges, progress, images, onPick) {
+const GROUPS = [
+  { name: 'Facile', test: (lv) => lv === 0 },
+  { name: 'Moyen', test: (lv) => lv === 1 || lv === 2 },
+  { name: 'Difficile', test: (lv) => lv >= 3 },
+];
+
+/**
+ * Cartes de défi groupées par difficulté. thumbOf(c) → dataURL de la vignette 3D ou null
+ * (repli : image dessinée si elle existe, sinon emoji).
+ */
+export function buildCards(challenges, progress, images, onPick, thumbOf = () => null) {
   const box = $('#cards');
   box.innerHTML = '';
-  for (const c of challenges) {
-    const b = document.createElement('button');
-    b.className = 'card';
-    const pic = images[c.id] ? `<img src="assets/img/${c.id}.png" alt="">` : c.emoji;
-    b.innerHTML = `<div class="pic">${pic}</div><b>${c.title}</b><div class="stars">${starsHtml(progress[c.id] ?? 0)}</div><div class="dots">${dotsHtml(c.level)}</div>`;
-    b.addEventListener('click', () => onPick(c.id));
-    box.appendChild(b);
+  for (const g of GROUPS) {
+    const list = challenges.filter((c) => g.test(c.level));
+    if (!list.length) continue;
+    const h = document.createElement('h3');
+    h.className = 'group';
+    h.textContent = g.name;
+    box.appendChild(h);
+    for (const c of list) {
+      const b = document.createElement('button');
+      b.className = 'card';
+      b.dataset.id = c.id;
+      const thumb = images[c.id] ? null : thumbOf(c);
+      const pic = images[c.id] ? `<img src="assets/img/${c.id}.png" alt="">` : thumb ? `<img class="thumb" src="${thumb}" alt="">` : c.emoji;
+      const badge = c.steps ? '<div class="dots">👣</div>' : `<div class="dots">${dotsHtml(c.level)}</div>`;
+      b.innerHTML = `<div class="pic">${pic}</div><b>${c.title}</b><div class="stars">${starsHtml(progress[c.id] ?? 0)}</div>${badge}`;
+      b.addEventListener('click', () => onPick(c.id));
+      box.appendChild(b);
+    }
   }
 }

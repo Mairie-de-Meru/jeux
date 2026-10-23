@@ -41,6 +41,11 @@ export const sounds = {
     tone(330, 0, 0.16, { type: 'triangle', vol: 0.12 });
     tone(262, 0.12, 0.22, { type: 'triangle', vol: 0.1 });
   },
+  /** petite note joyeuse : bonne brique en mode pas à pas */
+  step() {
+    tone(660, 0.05, 0.1, { type: 'triangle', vol: 0.12 });
+    tone(990, 0.13, 0.14, { type: 'triangle', vol: 0.12 });
+  },
   tick() { tone(600, 0, 0.05, { type: 'triangle', vol: 0.09 }); },
   /** arpège de victoire */
   win() {
