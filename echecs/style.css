@@ -30,7 +30,7 @@ button { font: inherit; color: inherit; cursor: pointer; border: 0; touch-action
 .pl span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22vw; }
 .pl.turn { border-color: var(--accent); background: rgba(255, 185, 56, 0.18); }
 .dot { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 2px solid rgba(255, 255, 255, 0.5); }
-.dot.w { background: #f6ead0; } .dot.b { background: #9a1f40; }
+.dot.w { background: #f8f8f4; } .dot.b { background: #26262c; }
 
 #toast {
   max-width: min(92vw, 560px); padding: 8px 16px; border-radius: 12px; font-weight: 600; font-size: 16px; text-align: center;
