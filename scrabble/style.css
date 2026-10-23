@@ -16,22 +16,23 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 .icon { width: 48px; height: 48px; border-radius: 14px; border: 0; background: rgba(255,255,255,0.22); color: #fff; font-size: 22px; cursor: pointer; }
 .icon:active { transform: scale(0.94); }
 
-#main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#main { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 #stage { position: relative; flex: 1; min-height: 0; }
 #c { display: block; width: 100%; height: 100%; touch-action: none; }
-#msg { position: absolute; left: 8px; right: 8px; top: 6px; display: flex; justify-content: center; pointer-events: none; }
+#msg { position: absolute; left: 8px; right: calc(8px + var(--inset-r, 0px)); top: 6px; display: flex; justify-content: center; pointer-events: none; }
 #msg span { max-width: 90vw; background: rgba(20, 24, 40, 0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: clamp(13px, 3.4vmin, 15px); line-height: 1.3; box-shadow: 0 2px 8px rgba(0,0,0,0.18); text-align: center; animation: msgin 0.18s ease-out; transition: opacity 0.18s ease-out; }
 #msg span.out { opacity: 0; }
 #msg span.bad { background: rgba(150, 50, 10, 0.6); }
 #pan:not(.hidden) ~ #msg { top: 64px; }
 #msg:empty { display: none; }
 @keyframes msgin { from { transform: translateY(-10px); opacity: 0; } to { transform: none; opacity: 1; } }
-#pop { position: absolute; left: 0; right: 0; top: 38%; display: flex; justify-content: center; pointer-events: none; }
+#pop { position: absolute; left: 0; right: var(--inset-r, 0px); top: calc((100% - var(--inset-b, 0px)) * 0.38); display: flex; justify-content: center; pointer-events: none; }
 #pop span { font-size: clamp(28px, 9vmin, 56px); font-weight: 900; color: #fff; text-shadow: 0 3px 0 #e8590c, 0 6px 14px rgba(0,0,0,0.35); animation: popup 1.5s ease-out forwards; }
 @keyframes popup { 0% { transform: scale(0.4); opacity: 0; } 18% { transform: scale(1.2); opacity: 1; } 35% { transform: scale(1); } 80% { opacity: 1; } 100% { transform: translateY(-40px); opacity: 0; } }
 
-#panel { padding: 4px 8px 8px; background: rgba(30, 20, 80, 0.55); display: flex; flex-direction: column; gap: 6px; align-items: center; }
-#status { min-height: 20px; color: #fff; font-weight: 700; font-size: 15px; text-align: center; }
+/* panneau translucide posé sur le bas du plateau ; tuiles et boutons restent opaques */
+#panel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 4px 8px 8px; background: linear-gradient(to bottom, rgba(20, 24, 40, 0.2), rgba(20, 24, 40, 0.42)); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+#status { min-height: 20px; color: #fff; font-weight: 700; font-size: 15px; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.5); }
 #rack { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 6px; border-radius: 14px; background: #8a5426; box-shadow: inset 0 3px 8px rgba(0,0,0,0.4); max-width: 100%; }
 .tile { --t: min(70px, max(9vmin, calc((100vw - 34px) / 7))); position: relative; width: var(--t); height: var(--t); border: 0; border-radius: 12px; background: linear-gradient(145deg, #fbe3a8, #efc476); border-bottom: 4px solid #c9964a; color: #4a2a10; font: 900 max(22px, calc(var(--t) * 0.56))/1 "Trebuchet MS", system-ui, sans-serif; cursor: grab; touch-action: none; padding: 0; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
 .tile small { position: absolute; right: 4px; bottom: 2px; font-size: 14px; font-weight: 800; line-height: 1; }
@@ -48,7 +49,7 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 .btn.go { background: #3ecf6e; color: #05361a; }
 .btn.idea { background: #ffd43b; color: #4a3500; }
 .btn.big { min-height: 64px; font-size: 18px; padding: 8px 18px; }
-.btn:disabled { opacity: 0.4; pointer-events: none; }
+.btn:disabled { opacity: 1; filter: grayscale(0.85) brightness(0.92); color: rgba(59, 42, 96, 0.5); pointer-events: none; }
 #btn-ok { grid-column: span 1; }
 
 .overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 30%, #6c63d9, #2b2a7a 80%); padding: 8px; }
@@ -79,9 +80,10 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
   /* paysage téléphone : plateau sur toute la hauteur, barre du haut et chevalet dans la colonne de droite */
   #app { --side: clamp(304px, 40vw, 360px); display: grid; grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: auto minmax(0, 1fr); }
   #main { display: contents; }
-  #topbar { grid-column: 2; grid-row: 1; justify-content: center; gap: 4px 6px; }
-  #stage { grid-column: 1; grid-row: 1 / span 2; }
-  #panel { grid-column: 2; grid-row: 2; min-height: 0; overflow-y: auto; padding: 4px 6px; gap: 4px; justify-content: flex-start; }
+  /* le canvas passe aussi sous la colonne de droite, au fond translucide */
+  #topbar { grid-column: 2; grid-row: 1; justify-content: center; gap: 4px 6px; position: relative; z-index: 2; background: rgba(20, 24, 40, 0.3); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  #stage { grid-column: 1 / span 2; grid-row: 1 / span 2; }
+  #panel { position: relative; left: auto; right: auto; bottom: auto; background: rgba(20, 24, 40, 0.3); grid-column: 2; grid-row: 2; min-height: 0; overflow-y: auto; padding: 4px 6px; gap: 4px; justify-content: flex-start; }
   #rack { flex-wrap: nowrap; gap: 2px; padding: 4px; }
   #rack .tile { --t: calc((var(--side) - 32px) / 7); }
   .icon { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
@@ -110,7 +112,7 @@ body { font-family: "Trebuchet MS", "Avenir Next Rounded", "Segoe UI", system-ui
 @media (max-width: 400px) { .btn { font-size: 14px; } .chip { padding-right: 7px; } #rack { gap: 2px; padding: 4px; } #panel { padding: 4px 4px 6px; } }
 
 /* flèches de déplacement en mode zoom */
-#pan { position: absolute; inset: 0; pointer-events: none; }
+#pan { position: absolute; top: 0; left: 0; right: var(--inset-r, 0px); bottom: var(--inset-b, 0px); pointer-events: none; }
 .pan-b { position: absolute; width: 52px; height: 52px; border-radius: 16px; border: 0; background: rgba(30,20,80,0.6); color: #fff; font-size: 24px; cursor: pointer; pointer-events: auto; }
 .pan-b:active { transform: scale(0.94); }
 #pan-up { top: 6px; left: 50%; margin-left: -26px; }

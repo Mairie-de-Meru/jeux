@@ -5,7 +5,7 @@ import { boardTexture, tileTexture, woodTexture, backgroundTexture } from './tex
 import { focusSpan, zoomUseful } from '../logic/zoom.js';
 
 const TILE_H = 0.3;
-const FRAME_M = 0.22; // marge de cadre en bois montrée autour des cases en vue d'ensemble
+const FRAME_M = 0.45; // vue d'ensemble : cadre en bois entier (demi-largeur du cadre = n/2 + 0.45)
 const PENDING_LIFT = 0.1;
 const ease = {
   outCubic: (k) => 1 - Math.pow(1 - k, 3),
@@ -77,6 +77,8 @@ export class BoardView {
     this.rect = null;
     this.target = new THREE.Vector3();
     this.fullPx = 0; // px par case en vue d'ensemble (mesuré à chaque recadrage)
+    this.bottomInset = 0; // px du bas du canvas recouverts par le panneau translucide
+    this.rightInset = 0; // px de droite recouverts (colonne en paysage téléphone)
     this.onResize = null; // rappel après recadrage (interface du zoom)
 
     this.ro = new ResizeObserver(() => this.resize());
@@ -289,6 +291,32 @@ export class BoardView {
     if (this.onResize) this.onResize();
   }
 
+  // Zone recouverte par l'interface (px) : le plateau est cadré dans la partie visible.
+  setInsets(bottom = 0, right = 0) {
+    const b = Math.max(0, Math.round(bottom)), r = Math.max(0, Math.round(right));
+    if (b === this.bottomInset && r === this.rightInset) return;
+    this.bottomInset = b;
+    this.rightInset = r;
+    this.measureFull();
+    if (this.focus && !this.zoomUseful()) this.focus = false;
+    this.fit();
+    if (this.onResize) this.onResize();
+  }
+
+  // Coins extérieurs du cadre en bois projetés en px (repère du canvas) et zone visible en px : contrôle du cadrage.
+  frameCheck() {
+    const w = this.container.clientWidth, h = this.container.clientHeight;
+    const m = this.size / 2 + 0.45;
+    const pts = [];
+    for (const x of [-m, m]) for (const z of [-m, m]) {
+      const v = new THREE.Vector3(x, 0, z).project(this.camera);
+      pts.push({ x: +(((v.x + 1) / 2) * w).toFixed(1), y: +(((1 - v.y) / 2) * h).toFixed(1) });
+    }
+    const zone = { left: 0, top: 0, right: w - this.rightInset, bottom: h - this.bottomInset };
+    const ok = pts.every((p) => p.x >= zone.left + 2 && p.x <= zone.right - 2 && p.y >= zone.top + 2 && p.y <= zone.bottom - 2);
+    return { ok, pts, zone };
+  }
+
   // Mesure les px par case du plateau entier, sans changer le cadrage courant.
   measureFull() {
     if (!this.camera) return;
@@ -366,9 +394,19 @@ export class BoardView {
     return Math.min(Math.hypot(bx.x - a.x, bx.y - a.y), Math.hypot(bz.x - a.x, bz.y - a.y));
   }
 
+  // Zone visible en NDC (hors panneau et colonne recouvrants), avec une marge de 0.03.
+  visibleZone() {
+    const w = Math.max(1, this.container.clientWidth), h = Math.max(1, this.container.clientHeight);
+    const yb = Math.min(1.6, (2 * this.bottomInset) / h), xr = Math.min(1.6, (2 * this.rightInset) / w); // au moins 0.34 NDC visibles
+    return { x0: -0.97, x1: 0.97 - xr, y0: -0.97 + yb, y1: 0.97 };
+  }
+
   fit() {
     if (!this.camera) return;
     const rect = this.currentRect();
+    const zone = this.visibleZone();
+    const zw = zone.x1 - zone.x0, zh = zone.y1 - zone.y0;
+    const zx = (zone.x0 + zone.x1) / 2, zy = (zone.y0 + zone.y1) / 2;
     const cam = this.camera;
     const dir = new THREE.Vector3(0, Math.sin(this.elev), Math.cos(this.elev));
     const target = new THREE.Vector3((rect.x0 + rect.x1) / 2, 0, (rect.z0 + rect.z1) / 2);
@@ -378,26 +416,30 @@ export class BoardView {
       cam.position.copy(target).addScaledVector(dir, d);
       cam.lookAt(target);
       cam.updateMatrixWorld(true);
-      let mx = 0, y0 = Infinity, y1 = -Infinity;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
       for (const p of corners) {
         const v = p.clone().project(cam);
-        mx = Math.max(mx, Math.abs(v.x));
+        x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x);
         y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
       }
-      return { mx, y0, y1 };
+      return { x0, x1, y0, y1 };
     };
+    const tanH = Math.tan((cam.fov * Math.PI) / 360);
     let dist = 10;
-    for (let it = 0; it < 4; it++) {
+    for (let it = 0; it < 5; it++) {
       let lo = 2, hi = 120;
       for (let i = 0; i < 24; i++) {
         const mid = (lo + hi) / 2;
         const m = metrics(mid);
-        if (m.mx <= 0.97 && m.y0 >= -0.97 && m.y1 <= 0.97) hi = mid; else lo = mid;
+        if (m.x1 - m.x0 <= zw && m.y1 - m.y0 <= zh) hi = mid; else lo = mid;
       }
       dist = hi;
+      // recentre le plateau au milieu de la zone visible
       const m = metrics(dist);
-      const dy = (m.y0 + m.y1) / 2;
-      target.z -= (dy * dist * Math.tan((cam.fov * Math.PI) / 360)) / Math.sin(this.elev);
+      const dy = (m.y0 + m.y1) / 2 - zy;
+      const dx = (m.x0 + m.x1) / 2 - zx;
+      target.z -= (dy * dist * tanH) / Math.sin(this.elev);
+      target.x += dx * dist * tanH * cam.aspect;
     }
     metrics(dist);
     this.target.copy(target);

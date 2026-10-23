@@ -151,6 +151,18 @@ function syncZoomUi() {
   $('pan').classList.toggle('hidden', !view.focus);
 }
 view.onResize = syncZoomUi;
+// Le canvas passe sous le panneau (portrait) ou la colonne de droite (paysage) : on cadre le plateau dans la partie visible.
+function syncInsets() {
+  const st = $('stage').getBoundingClientRect(), pn = $('panel').getBoundingClientRect(), tb = $('topbar').getBoundingClientRect();
+  let bottom = 0, right = 0;
+  if (pn.width >= st.width * 0.9) bottom = Math.max(0, st.bottom - pn.top); // panneau en bas, sur toute la largeur
+  else right = Math.max(0, st.right - Math.min(pn.left, tb.left < st.right && tb.bottom > st.top ? tb.left : Infinity));
+  $('stage').style.setProperty('--inset-b', bottom + 'px');
+  $('stage').style.setProperty('--inset-r', right + 'px');
+  view.setInsets(bottom, right);
+}
+new ResizeObserver(syncInsets).observe($('panel'));
+new ResizeObserver(syncInsets).observe($('stage'));
 function refocus() { if (view.focus) view.setFocus(true, focusCells()); }
 // Zoom automatique sur petit écran quand l'enfant prend une lettre (sélection ou glisser).
 function autoZoomIn() {
@@ -700,6 +712,7 @@ window.__scrabble = {
   lexique: () => ({ loaded: lex.loaded, size: lex.set ? lex.set.size : 0 }),
   targets: () => targetCells.map(([r, c]) => [r, c]),
   cellPx: () => view.cellPx(),
+  frameCheck: () => view.frameCheck(),
   get fullPx() { return view.fullPx; },
   get focus() { return view.focus; },
   get autoZoom() { return S.autoZoom; },

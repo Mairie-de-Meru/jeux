@@ -90,7 +90,9 @@ const MEASURE = `(() => {
     const covered = !top || !(top === b || b.contains(top) || (b.disabled && top.contains(b)));
     if (off || covered) bad.push((b.id || b.className || b.textContent.trim()) + (off ? ' hors-écran' : ' recouvert:' + (top ? (top.id || top.className || top.tagName) : 'rien')));
   }
+  const fc = h.frameCheck && !h.view.focus ? h.frameCheck() : null;
   return {
+    frame: fc ? (fc.ok ? 'OK' : 'KO ' + JSON.stringify(fc)) : 'n/a (zoom)',
     cellPx: h.cellPx ? +h.cellPx().toFixed(1) : null,
     focus: !!h.view.focus,
     letterFont: cs(tile), valueFont: cs(tile && tile.querySelector('small')),
