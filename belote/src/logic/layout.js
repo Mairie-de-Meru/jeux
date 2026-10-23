@@ -27,8 +27,8 @@ export function cameraDistance({ aspect, fovDeg = 38, elevDeg = 60, halfW, halfD
 // Repère : x vers la droite, y vers le haut, z vers le joueur du bas. Cartes : 0.9 × 1.35 à l'échelle 1.
 export const TABLE = {
   card: { w: 0.9, h: 1.35 },
-  trickScale: 1.55, // cartes du pli
-  turnedScale: 1.6, // carte retournée pendant les enchères
+  trickScale: 1.35, // cartes du pli
+  turnedScale: 1.4, // carte retournée pendant les enchères
   fanScale: 0.45, // éventails de dos des autres places
   seat: [[0, 2.6], [2.75, 0], [0, -2.6], [-2.75, 0]], // 0 bas (toi), 1 droite, 2 haut, 3 gauche
   slot: [[0, 1.12], [1.42, 0.02], [0, -1.12], [-1.42, 0.02]], // cartes du pli devant chaque place
