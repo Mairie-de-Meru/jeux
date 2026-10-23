@@ -63,11 +63,14 @@ export function faceCanvas(card) {
   if (card.r >= 11 && card.r <= 13) {
     ctx.fillStyle = col + '22'; rr(ctx, 58, 70, 90, 160, 18); ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
-    ctx.font = '900 96px "Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif';
+    ctx.font = '900 104px "Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif';
     ctx.fillStyle = col; ctx.fillText(ch, 103, 138);
     suit(ctx, card.s, 103, 195, 18);
   } else {
-    suit(ctx, card.s, 108, 152, card.r === 14 ? 50 : 38);
+    // grosse valeur au centre : lisible même quand la carte est petite à l'écran (cartes communes sur téléphone)
+    ctx.font = `900 ${ch.length > 1 ? 100 : 116}px "Arial Rounded MT Bold", "Trebuchet MS", Arial, sans-serif`;
+    ctx.fillStyle = col; ctx.fillText(ch, 108, 132);
+    suit(ctx, card.s, 108, 212, card.r === 14 ? 34 : 28);
   }
   faceCache.set(card.id, cv);
   return cv;

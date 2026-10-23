@@ -3,9 +3,10 @@
 export const TA0 = 6.2, TB0 = 3.8;
 export const WOOD = 0.35; // marge : bord du bois + demi-jeton
 export const LABEL_R = 0.84; // étiquette de place : fraction du rayon de l'ellipse
-export const BOARD_S = 0.9, BOARD_GAP = 1.0; // échelle et écart des cartes communes
+export const BOARD_S = 1.35, BOARD_GAP = 0.9 * 1.35 + 0.08; // échelle et écart des cartes communes (grandes, serrées au centre)
 export const BOARD = { hx: 2 * BOARD_GAP + (0.9 * BOARD_S) / 2, hz: (1.35 * BOARD_S) / 2 }; // demi-dimensions du rectangle des cartes communes
-export const POT = { x: 0, z: -1.3 };
+export const POT = { x: 0, z: BOARD.hz + 0.6, hx: 1.0, hz: 0.45 }; // pot (jetons + montant) juste sous les cartes communes
+export const DECK = { x: 0, z: -(BOARD.hz + 0.62), hx: 0.4, hz: 0.55 }; // paquet juste au-dessus
 const CARD_W = 0.9, CARD_H = 1.35, GAP = 0.08;
 
 export const cardScale = (n) => (n <= 3 ? 0.8 : n === 4 ? 0.7 : n === 5 ? 0.62 : 0.55);
@@ -19,20 +20,22 @@ export function inEllipse(r, a, b, margin = WOOD) {
 export const cardRect = (x, z, s) => rect(x, z, CARD_W * s + GAP / 2, (CARD_H * s) / 2); // les 2 cartes côte à côte
 
 // -> { a, b, seats: [{ pos, cards:{x,z,s,rect}, bet, dealer }] }  (seats[slot], slot 0 = en bas)
-export function seatLayout(n, portrait = false, label = { hx: 0, hz: 0 }) {
+// dims : demi-axes réels {a, b} de la table (x, z) ; par défaut TA0 x TB0 (ou l'inverse en portrait)
+export function seatLayout(n, portrait = false, label = { hx: 0, hz: 0 }, dims = null) {
   let best = null;
   for (const lr of [LABEL_R, 0.9, 0.95]) {
-    const L = place(n, portrait, label, lr);
+    const L = place(n, portrait, label, lr, dims);
     if (!best || L.minScale > best.minScale) best = L;
     if (L.minScale >= 0.9 * cardScale(n)) return L;
   }
   return best;
 }
 
-function place(n, portrait, label, lr) {
-  const a = portrait ? TB0 : TA0, b = portrait ? TA0 : TB0;
+function place(n, portrait, label, lr, dims) {
+  const a = dims ? dims.a : portrait ? TB0 : TA0, b = dims ? dims.b : portrait ? TA0 : TB0;
   const boardR = rect(0, 0, BOARD.hx, BOARD.hz);
-  const potR = rect(POT.x, POT.z, 0.5, 0.5);
+  const potR = rect(POT.x, POT.z, POT.hx, POT.hz);
+  const deckR = rect(DECK.x, DECK.z, DECK.hx, DECK.hz);
   const taken = [];
   const labels = [];
   const seats = [];
@@ -54,7 +57,7 @@ function place(n, portrait, label, lr) {
       for (const sh of [0, 0.5, -0.5, 1, -1, 1.5, -1.5]) for (let r = 0.62; r >= 0.3 && !cards; r -= 0.02) {
         const cx = ux * r + tdx * sh, cz = uz * r + tdz * sh;
         const rc = cardRect(cx, cz, s);
-        if (inEllipse(rc, a, b) && !overlap(rc, boardR, 0.08) && !(label.hx && labels.some((l) => overlap(rc, l, 0.1))) && !taken.some((t) => overlap(rc, t, 0.06))) cards = { x: cx, z: cz, s, rect: rc };
+        if (inEllipse(rc, a, b) && !overlap(rc, boardR, 0.08) && !overlap(rc, potR, 0.06) && !overlap(rc, deckR, 0.06) && !(label.hx && labels.some((l) => overlap(rc, l, 0.1))) && !taken.some((t) => overlap(rc, t, 0.06))) cards = { x: cx, z: cz, s, rect: rc };
       }
     }
     if (!cards) { const sc = 0.3; cards = { x: ux * 0.5, z: uz * 0.5, s: sc, rect: cardRect(ux * 0.5, uz * 0.5, sc) }; }
@@ -62,7 +65,7 @@ function place(n, portrait, label, lr) {
     seats.push({ pos, cards, bet: null, dealer: null });
   }
   // piles de mise puis bouton donneur : sur le feutre, sans toucher cartes, tableau, pot ni autres piles
-  const obst = [boardR, potR, ...taken, ...(label.hx ? labels : [])];
+  const obst = [boardR, potR, deckR, ...taken, ...(label.hx ? labels : [])];
   const free = (q) => inEllipse(q, a, b) && !obst.some((o) => overlap(q, o, 0.04));
   seats.forEach((st, slot) => {
     const th = Math.PI / 2 + (2 * Math.PI * slot) / n;

@@ -25,6 +25,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 .seat-label.allin .sl-tag { color: #c0392b; font-weight: 900; }
 .seat-label.win { background: #fff1b8; border-color: #f2b21f; }
 .seat-label.win .sl-tag { color: #1b6f4a; }
+.pot-label { position: absolute; transform: translate(-50%, -50%); padding: 2px 10px; border-radius: 12px; background: rgba(10,14,40,.72); color: #fff; font-weight: 900; font-size: 15px; white-space: nowrap; pointer-events: none; }
+.pot-label::first-letter { color: #ffd23f; }
 #labels.dense .seat-label { min-width: 58px; max-width: 66px; padding: 1px 4px 2px; border-width: 2px; border-radius: 10px; }
 #labels.dense .sl-name { font-size: 11px; }
 #labels.dense .sl-stack { font-size: 12px; }
@@ -64,7 +66,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
 .btn.allin { background: #ff5a5f; color: #fff; box-shadow: 0 4px 0 #b32d31; }
 .btn.big { min-height: 64px; padding: 10px 34px; font-size: clamp(22px, 6vmin, 30px); background: #4cd07d; box-shadow: 0 5px 0 #249455; color: #fff; }
 
-.card { flex: none; width: var(--card-w, clamp(54px, 15vmin, 80px)); aspect-ratio: 2 / 3; border-radius: 10px; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); transition: opacity .2s; }
+.card { flex: none; width: var(--card-w, clamp(66px, 19vmin, 84px)); aspect-ratio: 2 / 3; border-radius: 10px; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); transition: opacity .2s; }
 .card img { width: 100%; height: 100%; display: block; pointer-events: none; }
 .card.dim { opacity: .5; }
 
@@ -125,7 +127,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #1c2a4a; fon
   #side { grid-column: 2; grid-row: 2; max-height: none; border-radius: 22px 0 0 0; min-height: 0; }
   #stage { grid-column: 1; grid-row: 2; }
   #me-row { padding: 6px 8px 0; gap: 8px; }
-  .card { width: var(--card-w, 50px); }
+  .card { width: var(--card-w, 62px); }
   #bar { gap: 6px; padding: 4px 6px 6px; }
   #bar .btn { min-width: 100px; }
   .btn { min-height: 48px; padding: 6px 12px; font-size: 16px; }

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { faceCanvas, backCanvas, cardKey } from './cardart.js';
-import { seatLayout, TA0, TB0, POT, BOARD, BOARD_S, BOARD_GAP } from '../logic/layout.js';
+import { seatLayout, TA0, TB0, POT, DECK, BOARD, BOARD_S, BOARD_GAP } from '../logic/layout.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
-export const DECK_POS = new THREE.Vector3(-(BOARD.hx + 0.6), 0.1, 0);
+export const DECK_POS = new THREE.Vector3(DECK.x, 0.1, DECK.z);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const sideMat = new THREE.MeshStandardMaterial({ color: 0xfffdf6, roughness: 0.7 });
 
@@ -30,7 +30,7 @@ function cardMesh(card) {
 }
 
 // Jetons : géométrie et matériaux partagés
-const chipGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.07, 20);
+const chipGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.06, 20); // jetons décoratifs, petits
 const CHIP_DEN = [[1000, 0xf2b21f], [500, 0x8e4fd1], [100, 0x2b2d42], [25, 0x2ba866], [10, 0x2d78d6], [5, 0xe8454d], [1, 0xf4f4f4]];
 const chipMats = new Map();
 const chipMat = (hex) => {
@@ -47,11 +47,11 @@ function chipStack(amount) {
     if (n > 0) { cols.push([hex, Math.min(n, 8)]); rest -= n * v; }
     if (cols.length >= 4) break;
   }
-  const off = ((cols.length - 1) * 0.6) / 2;
+  const off = ((cols.length - 1) * 0.48) / 2;
   for (const [hex, n] of cols) {
     for (let k = 0; k < n; k++) {
       const m = new THREE.Mesh(chipGeo, chipMat(hex));
-      m.position.set(col * 0.6 - off, 0.04 + k * 0.075, 0);
+      m.position.set(col * 0.48 - off, 0.035 + k * 0.064, 0);
       m.castShadow = true;
       g.add(m);
     }
@@ -92,12 +92,21 @@ export function createScene(stage, canvas) {
   Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 25 });
   scene.add(sun);
 
-  // table ovale (groupe tourné de 90° en portrait)
+  // table ovale : demi-axes (a en x, b en z) adaptés au ratio de l'écran, reconstruite au resize
   const tableG = new THREE.Group(); scene.add(tableG);
   const felt = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.3, 72), new THREE.MeshStandardMaterial({ color: 0x1f9d6b, roughness: 0.95 }));
-  felt.scale.set(TA0, 1, TB0); felt.position.y = -0.16; felt.receiveShadow = true; tableG.add(felt);
-  const rim = ellipseTube(TA0, TB0, 0.24, 0x8a4b2a); rim.position.y = -0.02; tableG.add(rim);
-  const line = ellipseTube(TA0 * 0.86, TB0 * 0.84, 0.03, 0x7ee0b0); line.position.y = 0.0; tableG.add(line);
+  felt.position.y = -0.16; felt.receiveShadow = true; tableG.add(felt);
+  let rim = null, line = null, tableDims = '';
+  function buildTable(a, b) {
+    const key = a.toFixed(2) + 'x' + b.toFixed(2);
+    if (key === tableDims) return;
+    tableDims = key;
+    felt.scale.set(a, 1, b);
+    for (const m of [rim, line]) if (m) { tableG.remove(m); m.geometry.dispose(); m.material.dispose(); }
+    rim = ellipseTube(a, b, 0.24, 0x8a4b2a); rim.position.y = -0.02; tableG.add(rim);
+    line = ellipseTube(a - 0.75, b - 0.75, 0.03, 0x7ee0b0); line.position.y = 0.0; tableG.add(line);
+  }
+  buildTable(TA0, TB0);
 
   // emplacements du tableau + paquet
   const slotMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.14 });
@@ -107,7 +116,7 @@ export function createScene(stage, canvas) {
     s.position.copy(slotPos(i)).setY(0.02); scene.add(s);
   }
   const deck = new THREE.Mesh(cardGeo, [sideMat, sideMat, getBackMat(), getBackMat(), sideMat, sideMat]);
-  deck.scale.set(BOARD_S, 8, BOARD_S); deck.position.copy(DECK_POS).setY(0.14); deck.castShadow = true; scene.add(deck);
+  deck.scale.set(0.8, 8, 0.8); deck.position.copy(DECK_POS).setY(0.14); deck.castShadow = true; scene.add(deck);
   const POT_POS = new THREE.Vector3(POT.x, 0.02, POT.z);
 
   let board = [];
@@ -126,13 +135,16 @@ export function createScene(stage, canvas) {
     if (amount === potAmount) return;
     potAmount = amount;
     if (potGroup) scene.remove(potGroup);
-    potGroup = chipStack(amount); potGroup.position.copy(POT_POS); scene.add(potGroup);
+    potGroup = chipStack(amount); potGroup.position.copy(POT_POS).add(new THREE.Vector3(0, 0, -0.12)); scene.add(potGroup);
+    potLabel.textContent = amount > 0 ? '● ' + amount : '';
+    potLabel.style.display = amount > 0 ? '' : 'none';
   }
 
   const dealerBtn = dealerButton(); dealerBtn.visible = false; scene.add(dealerBtn);
 
   // étiquettes DOM (texte net), projetées sur les places
   const labels = document.createElement('div'); labels.id = 'labels'; stage.appendChild(labels);
+  const potLabel = document.createElement('div'); potLabel.className = 'pot-label'; potLabel.style.display = 'none'; labels.appendChild(potLabel);
 
   let seats = [], viewer = 0, layout = { portrait: false, a: TA0, b: TB0 };
   function layoutSeats() {
@@ -144,7 +156,7 @@ export function createScene(stage, canvas) {
     const H = el0 ? el0.offsetHeight : 0;
     const apply = (m) => {
       const lab = H ? { hx: maxW / 2 / sx + 0.1 + m, hz: H / 2 / sz + 0.15 + m, dz: 0.2 } : { hx: 0, hz: 0 };
-      const L = seatLayout(n, layout.portrait, lab);
+      const L = seatLayout(n, layout.portrait, lab, { a: layout.a, b: layout.b });
       seats.forEach((s, i) => {
         const e = L.seats[(i - viewer + n) % n];
         s.pos = new THREE.Vector3(e.pos.x, 0, e.pos.z);
@@ -194,6 +206,8 @@ export function createScene(stage, canvas) {
     return { x: ((p.x + 1) / 2) * stage.clientWidth, y: ((1 - p.y) / 2) * stage.clientHeight };
   }
   function placeLabels() {
+    const pq = screenOf(POT_POS.clone().setY(0.25).add(new THREE.Vector3(0, 0, 0.22)));
+    potLabel.style.left = pq.x + 'px'; potLabel.style.top = pq.y + 'px';
     for (const s of seats) {
       const q = screenOf(s.pos.clone().setY(0.4));
       const hw = s.el.offsetWidth / 2, hh = s.el.offsetHeight / 2;
@@ -286,28 +300,34 @@ export function createScene(stage, canvas) {
     }
   }
 
-  // cadrage : choisit table horizontale ou verticale selon le ratio, caméra ajustée pour tout voir
-  const ELEV = (66 * Math.PI) / 180;
+  // cadrage : table verticale si l'écran est en hauteur ; ses demi-axes suivent le ratio pour remplir le canvas,
+  // caméra plongeante et serrée (marges minimales) ; recalculé à chaque resize/rotation
+  const ELEV = (72 * Math.PI) / 180, SIN = Math.sin(ELEV);
   const fitDist = (w, h, a, b) => {
     const t = Math.tan((camera.fov * Math.PI) / 360);
-    const needH = Math.max(a + 0.3, a * 0.86 + 1.3) / (t * (w / h));
-    const needV = (Math.max(b + 0.3, b * 0.86 + 0.9) * Math.sin(ELEV) + 0.5) / t;
+    const needH = (a + 0.4) / (t * (w / h));
+    const needV = ((b + 0.4) * SIN + 0.15) / t;
     return Math.max(needH, needV);
   };
   function resize() {
     const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    const dL = fitDist(w, h, TA0, TB0), dP = fitDist(w, h, TB0, TA0);
-    const portrait = dP < dL;
-    const d = portrait ? dP : dL;
-    if (portrait !== layout.portrait || layout.a !== (portrait ? TB0 : TA0)) {
-      layout = { portrait, a: portrait ? TB0 : TA0, b: portrait ? TA0 : TB0 };
-      tableG.rotation.y = portrait ? Math.PI / 2 : 0;
-      layoutSeats();
+    const portrait = h > w * 1.05;
+    let a, b;
+    if (portrait) { b = TA0; a = Math.min(Math.max((w / h) * (b + 0.4) * SIN - 0.4, TB0), 5.0); }
+    else { a = TA0; b = Math.min(Math.max((h / w) * (a + 0.4) / SIN - 0.4, 4.2), 5.0); }
+    a = Math.round(a * 20) / 20; b = Math.round(b * 20) / 20;
+    // bande réservée en haut pour la pastille #toast : la table est cadrée dessous
+    const top = Math.min(40, h * 0.1), r = top / h;
+    const d = fitDist(w, h, a, b) / (1 - r);
+    const shift = (r * d * Math.tan((camera.fov * Math.PI) / 360)) / SIN;
+    if (portrait !== layout.portrait || layout.a !== a || layout.b !== b) {
+      layout = { portrait, a, b };
+      buildTable(a, b);
     }
-    camera.position.set(0, Math.sin(ELEV) * d, Math.cos(ELEV) * d + 0.1);
-    camera.lookAt(0, 0, 0.1);
+    camera.position.set(0, SIN * d, Math.cos(ELEV) * d + 0.1 - shift);
+    camera.lookAt(0, 0, 0.1 - shift);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     layoutSeats();
@@ -321,6 +341,6 @@ export function createScene(stage, canvas) {
   return {
     renderer, scene, camera, resize, render, fly, flyChips, setupSeats, setViewer, setSeat, setBoard, setPot, setDealer, clearTable, screenOf,
     seatPos: (i) => seats[i].pos.clone().setY(0.3), betPos: (i) => seats[i].bpos.clone().setY(0.1), cardsPos: (i) => seats[i].cpos.clone(),
-    cardScaleOf: (i) => seats[i].cs, slotPos, potPos: POT_POS, deckPos: DECK_POS.clone().setY(0.3), get layout() { return layout; },
+    cardScaleOf: (i) => seats[i].cs, slotPos, boardScale: BOARD_S, potPos: POT_POS, deckPos: DECK_POS.clone().setY(0.3), get layout() { return layout; },
   };
 }
