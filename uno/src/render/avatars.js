@@ -3,8 +3,11 @@ import * as THREE from 'three';
 
 export const AVATAR_KEYS = { '🦊': 'av-renard', '🐼': 'av-panda', '🐨': 'av-koala', '🦉': 'av-hibou' };
 const BASE = 1.95;       // hauteur du sprite (unités monde)
+// bulle du nombre : à côté de la tête, côté centre ; décalage dans le plan de l'écran (ancre du sprite),
+// indépendant de la plongée de la caméra
+const BUB = 0.8, BUB_X = 0.42, BUB_Y = 0.9;
 export const EDGE = 4.15;        // rayon du bord de la table où se tiennent les avatars
-export const EDGE_COMPACT = 3.8; // petits écrans : avatars rapprochés du centre
+export const EDGE_COMPACT = 3.9; // petits écrans : avatars rapprochés du centre
 
 function avatarCanvas(img, emoji) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 256;
@@ -47,7 +50,6 @@ export function createAvatars(root) {
     e.pos.set((s.world.x / len) * edge, 0.05, (s.world.z / len) * edge);
     e.sprite.position.copy(e.pos); e.label.position.copy(e.pos);
     e.side = e.pos.x > 0.5 ? -1 : 1; // bulle à côté de l'avatar, du côté du centre de la table (jamais hors écran)
-    e.bubble.center.set(e.side > 0 ? 0 : 1, 0.5);
   }
 
   function setup(seats, players, edgeR = edge) {
@@ -59,7 +61,7 @@ export function createAvatars(root) {
       sprite.center.set(0.5, 0); sprite.renderOrder = 8;
       sprite.scale.set(BASE, BASE, 1);
       const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
-      bubble.renderOrder = 9; bubble.scale.set(0.8, 0.8, 1);
+      bubble.renderOrder = 9; bubble.scale.set(BUB, BUB, 1);
       const label = s.label; label.removeFromParent();
       label.center.set(0.5, 1); label.renderOrder = 10;
       root.add(sprite, bubble, label);
@@ -78,8 +80,8 @@ export function createAvatars(root) {
     for (const e of list) {
       const { x, y, z } = e.pos, hb = BASE / 2;
       out.push([x, y, z, -hb, 0], [x, y, z, hb, 0], [x, y, z, -hb, BASE * 1.08], [x, y, z, hb, BASE * 1.08]);
-      const bx = x + e.side * BASE * 0.42, by = y + BASE * 0.55;
-      out.push([bx, by, z, 0, -0.42], [bx, by, z, e.side * 0.82, 0.42]);
+      const ox = e.side * BASE * BUB_X, oy = BASE * BUB_Y, r = BUB / 2 + 0.02;
+      out.push([x, y, z, ox - r, oy - r], [x, y, z, ox + r, oy + r * 1.2]); // + marge de saut
       out.push([x, y, z, -0.9, 0], [x, y, z, 0.9, -0.55]); // prénom sous l'avatar
     }
     return out;
@@ -129,7 +131,8 @@ export function createAvatars(root) {
       e.sprite.position.y = e.pos.y + h;
       e.sprite.scale.set(BASE * sx, BASE * sy, 1);
       e.sprite.material.rotation = rot;
-      e.bubble.position.set(e.pos.x + e.side * BASE * 0.42 * sx, e.pos.y + h + BASE * 0.55 * sy, e.pos.z);
+      e.bubble.position.set(e.pos.x, e.pos.y + h, e.pos.z);
+      e.bubble.center.set(0.5 - (e.side * BASE * BUB_X * sx) / BUB, 0.5 - (BASE * BUB_Y * sy) / BUB);
     }
   }
 

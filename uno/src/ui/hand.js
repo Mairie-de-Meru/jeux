@@ -7,7 +7,8 @@ let fast = false;
 export function setHandFast(b) { fast = !!b; }
 
 const LIFT = 14;
-const naturalWidth = () => Math.max(48, Math.min(96, Math.round(0.17 * Math.min(window.innerWidth, window.innerHeight))));
+// largeur visée (px) : ~1,35× l'ancienne sur téléphone, jusqu'à 124 px sur grand écran
+const naturalWidth = () => Math.max(48, Math.min(124, Math.round(0.235 * Math.min(window.innerWidth, window.innerHeight))));
 const T = 'left .26s ease, top .26s ease, width .26s ease, height .26s ease, transform .26s ease, opacity .2s';
 
 function place(el, it, w, h, playable) {

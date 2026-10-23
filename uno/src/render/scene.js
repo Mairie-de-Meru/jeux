@@ -9,6 +9,8 @@ const SEATS = { 1: [[0, -3.4]], 2: [[-3.3, -0.7], [3.3, -0.7]], 3: [[-3.4, 0.1],
 // petits écrans : places rapprochées (les éventails latéraux restent hors de la défausse grossie)
 const SEATS_COMPACT = { 1: [[0, -3.0]], 2: [[-3.2, -0.7], [3.2, -0.7]], 3: [[-3.25, 0.1], [0, -3.0], [3.25, 0.1]] };
 export const CENTER = 1.5;   // échelle des cartes du centre (pioche, défausse)
+const FAN_S = 0.7;           // échelle des cartes de dos des robots
+const FAN_R = { compact: 2.55, wide: 2.72 }; // rayon du centre de l'éventail : entre la pioche/défausse et l'avatar
 const DISC_K = 1.22;         // échelle du disque de couleur (rayon 1.4 : ne touche pas la pioche)
 export const HUMAN_POS = new THREE.Vector3(0, 0.6, 4.4);
 export const DISCARD_POS = new THREE.Vector3(1.1, 0, 0);
@@ -144,6 +146,14 @@ export function createScene(stage, canvas) {
     const [x, z] = seatTable()[n][i];
     s.group.position.set(x, 0, z); s.group.rotation.y = Math.atan2(-x, -z); // le +z local regarde le centre
     s.world.set(x, 0.3, z);
+    s.side = Math.abs(x) > Math.abs(z); // robot de gauche ou de droite
+    const fr = compact ? FAN_R.compact : FAN_R.wide;
+    if (s.side) { // robots de côté : colonne parallèle à l'axe z, un peu vers le bas de l'écran (sous la bulle)
+      s.group.updateMatrixWorld(true);
+      const p = s.group.worldToLocal(new THREE.Vector3(Math.sign(x) * fr, 0, z + (z < -0.3 ? 1.4 : 0.6))); // 2 robots (places hautes) : plus bas, sous le prénom
+      s.fan.position.set(p.x, 0, p.z);
+      s.fan.rotation.y = -Math.sign(x) * Math.PI / 2 - s.group.rotation.y;
+    } else { s.fan.position.set(0, 0, Math.hypot(x, z) - fr); s.fan.rotation.y = 0; }
   }
   function setCompact(c) {
     if (c === compact) return;
@@ -160,7 +170,7 @@ export function createScene(stage, canvas) {
       const group = new THREE.Group();
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.06, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 }));
       ring.rotation.x = Math.PI / 2; ring.position.y = 0.02; group.add(ring);
-      const fan = new THREE.Group(); fan.position.z = 0.45; group.add(fan);
+      const fan = new THREE.Group(); group.add(fan);
       const label = labelSprite(); group.add(label);
       scene.add(group);
       const s = { group, fan, ring, label, pl, count: -1, active: false, world: new THREE.Vector3() };
@@ -175,10 +185,15 @@ export function createScene(stage, canvas) {
       s.fan.clear();
       const shown = Math.min(n, 12);
       for (let k = 0; k < shown; k++) {
-        const m = cardMesh(null); m.scale.setScalar(0.5);
+        const m = cardMesh(null); m.scale.setScalar(FAN_S); m.userData.fan = true;
         const t = shown === 1 ? 0 : k / (shown - 1) - 0.5;
-        m.position.set(t * Math.min(2.2, shown * 0.32), 0.05 + k * 0.012, -Math.cos(t * 1.4) * 0.1);
-        m.rotation.y = -t * 0.9;
+        if (s.side) { // robots de côté : cartes debout à l'écran (comme celles du haut), étalées le long du bord
+          m.position.set(t * Math.min(2.6, shown * 0.4), 0.05 + k * 0.012, 0);
+          m.rotation.y = Math.PI / 2 - t * 0.25;
+        } else {
+          m.position.set(t * Math.min(3.0, shown * 0.44), 0.05 + k * 0.012, -Math.cos(t * 1.4) * 0.14);
+          m.rotation.y = -t * 0.9;
+        }
         s.fan.add(m);
       }
     }
@@ -300,29 +315,35 @@ export function createScene(stage, canvas) {
     }
     seats.forEach((s) => {
       s.group.updateMatrixWorld(true);
-      for (const x of [-1.35, 1.35]) for (const z of [0, 0.9]) { V.set(x, 0.1, z); s.group.localToWorld(V); P.push([V.x, V.y, V.z]); }
+      s.fan.children.forEach((m) => { for (const x of [-CW / 2, CW / 2]) for (const z of [-CH / 2, CH / 2]) { V.set(x, 0, z); m.localToWorld(V); P.push([V.x, V.y, V.z]); } });
     });
     return P.concat(avatars.framePoints());
   }
-  function stageMargins(w, h) {
+  // marges (px) dans la zone utile (#stage) : pastille de message en haut, bouton « Piocher » posé sur la scène
+  function stageMargins(sr) {
     const m = { top: 6, bottom: 6, left: 6, right: 6 };
-    const sr = stage.getBoundingClientRect();
     const toast = stage.querySelector('#toast');
     if (toast && getComputedStyle(toast).position !== 'fixed') m.top = Math.max(m.top, toast.offsetTop + Math.max(toast.offsetHeight, 30) + 6);
     const bar = document.getElementById('bar');
     if (bar) {
       const b = bar.getBoundingClientRect();
-      if (b.width && b.top < sr.bottom && b.bottom > sr.top + h / 2 && b.left < sr.right && b.right > sr.left) m.bottom = Math.max(m.bottom, sr.bottom - b.top + 6);
+      if (b.width && b.top < sr.bottom && b.bottom > sr.top + sr.height / 2 && b.left < sr.right && b.right > sr.left) m.bottom = Math.max(m.bottom, sr.bottom - b.top + 6);
     }
     return m;
   }
   function resize() {
-    const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
+    // cadrage calculé dans la zone utile (#stage) ; le canevas part du même coin haut-gauche mais va jusqu'aux
+    // bords bas et droit de la fenêtre, sous le panneau translucide (setViewOffset : même projection, image prolongée)
+    const st = stage.getBoundingClientRect();
+    const w = Math.max(1, Math.round(window.innerWidth - st.left)), h = Math.max(1, Math.round(window.innerHeight - st.top));
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
     renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    setCompact(w < 820 || camera.aspect < 0.9);
+    const sw = Math.max(1, stage.clientWidth), sh = Math.max(1, stage.clientHeight);
+    camera.aspect = sw / sh;
+    setCompact(sw < 820 || camera.aspect < 0.9);
     const elevDeg = camera.aspect < 0.9 ? 78 : 62;
-    const r = fitCamera({ points: framePoints(), width: w, height: h, fovDeg: camera.fov, elevDeg, margins: stageMargins(w, h), alignY: 'center' });
+    const r = fitCamera({ points: framePoints(), width: sw, height: sh, fovDeg: camera.fov, elevDeg, margins: stageMargins(st), alignY: 'center' });
+    camera.setViewOffset(sw, sh, 0, 0, w, h);
     camera.position.set(...r.position);
     camera.lookAt(...r.target);
     camera.updateProjectionMatrix();

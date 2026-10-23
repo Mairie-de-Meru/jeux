@@ -11,7 +11,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #2a2663; fon
 
 #stage { position: relative; flex: 1 1 auto; min-height: 0; }
 #stage::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(20, 12, 60, .38) 100%); }
-#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#c { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; touch-action: none; } /* taille posée par scene.resize() : passe sous le panneau translucide */
 #toast { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); background: rgba(20,24,40,.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: clamp(13px, 3.6vmin, 15px); line-height: 1.25; box-shadow: 0 2px 8px rgba(0,0,0,.25); opacity: 0; transition: opacity .18s; pointer-events: none; max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; z-index: 5; } /* pastille translucide sous la barre du haut (choix utilisateur 2026-10-18) */
 #toast.show { opacity: 1; }
 
@@ -212,12 +212,14 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #2a2663; fon
 @keyframes unotext { 0%, 80% { opacity: 1; margin-top: 0; } 100% { opacity: 0; margin-top: -24px; } }
 
 /* bandeau du bas mince : barre d'actions en surimpression au-dessus de l'éventail (portrait) */
-#side { position: relative; max-height: none; z-index: 3; overflow: visible; }
+#side { position: relative; max-height: none; z-index: 3; overflow: visible; background: linear-gradient(to bottom, rgba(20, 16, 60, .12), rgba(20, 16, 60, .38)); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); box-shadow: none; } /* panneau translucide : la table reste visible derrière (demande 2026-10-23) */
+#side .card { filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+#side .card.playable { filter: drop-shadow(0 0 7px #fff36b) drop-shadow(0 0 3px #fff36b) drop-shadow(0 3px 4px rgba(0,0,0,.45)); }
 #bar { position: absolute; right: 8px; bottom: calc(100% + 4px); flex-wrap: nowrap; gap: 8px; padding: 0; }
 #bar .btn { min-height: 52px; padding: 6px 16px; font-size: clamp(17px, 4.6vmin, 22px); }
-#hand { height: clamp(120px, 23dvh, 170px); }
+#hand { height: clamp(150px, 28dvh, 240px); } /* cartes de la main plus grandes (téléphone et grand écran) */
 @media (max-height: 500px) and (orientation: landscape) {
-  #side { overflow: hidden; }
+  #side { overflow: hidden; background: linear-gradient(to right, rgba(20, 16, 60, .12), rgba(20, 16, 60, .38)); }
   #bar { position: static; justify-content: center; flex-wrap: wrap; padding: 6px 6px 2px; }
   #hand { height: auto; }
 }

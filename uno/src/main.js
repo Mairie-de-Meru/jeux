@@ -332,6 +332,7 @@ $('c').addEventListener('pointerdown', (e) => {
 
 const ro = new ResizeObserver(() => scene.resize());
 ro.observe($('stage'));
+ro.observe($('side')); // panneau translucide : sa taille fixe la marge du cadrage
 window.addEventListener('resize', () => scene.resize());
 window.addEventListener('orientationchange', () => setTimeout(() => scene.resize(), 200));
 scene.resize();
