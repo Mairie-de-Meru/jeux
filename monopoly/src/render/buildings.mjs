@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { SPACES } from '../logic/board.mjs';
 
+// échelle des maisons et hôtels (1,15 : plus visibles sur téléphone, restent dans la case)
+const BS = 1.15;
 const houseBody = new RoundedBoxGeometry(0.36, 0.26, 0.34, 2, 0.05);
 const houseRoof = new THREE.ConeGeometry(0.3, 0.2, 4); houseRoof.rotateY(Math.PI / 4);
 const hotelBody = new RoundedBoxGeometry(1.2, 0.4, 0.5, 2, 0.08);
@@ -19,13 +21,13 @@ function mkHouse() {
   const g = new THREE.Group();
   const b = new THREE.Mesh(houseBody, mGreen); b.position.y = 0.13; b.castShadow = true;
   const r = new THREE.Mesh(houseRoof, mGreenRoof); r.position.y = 0.36; r.castShadow = true;
-  g.add(b, r); return g;
+  g.add(b, r); g.scale.setScalar(BS); return g;
 }
 function mkHotel() {
   const g = new THREE.Group();
   const b = new THREE.Mesh(hotelBody, mRed); b.position.y = 0.2; b.castShadow = true;
   const r = new THREE.Mesh(hotelRoof, mRedRoof); r.position.y = 0.54; r.castShadow = true;
-  g.add(b, r); return g;
+  g.add(b, r); g.scale.setScalar(BS); return g;
 }
 
 export function createBuildings(tileGroups, tween) {
@@ -53,11 +55,11 @@ export function createBuildings(tileGroups, tween) {
       if (want.mortgaged) { const v = new THREE.Mesh(veilGeo, veilMat); v.rotation.x = -Math.PI / 2; v.position.y = 0.2; tg.add(v); c.objs.push(v); }
       if (want.houses === 5) {
         const h = mkHotel(); h.position.set(0, 0.17, -1.02); tg.add(h); c.objs.push(h);
-        if (grew) { h.scale.setScalar(0.01); tween(350, (k) => h.scale.setScalar(Math.max(0.01, 1 + Math.sin(k * Math.PI) * 0.3) * Math.min(1, k * 3 + 0.01))); }
+        if (grew) { h.scale.setScalar(0.01); tween(350, (k) => h.scale.setScalar(BS * Math.max(0.01, 1 + Math.sin(k * Math.PI) * 0.3) * Math.min(1, k * 3 + 0.01))); }
       } else {
         for (let n = 0; n < want.houses; n++) {
           const h = mkHouse(); h.position.set(-0.66 + n * 0.44, 0.17, -1.02); tg.add(h); c.objs.push(h);
-          if (grew && n === want.houses - 1) { h.scale.setScalar(0.01); tween(300, (k) => h.scale.setScalar(Math.max(0.01, k < 1 ? k * (1 + 0.3 * Math.sin(k * Math.PI)) : 1))); }
+          if (grew && n === want.houses - 1) { h.scale.setScalar(0.01); tween(300, (k) => h.scale.setScalar(BS * Math.max(0.01, k < 1 ? k * (1 + 0.3 * Math.sin(k * Math.PI)) : 1))); }
         }
       }
       Object.assign(c, want);

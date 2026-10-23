@@ -9,7 +9,7 @@ import { getImage, refsReady, pawnAvatar, playerAvatar } from './render/images.m
 import { PAWNS } from './render/pawns.mjs';
 import { assignPawns } from './logic/seats.mjs';
 import { createScene } from './render/scene.mjs';
-import { iconCanvas, drawHouse } from './render/textures.mjs';
+import { iconCanvas, drawHouse, tileTextInfo } from './render/textures.mjs';
 import { h, $, showModal, hideModal, hasModal, hideAllModals } from './ui/dom.mjs';
 import { renderPlayers } from './ui/hud.mjs';
 import { buildContent } from './ui/build.mjs';
@@ -104,6 +104,9 @@ function ensureScene() {
     G.scene.setFast(G.fast);
     new ResizeObserver(() => G.scene.resize()).observe($('#stage'));
     window.addEventListener('resize', () => G.scene.resize());
+    // rotation du téléphone et barre d'adresse mobile : recadrage (zone libre recalculée par resize)
+    window.addEventListener('orientationchange', () => setTimeout(() => G.scene && G.scene.resize(), 120));
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', () => G.scene && G.scene.resize());
     setupPicking();
     return true;
   } catch (e) {
@@ -323,14 +326,18 @@ function confetti() {
 }
 
 // ---------- outils du panneau, menu, sélection de case ----------
+// Un tap sur une case ouvre sa fiche après un court délai, pour laisser place au double-tap (zoom) :
+// si le relâché suivant fait partie d'un geste de la scène (double-tap, pincement, glissé), la fiche n'est pas ouverte.
 function setupPicking() {
-  const cv = $('#gl'); let down = null;
-  cv.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY }; });
+  const cv = $('#gl'); let down = null; let pending = null;
+  cv.addEventListener('pointerdown', (e) => { if (!e.isPrimary) { down = null; return; } down = { x: e.clientX, y: e.clientY }; });
   cv.addEventListener('pointerup', (e) => {
+    if (G.scene.gestureActive()) { clearTimeout(pending); pending = null; down = null; return; }
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12) { down = null; return; }
     down = null;
     const i = G.scene.pickSpace(e.clientX, e.clientY);
-    if (i >= 0) { sfx('click'); G.scene.flash(i); openDeed(i); }
+    clearTimeout(pending);
+    if (i >= 0) pending = setTimeout(() => { pending = null; if (G.scene.gestureActive()) return; sfx('click'); G.scene.flash(i); openDeed(i); }, 300);
   });
 }
 function buildTools() {
@@ -388,6 +395,9 @@ window.__monopoly = {
   me: () => G.me,
   banner: () => turnBanner(G.state),
   pawnScreen: (pid = 0) => G.scene.pawnScreen(pid),
+  textInfo: () => tileTextInfo(),
+  userZoom: () => G.scene.userZoom(),
+  setUserZoom: (z) => G.scene.setUserZoom(z),
   autoplay: async (n = 10) => {
     let done = 0;
     while (done < n && G.state && !G.state.over) {

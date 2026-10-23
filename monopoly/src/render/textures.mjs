@@ -143,48 +143,70 @@ export function iconCanvas(kind, size = 64, color) {
 }
 
 // ---------- textures de cases ----------
+// Coupe en lignes ; un mot composé peut se couper après son trait d'union.
 function wrapText(ctx, text, maxW) {
-  const words = text.split(' '); const lines = []; let line = '';
+  const words = text.split(' ').flatMap((w) => w.split(/(?<=-)/)); const lines = []; let line = '';
   for (const w of words) {
-    const t = line ? line + ' ' + w : w;
+    const glue = line && !line.endsWith('-') ? ' ' : '';
+    const t = line + glue + w;
     if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
   }
   lines.push(line); return lines;
 }
-function centeredName(ctx, name, cx, y0, maxW, maxLines = 3, size = 30) {
+// Abréviations utilisées seulement si le nom complet ne tient pas en assez gros.
+const ABBR = [[/^Boulevard /, 'Bd '], [/^Avenue /, 'Av. '], [/^Compagnie /, 'Cie '], [/^Faubourg /, 'Fg ']];
+const abbreviate = (name) => ABBR.reduce((n, [re, r]) => n.replace(re, r), name);
+const FONT = (fs) => `bold ${fs}px "Trebuchet MS", system-ui, sans-serif`;
+function fitName(ctx, name, maxW, maxLines, size, min) {
+  for (let fs = size; fs >= min; fs -= 2) { ctx.font = FONT(fs); const lines = wrapText(ctx, name, maxW); if (lines.length <= maxLines && lines.every((l) => ctx.measureText(l).width <= maxW)) return { fs, lines }; }
+  return null;
+}
+// Nom centré, le plus gros possible : nom complet (≥ 36 px), sinon abrégé (≥ 32), sinon nom complet réduit.
+function centeredName(ctx, name, cx, y0, maxW, maxLines = 3, size = 44) {
   ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  let fs = size; let lines;
-  for (;;) { ctx.font = `bold ${fs}px "Trebuchet MS", system-ui, sans-serif`; lines = wrapText(ctx, name, maxW); if ((lines.length <= maxLines && lines.every((l) => ctx.measureText(l).width <= maxW)) || fs < 16) break; fs -= 2; }
-  lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * (fs + 4)));
-  return lines.length * (fs + 4);
+  const short = abbreviate(name);
+  const fit = fitName(ctx, name, maxW, maxLines, size, 36) || (short !== name && fitName(ctx, short, maxW, maxLines, size, 32)) || fitName(ctx, name, maxW, maxLines, 34, 18) || { fs: 18, lines: wrapText(ctx, name, maxW) };
+  ctx.font = FONT(fit.fs);
+  fit.lines.forEach((l, k) => ctx.fillText(l, cx, y0 + k * (fit.fs + 2)));
+  return { h: fit.lines.length * (fit.fs + 2), fs: fit.fs };
 }
 function emojiAt(ctx, e, cx, cy, size) {
   ctx.font = `${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(e, cx, cy);
 }
 
+// Dimensions logiques d'une case (216 × 312 pour 1,8 × 2,6 unités) ; le canevas est 1,5× plus fin
+// pour rester net quand on zoome. Taille des textes mémorisée pour les mesures (crochet textInfo).
+export const TILE_PX = { W: 216, H: 312, K: 1.5, PRICE: 46, PLANE_W: 1.68 };
+const nameFs = {};
+export function tileTextInfo() {
+  const u = TILE_PX.PLANE_W / TILE_PX.W; const sizes = Object.values(nameFs);
+  return { nameUnits: (nameFs[1] || 0) * u, minNameUnits: Math.min(...sizes) * u, priceUnits: TILE_PX.PRICE * u, nameFs: { ...nameFs } };
+}
+
 export function tileCanvas(sp) {
-  const W = 216; const H = 312;
-  const c = makeCanvas(W, H); const ctx = c.getContext('2d');
+  const { W, H, K } = TILE_PX;
+  const c = makeCanvas(W * K, H * K); const ctx = c.getContext('2d'); ctx.scale(K, K);
   ctx.fillStyle = '#fbfdff'; ctx.fillRect(0, 0, W, H);
-  let top = 8;
+  let top = 6;
   if (sp.kind === 'prop') {
-    ctx.fillStyle = GROUP_INFO[sp.group].color; ctx.fillRect(0, 0, W, 66);
-    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(0, 62, W, 5);
-    top = 70;
+    ctx.fillStyle = GROUP_INFO[sp.group].color; ctx.fillRect(0, 0, W, 54);
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(0, 50, W, 5);
+    top = 56;
   }
-  const nameH = centeredName(ctx, sp.name, W / 2, top + 24, W - 24, 3, sp.kind === 'prop' ? 30 : 28);
-  const iy = Math.max(top + 24 + nameH + 30, 196);
+  const nm = centeredName(ctx, sp.name, W / 2, top + 26, W - 14, 3, sp.kind === 'prop' ? 44 : 40);
+  nameFs[sp.i] = nm.fs;
+  const iy = Math.max(top + 4 + nm.h + 52, 186);
   const cx = W / 2;
   switch (sp.kind) {
-    case 'station': if (!drawRef(ctx, 'icone-gare', cx, iy, 110)) drawTrain(ctx, cx, iy, 96); break;
-    case 'utility': if (!drawRef(ctx, sp.name.includes('eaux') ? 'icone-eau' : 'icone-electricite', cx, iy, 110)) (sp.name.includes('eaux') ? drawTower : drawBulb)(ctx, cx, iy, 100); break;
-    case 'tirelire': if (!drawRef(ctx, 'icone-caisse', cx, iy, 110)) drawChest(ctx, cx, iy, 100); break;
+    case 'station': if (!drawRef(ctx, 'icone-gare', cx, iy, 96)) drawTrain(ctx, cx, iy, 86); break;
+    case 'utility': if (!drawRef(ctx, sp.name.includes('eaux') ? 'icone-eau' : 'icone-electricite', cx, iy, 96)) (sp.name.includes('eaux') ? drawTower : drawBulb)(ctx, cx, iy, 88); break;
+    case 'tirelire': if (!drawRef(ctx, 'icone-caisse', cx, iy, 96)) drawChest(ctx, cx, iy, 88); break;
     case 'surprise': if (!drawRef(ctx, 'icone-chance', cx, iy, 110)) drawGift(ctx, cx, iy, 100); break;
-    case 'tax': if (!drawRef(ctx, sp.amount >= 200 ? 'icone-impot' : 'icone-luxe', cx, iy, 100)) drawCoins(ctx, cx, iy, 90); break;
+    case 'tax': if (!drawRef(ctx, sp.amount >= 200 ? 'icone-impot' : 'icone-luxe', cx, iy, 90)) drawCoins(ctx, cx, iy, 80); break;
   }
-  ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = 'bold 34px "Trebuchet MS", system-ui, sans-serif';
-  if (sp.price) ctx.fillText(String(sp.price) + ' €', cx, H - 26);
-  if (sp.kind === 'tax') ctx.fillText(String(sp.amount) + ' €', cx, H - 26);
+  ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = FONT(TILE_PX.PRICE);
+  if (sp.price) ctx.fillText(String(sp.price) + ' €', cx, H - 30);
+  if (sp.kind === 'tax') ctx.fillText(String(sp.amount) + ' €', cx, H - 30);
   ctx.strokeStyle = INK; ctx.lineWidth = 5; ctx.strokeRect(2.5, 2.5, W - 5, H - 5);
   return c;
 }
@@ -201,7 +223,7 @@ export function cornerCanvas(sp) {
   } else if (sp.kind === 'jail') {
     drawBars(ctx, 150, 20, 130, 130);
     ctx.fillStyle = INK; ctx.font = 'bold 40px "Trebuchet MS", system-ui, sans-serif'; ctx.fillText('PRISON', 150, 188);
-    ctx.font = 'bold 28px "Trebuchet MS", system-ui, sans-serif'; ctx.fillText('simple visite', 150, 228);
+    ctx.font = 'bold 34px "Trebuchet MS", system-ui, sans-serif'; ctx.fillText('simple visite', 150, 230);
     emojiAt(ctx, '👀', 52, 80, 48);
   } else if (sp.kind === 'freepark') {
     if (!drawRef(ctx, 'icone-parc', S / 2, 100, 110)) emojiAt(ctx, '🧺', S / 2, 100, 100);

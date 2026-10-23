@@ -9,6 +9,9 @@ import { createPawn, upgradePawn } from './pawns.mjs';
 import { createFx } from './fx.mjs';
 import { createDice } from './dice.mjs';
 import { createBuildings } from './buildings.mjs';
+import { clampZoom, pinchZoom, wheelZoom, doubleTapZoom, autoZoom, followWorldWidth, distanceFor, clampPan } from './camzoom.mjs';
+
+const PAWN_S = 1.0; // échelle des pions (0,9 avant le 2026-10-23)
 
 const ease = {
   out: (t) => 1 - (1 - t) * (1 - t),
@@ -89,7 +92,8 @@ export function createScene(canvas, container) {
   }
 
   // ----- caméra : vue d'ensemble ou suivi du pion -----
-  const cam = { mode: 'follow', follow: 0, cur: null, tx: 0, tz: 0 };
+  // zoom : facteur utilisateur (pincement, molette, double-tap) ; pan : décalage de la cible ; moving : pion en déplacement
+  const cam = { mode: 'follow', follow: 0, cur: null, tx: 0, tz: 0, zoom: 1, pan: { x: 0, z: 0 }, moving: 0 };
   const panelEl = document.getElementById('panel'); const topEl = document.getElementById('topbar');
   let free = { cx: 0, cy: 0, w: 2, h: 2, key: '' }; let overview = null; let lastFree = 0;
   const rad = THREE.MathUtils.degToRad;
@@ -110,7 +114,9 @@ export function createScene(canvas, container) {
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => new THREE.Vector3((a * (SIZE + 0.9)) / 2, 0, (b * (SIZE + 0.9)) / 2));
   const tmp = new THREE.Vector3();
   function computeOverview() {
-    const el = rad(62); fitCam.aspect = free.W / free.H;
+    // zone libre en portrait : vue plus plongeante, le plateau remplit mieux la hauteur disponible
+    const tall = (free.h * free.H) / (free.w * free.W);
+    const el = rad(tall > 1.15 ? 74 : tall > 0.9 ? 68 : 62); fitCam.aspect = free.W / free.H;
     const bbox = (dist) => {
       fitCam.position.set(0, Math.sin(el) * dist, Math.cos(el) * dist); fitCam.lookAt(0, 0, 0); fitCam.updateMatrixWorld(); fitCam.updateProjectionMatrix();
       let minx = 9; let maxx = -9; let miny = 9; let maxy = -9;
@@ -118,20 +124,27 @@ export function createScene(canvas, container) {
       return { minx, maxx, miny, maxy };
     };
     let lo = 8; let hi = 200;
-    for (let k = 0; k < 24; k++) { const d = (lo + hi) / 2; const b = bbox(d); if ((b.maxx - b.minx) > free.w * 0.96 || (b.maxy - b.miny) > free.h * 0.96) lo = d; else hi = d; }
+    for (let k = 0; k < 24; k++) { const d = (lo + hi) / 2; const b = bbox(d); if ((b.maxx - b.minx) > free.w * 0.99 || (b.maxy - b.miny) > free.h * 0.99) lo = d; else hi = d; }
     const b = bbox(hi);
     return { tx: 0, tz: 0, dist: hi, el, ox: free.cx - (b.minx + b.maxx) / 2, oy: free.cy - (b.miny + b.maxy) / 2 };
   }
+  // Vue « Mon pion » : largeur de monde visible choisie pour des noms de cases lisibles sur téléphone
+  // (≈ 54 px CSS par unité), inchangée sur grand écran ; pion au centre de la zone libre.
   function followGoal() {
-    const aspect = free.W / free.H;
-    const dist = Math.min(30, Math.max(7, 8.5 / (Math.tan(rad(19)) * aspect * free.w)));
+    const aspect = free.W / free.H; const tanH = Math.tan(rad(19)); const freePx = (free.w / 2) * free.W;
     const p = pawns[cam.follow]; const pk = cam.peek && performance.now() < cam.peek.until ? cam.peek : null;
-    if (pk) return { tx: pk.x, tz: pk.z, dist: Math.min(30, Math.max(7, 7 / (Math.tan(rad(19)) * aspect * free.w))), el: rad(58), ox: free.cx, oy: free.cy };
-    if (free.H > free.W) { // portrait : vue plus plongeante, pion au centre de la zone libre
-      const pd = Math.min(36, Math.max(7, 10.5 / (Math.tan(rad(19)) * aspect * free.w)));
-      return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist: pd, el: rad(66), ox: free.cx, oy: free.cy };
-    }
-    return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist, el: rad(54), ox: free.cx, oy: free.cy };
+    if (pk) return { tx: pk.x, tz: pk.z, dist: distanceFor(Math.min(7, followWorldWidth(freePx)), tanH, aspect, free.w, 5, 30), el: rad(58), ox: free.cx, oy: free.cy };
+    const portrait = free.H > free.W;
+    const ww = followWorldWidth(freePx, { maxW: portrait ? 10.5 : 8.5 });
+    const dist = distanceFor(ww, tanH, aspect, free.w, 5, portrait ? 36 : 30) * autoZoom(cam.moving > 0);
+    return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist, el: rad(portrait ? 66 : 54), ox: free.cx, oy: free.cy };
+  }
+  // zoom et pan de l'utilisateur appliqués à la vue courante (vitrine exclue)
+  const LIM = SIZE / 2;
+  function withUser(g) {
+    if (cam.mode === 'vitrine') return g;
+    const pan = clampPan({ x: g.tx, z: g.tz }, cam.pan, LIM);
+    return { ...g, tx: g.tx + pan.x, tz: g.tz + pan.z, dist: g.dist * cam.zoom };
   }
   let lastCam = performance.now();
   function updateCamera(now) {
@@ -141,7 +154,7 @@ export function createScene(canvas, container) {
       if (f.key !== free.key || !overview) { free = f; overview = computeOverview(); }
     }
     if (!overview) return;
-    const g = cam.mode === 'vitrine' ? { tx: -0.5, tz: 1.5, dist: 40, el: rad(50), az: rad(-26), ox: 0, oy: 0.06 } : cam.mode === 'follow' ? followGoal() : { ...overview, az: 0 };
+    const g = withUser(cam.mode === 'vitrine' ? { tx: -0.5, tz: 1.5, dist: 40, el: rad(50), az: rad(-26), ox: 0, oy: 0.06 } : cam.mode === 'follow' ? followGoal() : { ...overview, az: 0 });
     if (g.az === undefined) g.az = 0;
     if (!cam.cur) cam.cur = { ...g };
     if (cam.cur.az === undefined) cam.cur.az = 0;
@@ -196,7 +209,7 @@ export function createScene(canvas, container) {
   let pawns = []; let pawnState = [];
   function setPlayers(players) {
     for (const p of pawns) scene.remove(p);
-    pawns = players.map((pl) => { const m = createPawn(pl.pawn || 'car', pl.color); upgradePawn(m, pl.pawn || 'car', pl.color); scene.add(m); return m; });
+    pawns = players.map((pl) => { const m = createPawn(pl.pawn || 'car', pl.color); upgradePawn(m, pl.pawn || 'car', pl.color); m.scale.setScalar(PAWN_S); scene.add(m); return m; });
     pawnState = players.map(() => ({ pos: 0, jail: false })); cam.follow = 0;
   }
   const slotOf = (pid) => pid % 4;
@@ -216,18 +229,21 @@ export function createScene(canvas, container) {
       p.position.set(from.x + dx * t, 0.165 + Math.sin(t * Math.PI) * (dur > 400 ? 1.6 : 0.7), from.z + dz * t);
       const s = Math.sin(t * Math.PI);
       const squash = t > 0.82 ? Math.sin(((t - 0.82) / 0.18) * Math.PI) * 0.25 : 0;
-      p.scale.set(0.9 * (1 - 0.12 * s + squash * 0.6), 0.9 * (1 + 0.2 * s - squash), 0.9 * (1 - 0.12 * s + squash * 0.6));
+      p.scale.set(PAWN_S * (1 - 0.12 * s + squash * 0.6), PAWN_S * (1 + 0.2 * s - squash), PAWN_S * (1 - 0.12 * s + squash * 0.6));
     });
-    p.scale.setScalar(0.9);
+    p.scale.setScalar(PAWN_S);
     if (!still()) fx.puff(pt.x, pt.z);
   }
   // steps > 0 : avance case par case ; steps < 0 : recule ; teleport : un grand saut.
+  // Pendant le déplacement : la caméra suit le pion avec un léger zoom avant (autoZoom), lissé par updateCamera.
   async function movePawn(pid, from, to, steps, teleport, jailAfter, onStep) {
-    pawns[pid].visible = true; cam.follow = pid;
-    if (teleport || !steps) { await hop(pid, to, jailAfter, 520); pawnState[pid] = { pos: to, jail: jailAfter }; return; }
-    const dir = steps > 0 ? 1 : -1; let pos = from;
-    for (let k = 0; k < Math.abs(steps); k++) { pos = (pos + dir + 40) % 40; if (onStep) onStep(); await hop(pid, pos, false); }
-    pawnState[pid] = { pos, jail: false };
+    pawns[pid].visible = true; cam.follow = pid; cam.pan = { x: 0, z: 0 }; cam.moving++;
+    try {
+      if (teleport || !steps) { await hop(pid, to, jailAfter, 520); pawnState[pid] = { pos: to, jail: jailAfter }; return; }
+      const dir = steps > 0 ? 1 : -1; let pos = from;
+      for (let k = 0; k < Math.abs(steps); k++) { pos = (pos + dir + 40) % 40; if (onStep) onStep(); await hop(pid, pos, false); }
+      pawnState[pid] = { pos, jail: false };
+    } finally { cam.moving = Math.max(0, cam.moving - 1); }
   }
 
   const buildings = createBuildings(tileGroups, tween);
@@ -244,11 +260,14 @@ export function createScene(canvas, container) {
 
   // ----- sélection tolérante d'une case -----
   const ray = new THREE.Raycaster(); const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0.16); const hit = new THREE.Vector3();
-  function pickSpace(clientX, clientY) {
+  function groundAt(clientX, clientY, out = hit) {
     const r = canvas.getBoundingClientRect();
     const nd = new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -(((clientY - r.top) / r.height) * 2 - 1));
     ray.setFromCamera(nd, camera);
-    if (!ray.ray.intersectPlane(plane, hit)) return -1;
+    return ray.ray.intersectPlane(plane, out);
+  }
+  function pickSpace(clientX, clientY) {
+    if (!groundAt(clientX, clientY)) return -1;
     let best = -1; let bd = 1e9;
     for (const info of SPACE_INFO) {
       const d = Math.hypot(hit.x - info.x, hit.z - info.z);
@@ -264,17 +283,69 @@ export function createScene(canvas, container) {
     return tween(700, (t) => { ring.scale.setScalar(1 + t * 0.8); ring.material.opacity = 1 - t; ring.material.transparent = true; if (t >= 1) ring.visible = false; });
   }
 
+  // ----- gestes sur le canevas : pincement, molette, double-tap, glissé à un doigt (pan) -----
+  // Seul le canevas écoute (touch-action:none dans le CSS) : les panneaux défilent normalement.
+  // `gesture` signale à la sélection de case (main.mjs) que le relâché courant faisait partie d'un geste.
+  const pts = new Map(); let pinch = null; let drag = null; let lastTap = null; let gesture = false;
+  const userView = () => cam.mode !== 'vitrine';
+  const resetUser = () => { cam.zoom = 1; cam.pan = { x: 0, z: 0 }; };
+  canvas.addEventListener('pointerdown', (e) => {
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
+    try { canvas.setPointerCapture(e.pointerId); } catch { /* pointeur déjà relâché */ }
+    if (pts.size === 1) gesture = false;
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()]; pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: cam.zoom }; drag = null; gesture = true;
+    } else if (pts.size === 1) drag = { x: e.clientX, y: e.clientY, active: false };
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    const p = pts.get(e.pointerId); if (!p || !userView()) return;
+    const px = p.x; const py = p.y; p.x = e.clientX; p.y = e.clientY;
+    if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()]; cam.zoom = pinchZoom(pinch.z0, pinch.d0, Math.hypot(a.x - b.x, a.y - b.y)); return; }
+    if (drag && pts.size === 1) {
+      if (!drag.active && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 12) drag.active = true;
+      if (!drag.active) return;
+      gesture = true;
+      const a = new THREE.Vector3(); const b = new THREE.Vector3();
+      if (groundAt(px, py, a) && groundAt(e.clientX, e.clientY, b)) { cam.pan = { x: cam.pan.x + (a.x - b.x), z: cam.pan.z + (a.z - b.z) }; }
+    }
+  });
+  const up = (e) => {
+    const p = pts.get(e.pointerId); pts.delete(e.pointerId);
+    if (pts.size < 2) pinch = null;
+    if (pts.size === 0) drag = null;
+    if (!p || gesture || e.type === 'pointercancel' || !userView()) { if (pts.size === 0) lastTap = null; return; }
+    // tap simple : double-tap si un autre tap proche a eu lieu juste avant
+    const now = performance.now();
+    if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40) {
+      lastTap = null; gesture = true;
+      const z = doubleTapZoom(cam.zoom);
+      if (z < 1) {
+        const w = new THREE.Vector3(); const g = cam.mode === 'follow' ? followGoal() : overview;
+        if (g && groundAt(e.clientX, e.clientY, w)) cam.pan = clampPan({ x: g.tx, z: g.tz }, { x: w.x - g.tx, z: w.z - g.tz }, LIM);
+      } else cam.pan = { x: 0, z: 0 };
+      cam.zoom = z;
+    } else lastTap = { t: now, x: e.clientX, y: e.clientY };
+  };
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', (e) => { if (!userView()) return; e.preventDefault(); cam.zoom = wheelZoom(cam.zoom, e.deltaY, e.deltaMode); }, { passive: false });
+  canvas.addEventListener('dblclick', (e) => e.preventDefault());
+
   requestAnimationFrame(tick);
   return {
     renderer, camera, resize, tween, rollDice, setPlayers, placePawns, movePawn, pickSpace, flash,
     syncBoard: (state) => buildings.sync(state),
     fx: fxApi,
     setFollow(pid) { if (pid != null) cam.follow = pid; },
-    setCamMode(m) { cam.mode = m; },
+    setCamMode(m) { cam.mode = m; resetUser(); }, // le bouton de vue remet le zoom utilisateur à 1
+    // vrai si le dernier relâché sur le canevas appartenait à un geste (pincement, glissé, double-tap)
+    gestureActive: () => gesture,
+    userZoom: () => ({ zoom: cam.zoom, pan: { ...cam.pan }, moving: cam.moving }),
+    setUserZoom(z) { cam.zoom = clampZoom(z); },
     camMode: () => cam.mode,
     peek(space, ms) { const i = SPACE_INFO[space]; if (i) cam.peek = { x: i.x, z: i.z, until: performance.now() + ms / (speed > 1 ? 60 : 1) }; },
     rollDice,
-    bigPawns(k) { pawns.forEach((p) => p.scale.setScalar(0.9 * k)); },
+    bigPawns(k) { pawns.forEach((p) => p.scale.setScalar(PAWN_S * k)); },
     pawnScreen(pid) { const p = pawns[pid]; if (!p) return null; const v = p.position.clone().project(camera); const r = canvas.getBoundingClientRect(); return { x: Math.round((v.x + 1) / 2 * r.width), y: Math.round((1 - v.y) / 2 * r.height) }; },
     setFast(b) { speed = b ? 60 : 1; },
     setPace(k) { if (speed <= 1) speed = 1 / k; }, // ralentit les animations (k > 1) ; sans effet en mode rapide
