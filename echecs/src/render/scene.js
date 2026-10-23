@@ -2,15 +2,15 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createPiece, HEIGHT } from './pieces.js';
+import { viewParams } from '../logic/layout.js';
 
 const TOP = 0.12; // hauteur de la surface des cases
-const FRAME = 0.55;
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const easeOutBack = (t) => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
 const wx = (s) => (s & 7) - 3.5;
 const wz = (s) => 3.5 - (s >> 3);
 
-function woodTexture(labels = true) {
+function woodTexture(labels, FRAME) {
   const c = document.createElement('canvas');
   c.width = c.height = 1024;
   const g = c.getContext('2d');
@@ -47,6 +47,38 @@ function woodTexture(labels = true) {
   return t;
 }
 
+// Coordonnées dans les cases (téléphone : cadre fin) : lettres en bas à droite de la rangée du bas,
+// chiffres en haut à gauche de la colonne de gauche, vues depuis le camp `side` (+1 blancs, -1 noirs).
+function squareLabels(side) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1024;
+  const g = c.getContext('2d');
+  const S = 128, pad = 9;
+  g.font = 'bold 36px system-ui, sans-serif';
+  for (let f = 0; f < 8; f++) for (let r = 0; r < 8; r++) {
+    const sc = side > 0 ? f : 7 - f, sr = side > 0 ? 7 - r : r; // colonne / rangée à l'écran
+    if (sr !== 7 && sc !== 0) continue;
+    const x0 = f * S, y0 = (7 - r) * S;
+    g.fillStyle = ((f + r) & 1) === 0 ? 'rgba(240,226,190,0.95)' : 'rgba(47,96,100,0.95)';
+    const draw = (txt, ax, ay, alignX, alignY) => {
+      g.save(); g.translate(ax, ay); if (side < 0) g.rotate(Math.PI);
+      g.textAlign = alignX; g.textBaseline = alignY; g.fillText(txt, 0, 0); g.restore();
+    };
+    if (sr === 7) { // coin bas-droit à l'écran
+      const ax = side > 0 ? x0 + S - pad : x0 + pad, ay = side > 0 ? y0 + S - pad : y0 + pad;
+      draw('abcdefgh'[f], ax, ay, 'right', 'bottom');
+    }
+    if (sc === 0) { // coin haut-gauche à l'écran
+      const ax = side > 0 ? x0 + pad : x0 + S - pad, ay = side > 0 ? y0 + pad : y0 + S - pad;
+      draw(String(r + 1), ax, ay, 'left', 'top');
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -66,42 +98,64 @@ export function createScene(canvas) {
   sun.shadow.bias = -0.0008;
   scene.add(sun);
 
-  // --- plateau ---
-  const board = new THREE.Group();
-  scene.add(board);
-  const size = 8 + 2 * FRAME;
-  const baseGeo = new RoundedBoxGeometry(size, 0.5, size, 3, 0.12);
-  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(false), roughness: 0.6 });
-  const woodLabels = woodTexture(true);
-  const base = new THREE.Mesh(baseGeo, wood);
-  base.position.y = -0.25 + 0.0;
-  base.receiveShadow = true;
-  board.add(base);
-  // plan texturé (cadre + coordonnées) posé sur le dessus du socle
-  const frameTex = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshStandardMaterial({ map: woodLabels, roughness: 0.6 }));
-  frameTex.rotation.x = -Math.PI / 2;
-  frameTex.position.y = 0.002;
-  board.add(frameTex);
+  // --- plateau (reconstruit si l'on passe de téléphone à bureau) ---
+  let vp = viewParams(window.innerWidth, window.innerHeight, canvas.clientWidth || 1, canvas.clientHeight || 1);
+  let size = 8 + 2 * vp.frame;
+  let board = null, labelW = null, labelB = null;
   const sqGeo = new THREE.BoxGeometry(1, TOP, 1);
   const matL = new THREE.MeshStandardMaterial({ color: 0xe0cba0, roughness: 0.55 });
   const matD = new THREE.MeshStandardMaterial({ color: 0x3f7276, roughness: 0.55 });
-  for (let s = 0; s < 64; s++) {
-    const m = new THREE.Mesh(sqGeo, (((s & 7) + (s >> 3)) & 1) === 0 ? matD : matL);
-    m.position.set(wx(s), TOP / 2, wz(s));
-    m.receiveShadow = true;
-    board.add(m);
+  function buildBoard() {
+    if (board) {
+      scene.remove(board);
+      board.traverse((o) => { if (o.material && o.material.map) o.material.map.dispose(); });
+    }
+    board = new THREE.Group();
+    scene.add(board);
+    size = 8 + 2 * vp.frame;
+    const wood = new THREE.MeshStandardMaterial({ map: woodTexture(false, vp.frame), roughness: 0.6 });
+    const base = new THREE.Mesh(new RoundedBoxGeometry(size, 0.5, size, 3, Math.min(0.12, vp.frame * 0.6)), wood);
+    base.position.y = -0.25;
+    base.receiveShadow = true;
+    board.add(base);
+    if (!vp.phone) {
+      // plan texturé (cadre + coordonnées) posé sur le dessus du socle
+      const frameTex = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshStandardMaterial({ map: woodTexture(true, vp.frame), roughness: 0.6 }));
+      frameTex.rotation.x = -Math.PI / 2;
+      frameTex.position.y = 0.002;
+      board.add(frameTex);
+    }
+    for (let s = 0; s < 64; s++) {
+      const m = new THREE.Mesh(sqGeo, (((s & 7) + (s >> 3)) & 1) === 0 ? matD : matL);
+      m.position.set(wx(s), TOP / 2, wz(s));
+      m.receiveShadow = true;
+      board.add(m);
+    }
+    labelW = labelB = null;
+    if (vp.phone) {
+      const mk = (side) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(8, 8).rotateX(-Math.PI / 2),
+          new THREE.MeshBasicMaterial({ map: squareLabels(side), transparent: true, depthWrite: false }));
+        m.position.y = TOP + 0.002;
+        m.renderOrder = 1;
+        board.add(m);
+        return m;
+      };
+      labelW = mk(1); labelB = mk(-1);
+    }
   }
+  buildBoard();
 
   // --- surlignages (créés à la demande, un par case) ---
   const hlGroup = new THREE.Group();
   scene.add(hlGroup);
   const planeGeo = new THREE.PlaneGeometry(0.98, 0.98).rotateX(-Math.PI / 2);
-  const dotGeo = new THREE.CircleGeometry(0.17, 24).rotateX(-Math.PI / 2);
-  const ringGeo = new THREE.RingGeometry(0.36, 0.46, 32).rotateX(-Math.PI / 2);
+  const dotGeo = new THREE.CircleGeometry(0.2, 24).rotateX(-Math.PI / 2);
+  const ringGeo = new THREE.RingGeometry(0.36, 0.48, 32).rotateX(-Math.PI / 2);
   const hlMat = (c, o) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false });
   const MATS = {
     selected: hlMat(0xffd23f, 0.65), last: hlMat(0xf2e24a, 0.4), check: hlMat(0xe5253b, 0.75),
-    danger: hlMat(0xff8a1f, 0.6), dot: hlMat(0x1e8f4e, 0.8), capture: hlMat(0x1e8f4e, 0.85),
+    danger: hlMat(0xff8a1f, 0.6), dot: hlMat(0x17a352, 0.88), capture: hlMat(0x17a352, 0.9),
   };
   const hlMeshes = [];
   function addHl(geo, mat, s, y) {
@@ -130,13 +184,16 @@ export function createScene(canvas) {
   scene.add(piecesGroup);
   const meshes = new Map(); // case -> Group
   function place(g, s) { g.position.set(wx(s), TOP, wz(s)); }
+  let lastBoard = null;
+  const pieceOpts = () => ({ scale: vp.pieceScale, lean: vp.knightLean, side: Math.cos(az) });
   function sync(brd) {
+    lastBoard = brd.slice();
     for (const g of meshes.values()) piecesGroup.remove(g);
     meshes.clear();
     for (let s = 0; s < 64; s++) {
       const p = brd[s];
       if (!p) continue;
-      const g = createPiece(p);
+      const g = createPiece(p, pieceOpts());
       place(g, s);
       g.userData.sq = s;
       piecesGroup.add(g);
@@ -168,8 +225,9 @@ export function createScene(canvas) {
       // étirement en vol, écrasement à l'arrivée
       const st = Math.sin(Math.PI * t);
       const land = t > 0.85 ? Math.sin(((t - 0.85) / 0.15) * Math.PI) : 0;
-      g.scale.set(1 - 0.08 * st + 0.14 * land, 1 + 0.12 * st - 0.2 * land, 1 - 0.08 * st + 0.14 * land);
-    }).then(() => { g.scale.set(1, 1, 1); place(g, to); });
+      const k = g.userData.k || 1;
+      g.scale.set(k * (1 - 0.08 * st + 0.14 * land), k * (1 + 0.12 * st - 0.2 * land), k * (1 - 0.08 * st + 0.14 * land));
+    }).then(() => { const k = g.userData.k || 1; g.scale.set(k, k, k); place(g, to); });
   }
   // Anime un coup (objet Move) ; la position finale est resynchronisée par l'appelant.
   async function animateMove(m, { instant = false } = {}) {
@@ -193,7 +251,8 @@ export function createScene(canvas) {
         jobs.push(tween(delay + 260, (t) => {
           const k = Math.max(0, (t * (delay + 260) - delay) / 260);
           const e = 1 - easeInOut(k);
-          cg.scale.set(e, e, e);
+          const ks = cg.userData.k || 1;
+          cg.scale.set(e * ks, e * ks, e * ks);
           cg.position.y = TOP + (1 - e) * 0.4;
         }).then(() => { cg.visible = false; }));
       }
@@ -201,11 +260,11 @@ export function createScene(canvas) {
     await Promise.all(jobs);
     if (m.promo) {
       const old = g;
-      const np = createPiece(m.piece[0] + m.promo);
+      const np = createPiece(m.piece[0] + m.promo, pieceOpts());
       place(np, m.to);
       piecesGroup.remove(old); piecesGroup.add(np);
       meshes.set(m.to, np);
-      await tween(300, (t) => { const e = Math.max(0.01, easeOutBack(t)); np.scale.set(e, e, e); });
+      await tween(300, (t) => { const e = Math.max(0.01, easeOutBack(t)) * np.userData.k; np.scale.set(e, e, e); });
     }
   }
 
@@ -226,8 +285,16 @@ export function createScene(canvas) {
     const f = Math.floor(x + 4), r = Math.floor(4 - z);
     return f >= 0 && f < 8 && r >= 0 && r < 8 ? r * 8 + f : -1;
   }
+  const fingerPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(TOP + 0.4));
   function pickSquare(cx, cy) {
     setRay(cx, cy);
+    if (vp.phone) {
+      // téléphone : la case sous le doigt (projection sur le plateau), arrondie à la case la plus proche
+      if (!ray.ray.intersectPlane(fingerPlane, hit)) return -1;
+      if (Math.abs(hit.x) > 4 + vp.frame + 0.35 || Math.abs(hit.z) > 4 + vp.frame + 0.35) return -1;
+      const f = Math.min(7, Math.max(0, Math.floor(hit.x + 4))), r = Math.min(7, Math.max(0, Math.floor(4 - hit.z)));
+      return r * 8 + f;
+    }
     const hits = ray.intersectObjects(piecesGroup.children, true);
     for (const h of hits) {
       let o = h.object;
@@ -255,44 +322,84 @@ export function createScene(canvas) {
     setRay(cx, cy);
     if (ray.ray.intersectPlane(dragPlane, hit)) {
       dragging.position.set(hit.x, 0.9, hit.z);
-      dragging.scale.set(1.08, 1.08, 1.08);
+      const k = 1.08 * (dragging.userData.k || 1);
+      dragging.scale.set(k, k, k);
     }
   }
   function dragEnd() {
     if (!dragging) return;
     place(dragging, dragging.userData.sq);
-    dragging.scale.set(1, 1, 1);
+    const k = dragging.userData.k || 1;
+    dragging.scale.set(k, k, k);
     dragging = null;
   }
 
   // --- caméra ---
-  let ELEV = (56 * Math.PI) / 180;
+  let ELEV = (vp.elevDeg * Math.PI) / 180;
   let az = 0, azTarget = 0, dist = 14;
-  const corners = [];
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const y of [-0.3, 1.5]) corners.push(new THREE.Vector3((sx * size) / 2, y, (sz * size) / 2));
   const tmp = new THREE.Vector3();
+  // Contraintes de cadrage : [point, limite en coordonnées normalisées]
+  function constraints() {
+    const out = [];
+    if (vp.phone) {
+      // les 8 colonnes / rangées remplissent `fill` du canvas ; cadre fin et têtes des pièces dans l'écran
+      const e = 4 + vp.frame;
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        out.push([new THREE.Vector3(sx * 4, TOP, sz * 4), vp.fill]);
+        out.push([new THREE.Vector3(sx * e, 0, sz * e), 0.995]);
+        // têtes des pièces les plus hautes (roi + croix) entièrement visibles, y compris la rangée du fond
+        out.push([new THREE.Vector3(sx * 3.75, TOP + 1.95 * vp.pieceScale, sz * 3.75), 0.975]);
+      }
+    } else {
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const y of [-0.3, 1.5]) out.push([new THREE.Vector3((sx * size) / 2, y, (sz * size) / 2), 0.97]);
+    }
+    return out;
+  }
+  let cons = constraints();
   function placeCamera(d) {
     camera.position.set(Math.sin(az) * Math.cos(ELEV) * d, Math.sin(ELEV) * d, Math.cos(az) * Math.cos(ELEV) * d);
-    camera.lookAt(0, 0.1, 0);
+    camera.lookAt(0, vp.phone ? TOP : 0.1, 0);
     camera.updateMatrixWorld(true);
   }
   function fit() {
     let d = dist;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       placeCamera(d);
       let m = 0;
-      for (const c of corners) { tmp.copy(c).project(camera); m = Math.max(m, Math.abs(tmp.x), Math.abs(tmp.y)); }
-      d *= m / 0.97;
+      for (const [c, lim] of cons) { tmp.copy(c).project(camera); m = Math.max(m, Math.abs(tmp.x) / lim, Math.abs(tmp.y) / lim); }
+      d *= m;
     }
     dist = d;
     placeCamera(d);
+  }
+  let side = 1;
+  function applySide() {
+    // côté de l'observateur : étiquettes des cases et inclinaison des cavaliers
+    const ns = Math.cos(az) >= 0 ? 1 : -1;
+    if (labelW) { labelW.visible = ns > 0; labelB.visible = ns < 0; }
+    side = ns;
+    // inclinaison des têtes de cavalier interpolée avec la caméra (droite à mi-rotation, sans saut)
+    const c = Math.cos(az);
+    for (const g of meshes.values()) {
+      const pv = g.userData.pivot;
+      if (!pv) continue;
+      pv.rotation.x = -c * pv.userData.lean;
+      pv.position.z = c * Math.sin(pv.userData.lean) * 0.48;
+    }
   }
   function resize() {
     const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    ELEV = ((w / h > 1.35 ? 72 : w / h < 0.7 ? 52 : 58) * Math.PI) / 180; // plus de plongée en paysage : plateau plus grand
+    const nv = viewParams(window.innerWidth, window.innerHeight, w, h);
+    const rebuild = nv.phone !== vp.phone;
+    vp = nv;
+    if (rebuild) { buildBoard(); if (lastBoard) sync(lastBoard); }
+    ELEV = (vp.elevDeg * Math.PI) / 180;
+    camera.fov = vp.fovDeg;
     camera.updateProjectionMatrix();
+    cons = constraints();
+    applySide();
     fit();
   }
   function setOrientation(color, animate = true) {
@@ -301,7 +408,7 @@ export function createScene(canvas) {
     let diff = azTarget - az;
     diff = ((diff + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
     azTarget = az + diff;
-    if (!animate) { az = azTarget; fit(); }
+    if (!animate) { az = azTarget; applySide(); fit(); }
   }
 
   let last = performance.now();
@@ -311,6 +418,7 @@ export function createScene(canvas) {
     runAnims(now);
     if (Math.abs(azTarget - az) > 0.0005) {
       az += (azTarget - az) * Math.min(1, dt * 3.2);
+      applySide();
       fit();
     }
     renderer.render(scene, camera);

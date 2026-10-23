@@ -287,6 +287,7 @@ loadImage('titre').then((img) => home.setHero(img));
 // ---------- taille ----------
 new ResizeObserver(() => scene.resize()).observe($('stage'));
 window.addEventListener('resize', () => scene.resize());
+window.addEventListener('orientationchange', () => setTimeout(() => scene.resize(), 150));
 scene.resize();
 
 // état initial : plateau de départ visible derrière l'accueil

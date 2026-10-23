@@ -114,3 +114,31 @@ h3 { margin: 10px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
   #history { font-size: 14px; }
 }
 @media (max-height: 500px) and (orientation: landscape) { .overlay .panel { width: min(100%, 560px); } }
+
+/* ---- Téléphone (2026-10-23) : plateau qui remplit la largeur (portrait) ou la hauteur (paysage) ---- */
+@media (max-width: 499px) and (orientation: portrait) {
+  #hud { min-height: 50px; padding: 2px 6px; }
+  #msgband { min-height: 34px; padding: 0 6px; }
+  #toast { padding: 5px 12px; font-size: 15px; }
+  #panel { padding: 2px 6px 6px; gap: 4px; }
+  .actions { gap: 6px; }
+  .btn.small { padding: 6px 8px; font-size: 14px; }
+  #history { min-height: 28px; padding: 2px 8px; font-size: 13px; background: rgba(255, 255, 255, 0.05); }
+}
+@media (max-height: 499px) and (orientation: landscape) {
+  /* plateau sur toute la hauteur à gauche ; joueurs, pastille, boutons et coups dans une colonne étroite à droite */
+  #app { grid-template-columns: minmax(0, 1fr) clamp(200px, calc(100vw - 100dvh - 8px), 290px);
+    grid-template-rows: auto auto auto minmax(0, 1fr); grid-template-areas: "stage hud" "stage msg" "stage panel" "stage panel"; }
+  #hud { padding: 4px 6px 0 2px; gap: 6px; min-height: 0; }
+  #players { flex-direction: column; gap: 3px; align-items: stretch; }
+  .pl { padding: 2px 8px; font-size: 13px; border-radius: 8px; }
+  .pl span { max-width: none; }
+  .dot { width: 11px; height: 11px; }
+  #msgband { min-height: 0; padding: 4px 6px 2px 2px; }
+  #toast { font-size: 13px; padding: 4px 10px; max-width: 100%; }
+  #toast:not(.show) { display: none; }
+  #panel { padding: 2px 6px 6px 2px; gap: 4px; }
+  .actions { flex-direction: row; gap: 6px; }
+  .btn.small { flex: 1; padding: 4px 6px; font-size: 13px; white-space: normal; line-height: 1.1; }
+  #history { font-size: 13px; padding: 2px 8px; }
+}

@@ -56,7 +56,8 @@ function king() {
     P(0.28, 1.2), P(0.26, 1.28), P(0, 1.28)];
   const v = new THREE.BoxGeometry(0.1, 0.34, 0.1); v.translate(0, 1.45, 0);
   const h = new THREE.BoxGeometry(0.28, 0.1, 0.1); h.translate(0, 1.5, 0);
-  return [lathe(pts), v, h];
+  const h2 = new THREE.BoxGeometry(0.1, 0.1, 0.28); h2.translate(0, 1.5, 0); // croix en « + » : lisible aussi de dessus
+  return [lathe(pts), v, h, h2];
 }
 function knight() {
   const base = lathe([...baseProfile(0.38), P(0.28, 0.22), P(0.26, 0.28), P(0, 0.3)]);
@@ -87,7 +88,9 @@ export const MATERIALS = {
 };
 
 // Crée une pièce (Group) ; le cavalier est vu de profil (blanc vers la droite, noir vers la gauche).
-export function createPiece(code) {
+// opts.scale : taille relative (téléphone : un peu plus grand) ; opts.lean (rad) / opts.side : tête du cavalier
+// basculée vers l'arrière pour que son profil reste lisible depuis une caméra quasi verticale.
+export function createPiece(code, opts = {}) {
   const color = code[0], type = code[1];
   const { geos, extra } = pieceGeometries(type);
   const g = new THREE.Group();
@@ -101,8 +104,23 @@ export function createPiece(code) {
     const m = new THREE.Mesh(geo, mat);
     m.castShadow = true;
     m.rotation.y = color === 'w' ? 0 : Math.PI; // profil lisible depuis la caméra
-    g.add(m);
+    if (opts.lean) {
+      // la tête bascule « en arrière » par rapport à l'observateur (side = cos de l'azimut caméra : +1 vue blancs, -1 vue noirs, interpolé pendant la rotation)
+      // et reste centrée sur sa case
+      const side = opts.side || 1, PIV = 0.33;
+      const pivot = new THREE.Group();
+      pivot.position.set(0, PIV, side * Math.sin(opts.lean) * 0.48);
+      pivot.rotation.x = -side * opts.lean;
+      m.position.y = -PIV;
+      pivot.add(m);
+      pivot.userData.lean = opts.lean;
+      g.userData.pivot = pivot;
+      g.add(pivot);
+    } else g.add(m);
   }
+  const k = opts.scale || 1;
+  g.scale.set(k, k, k);
   g.userData.code = code;
+  g.userData.k = k;
   return g;
 }
