@@ -82,7 +82,7 @@ function textureFace(v) {
 const VALEUR_FACE = [3, 4, 1, 6, 2, 5];
 const NORMALE = { 1: [0, 1, 0], 6: [0, -1, 0], 3: [1, 0, 0], 4: [-1, 0, 0], 2: [0, 0, 1], 5: [0, 0, -1] };
 
-export function creerScene(canvas, conteneur) {
+export function creerScene(canvas, conteneur, reserveBas = () => 0) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
@@ -414,10 +414,14 @@ export function creerScene(canvas, conteneur) {
     if (!w || !h) return;
     const portrait = h > w;
     // portrait étroit : plongée plus verticale (75°) pour employer la hauteur libre
-    const el = (portrait ? ((h - Math.min(RESERVE_HAUT, h * 0.08)) / w > 1.15 ? 75 : 70) : 60) * Math.PI / 180;
     const margeX = portrait ? 0.98 : MARGE; // bords gauche/droit : marge ≥ 1 %
-    const haut = portrait ? Math.min(RESERVE_HAUT, h * 0.08) : 0; // bande utile : [haut, h]
-    const hu = h - haut;
+    const bas = Math.min(reserveBas() || 0, h * 0.5); // HUD superposé en bas
+    // réserve haute pour la pastille des messages (+ safe-area-top, lue sur le top calculé de #toast)
+    const toast = conteneur.querySelector('#toast');
+    const safeHaut = toast ? Math.max(0, (parseFloat(getComputedStyle(toast).top) || 8) - 8) : 0;
+    const haut = (portrait ? Math.min(RESERVE_HAUT, h * 0.08) : 40) + safeHaut; // bande utile : [haut, h - bas]
+    const hu = h - haut - bas;
+    const el = (portrait ? (hu / w > 1.15 ? 75 : 70) : 60) * Math.PI / 180;
     camera.clearViewOffset();
     renderer.setSize(w, h, false);
     camera.aspect = w / hu;

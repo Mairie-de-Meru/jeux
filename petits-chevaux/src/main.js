@@ -9,7 +9,9 @@ import * as voix from './voix.js';
 import * as ui from './ui.js';
 
 const canvas = document.getElementById('c');
-const scene = creerScene(canvas, document.getElementById('zone3d'));
+const hud = document.getElementById('hud');
+const scene = creerScene(canvas, document.getElementById('zone3d'), () => (hud.hidden ? 0 : hud.offsetHeight));
+new ResizeObserver(() => scene.ajuster()).observe(hud);
 const params = new URLSearchParams(location.search);
 
 // Sièges par couleur (rouge, bleu, jaune, vert) : humain | robot | absent. Défaut : toi contre un robot.

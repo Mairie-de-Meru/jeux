@@ -88,11 +88,13 @@ function pastille(el, j, robot = false) {
 }
 
 const PALES = ['#ffe0e0', '#dcebff', '#fff7c2', '#dcf3dd'];
+// bandeau du joueur : couleur translucide (texte blanc ombré)
+const VOILES = ['rgba(229,57,53,.45)', 'rgba(30,136,229,.45)', 'rgba(190,150,0,.55)', 'rgba(67,160,71,.45)'];
 const nomAffiche = (jo) => (jo.nom === 'Toi' ? 'toi' : jo.nom);
 export function setJoueur(jo, j) {
   pastille($('pastille'), j, !jo.humain);
   const q = $('qui');
-  q.style.background = PALES[j];
+  q.style.background = VOILES[j];
   q.style.borderColor = css(COL[j]);
   $('quiNom').textContent = jo.humain ? `À ${nomAffiche(jo)} de jouer` : `${libelle(jo.nom)} joue`;
 }
