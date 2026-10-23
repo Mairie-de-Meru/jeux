@@ -348,10 +348,10 @@ export function createScene(canvas) {
         out.push([new THREE.Vector3(sx * 4, TOP, sz * 4), vp.fill]);
         out.push([new THREE.Vector3(sx * e, 0, sz * e), 0.995]);
         // têtes des pièces les plus hautes (roi + croix) entièrement visibles, y compris la rangée du fond
-        out.push([new THREE.Vector3(sx * 3.75, TOP + 1.95 * vp.pieceScale, sz * 3.75), 0.975]);
+        out.push([new THREE.Vector3(sx * 3.75, TOP + 2.0 * vp.pieceScale, sz * 3.75), 0.985]);
       }
     } else {
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const y of [-0.3, 1.5]) out.push([new THREE.Vector3((sx * size) / 2, y, (sz * size) / 2), 0.97]);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const y of [-0.3, 2.0]) out.push([new THREE.Vector3((sx * size) / 2, y, (sz * size) / 2), 0.97]);
     }
     return out;
   }
@@ -361,16 +361,29 @@ export function createScene(canvas) {
     camera.lookAt(0, vp.phone ? TOP : 0.1, 0);
     camera.updateMatrixWorld(true);
   }
+  // Cadrage : distance telle que toutes les contraintes tiennent. Sur téléphone, décalage optique vertical
+  // (setViewOffset) pour répartir la marge : la place réservée au sommet des pièces du fond n'est pas perdue en bas.
   function fit() {
-    let d = dist;
-    for (let i = 0; i < 6; i++) {
+    let d = dist, shift = 0;
+    if (camera.view && camera.view.enabled) camera.clearViewOffset();
+    for (let i = 0; i < 8; i++) {
       placeCamera(d);
-      let m = 0;
-      for (const [c, lim] of cons) { tmp.copy(c).project(camera); m = Math.max(m, Math.abs(tmp.x) / lim, Math.abs(tmp.y) / lim); }
-      d *= m;
+      let mx = 0, top = -Infinity, bot = Infinity;
+      for (const [c, lim] of cons) {
+        tmp.copy(c).project(camera);
+        mx = Math.max(mx, Math.abs(tmp.x) / lim);
+        top = Math.max(top, tmp.y / lim); bot = Math.min(bot, tmp.y / lim);
+      }
+      const half = vp.phone ? (top - bot) / 2 : Math.max(Math.abs(top), Math.abs(bot));
+      shift = vp.phone ? (top + bot) / 2 / Math.max(mx, half) : 0;
+      d *= Math.max(mx, half);
     }
     dist = d;
     placeCamera(d);
+    if (vp.phone && Math.abs(shift) > 1e-4) {
+      const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
+      camera.setViewOffset(w, h, 0, (-shift * h) / 2, w, h);
+    }
   }
   let side = 1;
   function applySide() {

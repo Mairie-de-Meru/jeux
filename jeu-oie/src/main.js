@@ -51,7 +51,7 @@ let last = performance.now();
 function loop(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  try { world.frame(now, dt, rel($('boardArea')), rel($('dieZone')), dice, W, H); } catch (e) { console.error(e); }
+  try { world.frame(now, dt, rel($('boardArea')), rel($('dieZone')), dice, W, H, rel($('main'))); } catch (e) { console.error(e); }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -210,7 +210,8 @@ canvas.addEventListener('pointerdown', (ev) => {
   if (!tapResolver) return;
   const rect = $('boardArea').getBoundingClientRect();
   if (ev.clientX < rect.left || ev.clientX > rect.right || ev.clientY < rect.top || ev.clientY > rect.bottom) return;
-  const i = world.pickCase(ev.clientX, ev.clientY, rect);
+  // la caméra dessine tout #main (le plateau continue sous l'encadré translucide)
+  const i = world.pickCase(ev.clientX, ev.clientY, $('main').getBoundingClientRect());
   if (i >= 0) { const r = tapResolver; tapResolver = null; r(i); }
 });
 
@@ -540,8 +541,8 @@ window.__oie = {
   get auto() { return auto; },
   tap(i) { if (tapResolver) { const r = tapResolver; tapResolver = null; r(i); return true; } return false; },
   answer(v) { if (answerResolver) { answerResolver(v, null); return true; } return false; },
-  pick: (cx, cy) => world.pickCase(cx, cy, $('boardArea').getBoundingClientRect()),
-  screenOf: (i) => world.screenOf(i, $('boardArea').getBoundingClientRect()),
+  pick: (cx, cy) => world.pickCase(cx, cy, $('main').getBoundingClientRect()),
+  screenOf: (i) => world.screenOf(i, $('main').getBoundingClientRect()),
   firstLanding: (total) => (G ? firstLanding(G, G.turn, total) : null),
   jumpTo(pid, pos) { G.players[pid].pos = pos; world.place(pid, pos); updateHud(); },
 };

@@ -172,7 +172,7 @@ export function createWorld(canvas) {
   }
   function setActive(pid) { pawns.forEach((p, i) => { p.userData.ring.visible = i === pid; }); }
 
-  function frame(now, dt, board, die, dice, W, H) {
+  function frame(now, dt, board, die, dice, W, H, view) {
     for (let i = tweens.length - 1; i >= 0; i--) {
       const t = tweens[i];
       const u = Math.min(1, (now - t.t0) / t.d);
@@ -230,9 +230,13 @@ export function createWorld(canvas) {
       const tilt = TILT;
       camera.position.set(camTarget.x, camDist.v * Math.sin(tilt), camTarget.z + camDist.v * Math.cos(tilt));
       camera.lookAt(camTarget.x, 0, camTarget.z);
+      // cadre virtuel = #boardArea, mais on dessine tout #main (view) : le plateau passe sous l'encadré du bas
+      const vr = view && view.w > 4 && view.h > 4 ? view : board;
+      if (vr !== board) camera.setViewOffset(board.w, board.h, vr.x - board.x, vr.y - board.y, vr.w, vr.h);
+      else camera.clearViewOffset();
       camera.updateProjectionMatrix();
-      renderer.setViewport(board.x, H - board.y - board.h, board.w, board.h);
-      renderer.setScissor(board.x, H - board.y - board.h, board.w, board.h);
+      renderer.setViewport(vr.x, H - vr.y - vr.h, vr.w, vr.h);
+      renderer.setScissor(vr.x, H - vr.y - vr.h, vr.w, vr.h);
       renderer.render(scene, camera);
     }
     if (die.w > 4 && die.h > 4) {
