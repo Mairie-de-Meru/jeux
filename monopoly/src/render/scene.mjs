@@ -9,7 +9,7 @@ import { createPawn, upgradePawn } from './pawns.mjs';
 import { createFx } from './fx.mjs';
 import { createDice } from './dice.mjs';
 import { createBuildings } from './buildings.mjs';
-import { clampZoom, pinchZoom, wheelZoom, doubleTapZoom, autoZoom, followWorldWidth, distanceFor, clampPan } from './camzoom.mjs';
+import { clampZoom, pinchZoom, wheelZoom, doubleTapZoom, autoZoom, followWorldWidth, distanceFor, clampPan, normAngle, angleDiff, dragRotation, dragTilt, userElevation, twistRotation, quarterTurn } from './camzoom.mjs';
 
 const PAWN_S = 1.0; // échelle des pions (0,9 avant le 2026-10-23)
 
@@ -93,7 +93,8 @@ export function createScene(canvas, container) {
 
   // ----- caméra : vue d'ensemble ou suivi du pion -----
   // zoom : facteur utilisateur (pincement, molette, double-tap) ; pan : décalage de la cible ; moving : pion en déplacement
-  const cam = { mode: 'follow', follow: 0, cur: null, tx: 0, tz: 0, zoom: 1, pan: { x: 0, z: 0 }, moving: 0 };
+  const cam = { mode: 'follow', follow: 0, cur: null, tx: 0, tz: 0, zoom: 1, pan: { x: 0, z: 0 }, moving: 0, rot: 0, tilt: 0 };
+  // rot : azimut utilisateur (clic droit, deux doigts, boutons ↺ ↻) ; tilt : inclinaison utilisateur (clic droit vertical)
   const panelEl = document.getElementById('panel'); const topEl = document.getElementById('topbar');
   let free = { cx: 0, cy: 0, w: 2, h: 2, key: '' }; let overview = null; let lastFree = 0;
   const rad = THREE.MathUtils.degToRad;
@@ -113,12 +114,13 @@ export function createScene(canvas, container) {
   const fitCam = new THREE.PerspectiveCamera(38, 1, 1, 200);
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => new THREE.Vector3((a * (SIZE + 0.9)) / 2, 0, (b * (SIZE + 0.9)) / 2));
   const tmp = new THREE.Vector3();
-  function computeOverview() {
+  // az : azimut de la vue (rotation utilisateur) ; le cadrage est recalculé pour le plateau tourné
+  function computeOverview(az = 0) {
     // zone libre en portrait : vue plus plongeante, le plateau remplit mieux la hauteur disponible
     const tall = (free.h * free.H) / (free.w * free.W);
     const el = rad(tall > 1.15 ? 74 : tall > 0.9 ? 68 : 62); fitCam.aspect = free.W / free.H;
     const bbox = (dist) => {
-      fitCam.position.set(0, Math.sin(el) * dist, Math.cos(el) * dist); fitCam.lookAt(0, 0, 0); fitCam.updateMatrixWorld(); fitCam.updateProjectionMatrix();
+      fitCam.position.set(Math.sin(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.cos(az) * Math.cos(el) * dist); fitCam.lookAt(0, 0, 0); fitCam.updateMatrixWorld(); fitCam.updateProjectionMatrix();
       let minx = 9; let maxx = -9; let miny = 9; let maxy = -9;
       for (const c of corners) { tmp.copy(c).project(fitCam); minx = Math.min(minx, tmp.x); maxx = Math.max(maxx, tmp.x); miny = Math.min(miny, tmp.y); maxy = Math.max(maxy, tmp.y); }
       return { minx, maxx, miny, maxy };
@@ -126,7 +128,7 @@ export function createScene(canvas, container) {
     let lo = 8; let hi = 200;
     for (let k = 0; k < 24; k++) { const d = (lo + hi) / 2; const b = bbox(d); if ((b.maxx - b.minx) > free.w * 0.99 || (b.maxy - b.miny) > free.h * 0.99) lo = d; else hi = d; }
     const b = bbox(hi);
-    return { tx: 0, tz: 0, dist: hi, el, ox: free.cx - (b.minx + b.maxx) / 2, oy: free.cy - (b.miny + b.maxy) / 2 };
+    return { tx: 0, tz: 0, dist: hi, el, az, ox: free.cx - (b.minx + b.maxx) / 2, oy: free.cy - (b.miny + b.maxy) / 2 };
   }
   // Vue « Mon pion » : largeur de monde visible choisie pour des noms de cases lisibles sur téléphone
   // (≈ 54 px CSS par unité), inchangée sur grand écran ; pion au centre de la zone libre.
@@ -139,27 +141,29 @@ export function createScene(canvas, container) {
     const dist = distanceFor(ww, tanH, aspect, free.w, 5, portrait ? 36 : 30) * autoZoom(cam.moving > 0);
     return { tx: p ? p.position.x : 0, tz: p ? p.position.z : 0, dist, el: rad(portrait ? 66 : 54), ox: free.cx, oy: free.cy };
   }
-  // zoom et pan de l'utilisateur appliqués à la vue courante (vitrine exclue)
+  // zoom, pan, rotation et inclinaison de l'utilisateur appliqués à la vue courante (vitrine exclue)
   const LIM = SIZE / 2;
   function withUser(g) {
     if (cam.mode === 'vitrine') return g;
     const pan = clampPan({ x: g.tx, z: g.tz }, cam.pan, LIM);
-    return { ...g, tx: g.tx + pan.x, tz: g.tz + pan.z, dist: g.dist * cam.zoom };
+    return { ...g, tx: g.tx + pan.x, tz: g.tz + pan.z, dist: g.dist * cam.zoom, az: normAngle((g.az || 0) + (g.ownAz ? 0 : cam.rot)), el: userElevation(g.el, cam.tilt) };
   }
   let lastCam = performance.now();
   function updateCamera(now) {
     const dt = Math.min(0.1, (now - lastCam) / 1000); lastCam = now;
     if (now - lastFree > 250) {
       lastFree = now; const f = computeFree();
-      if (f.key !== free.key || !overview) { free = f; overview = computeOverview(); }
+      if (f.key !== free.key || !overview) { free = f; overview = computeOverview(cam.rot); }
     }
+    if (overview && cam.mode === 'overview' && Math.abs(angleDiff(overview.az, cam.rot)) > 0.005) overview = computeOverview(cam.rot);
     if (!overview) return;
-    const g = withUser(cam.mode === 'vitrine' ? { tx: -0.5, tz: 1.5, dist: 40, el: rad(50), az: rad(-26), ox: 0, oy: 0.06 } : cam.mode === 'follow' ? followGoal() : { ...overview, az: 0 });
+    const g = withUser(cam.mode === 'vitrine' ? { tx: -0.5, tz: 1.5, dist: 40, el: rad(50), az: rad(-26), ox: 0, oy: 0.06 } : cam.mode === 'follow' ? followGoal() : { ...overview, ownAz: true });
     if (g.az === undefined) g.az = 0;
     if (!cam.cur) cam.cur = { ...g };
     if (cam.cur.az === undefined) cam.cur.az = 0;
     const k = speed > 1 ? 1 : 1 - Math.exp(-dt * (cam.mode === 'follow' ? 5 : 3.5));
-    const c = cam.cur; for (const key of ['tx', 'tz', 'dist', 'el', 'ox', 'oy', 'az']) c[key] += (g[key] - c[key]) * k;
+    const c = cam.cur; for (const key of ['tx', 'tz', 'dist', 'el', 'ox', 'oy']) c[key] += (g[key] - c[key]) * k;
+    c.az = normAngle(c.az + angleDiff(g.az, c.az) * k); // azimut : chemin le plus court
     camera.position.set(c.tx + Math.sin(c.az) * Math.cos(c.el) * c.dist, Math.sin(c.el) * c.dist, c.tz + Math.cos(c.az) * Math.cos(c.el) * c.dist);
     camera.lookAt(c.tx, 0, c.tz); camera.updateMatrixWorld(); camera.updateProjectionMatrix();
     camera.projectionMatrix.elements[8] = -c.ox; camera.projectionMatrix.elements[9] = -c.oy;
@@ -167,7 +171,7 @@ export function createScene(canvas, container) {
   }
   function resize() {
     const w = Math.max(1, container.clientWidth); const h = Math.max(1, container.clientHeight);
-    renderer.setSize(w, h, false); camera.aspect = w / h; free = computeFree(); overview = computeOverview(); lastFree = performance.now(); cam.cur = null;
+    renderer.setSize(w, h, false); camera.aspect = w / h; free = computeFree(); overview = computeOverview(cam.rot); lastFree = performance.now(); cam.cur = null;
   }
 
   // ----- effets -----
@@ -283,24 +287,38 @@ export function createScene(canvas, container) {
     return tween(700, (t) => { ring.scale.setScalar(1 + t * 0.8); ring.material.opacity = 1 - t; ring.material.transparent = true; if (t >= 1) ring.visible = false; });
   }
 
-  // ----- gestes sur le canevas : pincement, molette, double-tap, glissé à un doigt (pan) -----
+  // ----- gestes sur le canevas : pincement (+ rotation à deux doigts), molette, double-tap, glissé à un doigt (pan),
+  // clic droit maintenu (rotation horizontale, inclinaison verticale) -----
   // Seul le canevas écoute (touch-action:none dans le CSS) : les panneaux défilent normalement.
   // `gesture` signale à la sélection de case (main.mjs) que le relâché courant faisait partie d'un geste.
-  const pts = new Map(); let pinch = null; let drag = null; let lastTap = null; let gesture = false;
+  const pts = new Map(); let pinch = null; let drag = null; let lastTap = null; let gesture = false; let rdrag = null;
   const userView = () => cam.mode !== 'vitrine';
-  const resetUser = () => { cam.zoom = 1; cam.pan = { x: 0, z: 0 }; };
+  const resetUser = () => { cam.zoom = 1; cam.pan = { x: 0, z: 0 }; cam.rot = 0; cam.tilt = 0; };
+  const baseEl = () => (cam.mode === 'follow' ? followGoal().el : overview ? overview.el : rad(62));
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // canevas seulement : le clic droit y sert à tourner
   canvas.addEventListener('pointerdown', (e) => {
+    if (e.button === 2) { // clic droit : rotation / inclinaison, jamais une sélection de case
+      rdrag = { id: e.pointerId, x: e.clientX, y: e.clientY }; gesture = true;
+      try { canvas.setPointerCapture(e.pointerId); } catch { /* pointeur déjà relâché */ }
+      return;
+    }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY });
     try { canvas.setPointerCapture(e.pointerId); } catch { /* pointeur déjà relâché */ }
     if (pts.size === 1) gesture = false;
     if (pts.size === 2) {
-      const [a, b] = [...pts.values()]; pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: cam.zoom }; drag = null; gesture = true;
+      const [a, b] = [...pts.values()]; pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: cam.zoom, a0: Math.atan2(b.y - a.y, b.x - a.x), r0: cam.rot }; drag = null; gesture = true;
     } else if (pts.size === 1) drag = { x: e.clientX, y: e.clientY, active: false };
   });
   canvas.addEventListener('pointermove', (e) => {
+    if (rdrag && e.pointerId === rdrag.id) {
+      if (!userView()) return;
+      const dx = e.clientX - rdrag.x; const dy = e.clientY - rdrag.y; rdrag.x = e.clientX; rdrag.y = e.clientY;
+      cam.rot = dragRotation(cam.rot, dx); cam.tilt = dragTilt(cam.tilt, dy, baseEl());
+      return;
+    }
     const p = pts.get(e.pointerId); if (!p || !userView()) return;
     const px = p.x; const py = p.y; p.x = e.clientX; p.y = e.clientY;
-    if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()]; cam.zoom = pinchZoom(pinch.z0, pinch.d0, Math.hypot(a.x - b.x, a.y - b.y)); return; }
+    if (pinch && pts.size >= 2) { const [a, b] = [...pts.values()]; cam.zoom = pinchZoom(pinch.z0, pinch.d0, Math.hypot(a.x - b.x, a.y - b.y)); cam.rot = twistRotation(pinch.r0, pinch.a0, Math.atan2(b.y - a.y, b.x - a.x)); return; }
     if (drag && pts.size === 1) {
       if (!drag.active && Math.hypot(e.clientX - p.x0, e.clientY - p.y0) > 12) drag.active = true;
       if (!drag.active) return;
@@ -310,6 +328,7 @@ export function createScene(canvas, container) {
     }
   });
   const up = (e) => {
+    if (rdrag && e.pointerId === rdrag.id) { rdrag = null; return; }
     const p = pts.get(e.pointerId); pts.delete(e.pointerId);
     if (pts.size < 2) pinch = null;
     if (pts.size === 0) drag = null;
@@ -337,7 +356,11 @@ export function createScene(canvas, container) {
     syncBoard: (state) => buildings.sync(state),
     fx: fxApi,
     setFollow(pid) { if (pid != null) cam.follow = pid; },
-    setCamMode(m) { cam.mode = m; resetUser(); }, // le bouton de vue remet le zoom utilisateur à 1
+    setCamMode(m) { cam.mode = m; resetUser(); }, // le bouton de vue remet zoom, pan, rotation et inclinaison à zéro
+    // boutons ↺ ↻ : quart de tour en douceur (lissé par updateCamera) ; sans effet pendant la vitrine
+    rotateQuarter(dir) { if (userView()) cam.rot = quarterTurn(cam.rot, dir); },
+    setRotation(rad, tilt) { if (!userView()) return; cam.rot = normAngle(rad); if (tilt != null) cam.tilt = dragTilt(tilt, 0, baseEl()); },
+    userRotation: () => ({ rot: cam.rot, tilt: cam.tilt, az: cam.cur ? cam.cur.az : 0, el: cam.cur ? cam.cur.el : 0 }),
     // vrai si le dernier relâché sur le canevas appartenait à un geste (pincement, glissé, double-tap)
     gestureActive: () => gesture,
     userZoom: () => ({ zoom: cam.zoom, pan: { ...cam.pan }, moving: cam.moving }),

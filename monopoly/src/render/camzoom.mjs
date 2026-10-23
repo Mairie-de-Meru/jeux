@@ -47,3 +47,52 @@ export function clampPan(base, off, lim) {
   const c = (b, o) => Math.min(lim, Math.max(-lim, b + o)) - b;
   return { x: c(base.x, off.x), z: c(base.z, off.z) };
 }
+
+// ----- rotation de la vue (azimut) et inclinaison (élévation) -----
+// Angles en radians. L'azimut utilisateur s'ajoute à celui de la vue ; l'élévation finale reste dans [EL_MIN, EL_MAX].
+export const EL_MIN = (40 * Math.PI) / 180;
+export const EL_MAX = (80 * Math.PI) / 180;
+export const ROT_PX = 0.008;   // radians par pixel de glissé horizontal (clic droit)
+export const TILT_PX = 0.005;  // radians par pixel de glissé vertical (clic droit)
+export const TWIST_DEAD = 0.12; // zone morte de la rotation à deux doigts (évite de tourner en pinçant)
+export const QUARTER = Math.PI / 2;
+
+// Ramène un angle dans ]-π, π].
+export function normAngle(a) {
+  if (!Number.isFinite(a)) return 0;
+  const t = Math.PI * 2;
+  let r = ((a % t) + t) % t;
+  if (r > Math.PI) r -= t;
+  return r;
+}
+
+// Écart signé le plus court de `from` vers `to` (dans ]-π, π]) : sert à lisser sans faire le grand tour.
+export const angleDiff = (to, from) => normAngle(to - from);
+
+// Glissé horizontal au clic droit : vers la droite, le plateau tourne avec la souris (la caméra part dans l'autre sens).
+export const dragRotation = (rot, dx) => normAngle(rot - (Number.isFinite(dx) ? dx : 0) * ROT_PX);
+
+// Décalage d'inclinaison `tilt` borné pour que baseEl + tilt reste dans [EL_MIN, EL_MAX].
+export function clampTilt(tilt, baseEl) {
+  const t = Number.isFinite(tilt) ? tilt : 0;
+  return Math.min(EL_MAX - baseEl, Math.max(EL_MIN - baseEl, t));
+}
+// Élévation finale d'une vue : élévation de base + inclinaison utilisateur, bornée.
+export const userElevation = (baseEl, tilt) => baseEl + clampTilt(tilt, baseEl);
+
+// Glissé vertical au clic droit : vers le bas, la vue devient plus plongeante.
+export const dragTilt = (tilt, dy, baseEl) => clampTilt((Number.isFinite(tilt) ? tilt : 0) + (Number.isFinite(dy) ? dy : 0) * TILT_PX, baseEl);
+
+// Rotation à deux doigts : a0 = angle initial entre les doigts, a1 = angle courant (repère écran, y vers le bas).
+// Tourner les doigts dans le sens horaire fait tourner le plateau dans le même sens ; zone morte pour le simple pincement.
+export function twistRotation(rot0, a0, a1, dead = TWIST_DEAD) {
+  const d = angleDiff(a1, a0);
+  if (Math.abs(d) <= dead) return normAngle(rot0);
+  return normAngle(rot0 + d - Math.sign(d) * dead);
+}
+
+// Boutons ↺ ↻ : quart de tour aligné sur les côtés du plateau (dir = +1 ou -1).
+export function quarterTurn(rot, dir) {
+  const k = Math.round(normAngle(rot) / QUARTER) + (dir < 0 ? -1 : 1);
+  return normAngle(k * QUARTER);
+}

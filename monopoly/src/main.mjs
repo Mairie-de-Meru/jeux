@@ -352,6 +352,9 @@ function buildTools() {
   $('#t-say').onclick = () => speak($('#msg').textContent);
   const camBtn = $('#camBtn');
   camBtn.onclick = () => { sfx('click'); const m = G.scene.camMode() === 'follow' ? 'overview' : 'follow'; G.scene.setCamMode(m); camBtn.textContent = m === 'follow' ? '🗺️ Plateau' : '📍 Mon pion'; };
+  // ↺ ↻ : quart de tour du plateau (équivalent du clic droit, pour la tablette)
+  $('#rotL').onclick = () => { sfx('click'); G.scene.rotateQuarter(-1); };
+  $('#rotR').onclick = () => { sfx('click'); G.scene.rotateQuarter(1); };
   $('#menubtn').onclick = () => {
     sfx('click');
     const body = h('div', {}, h('h2', {}, 'Menu'),
@@ -398,6 +401,10 @@ window.__monopoly = {
   textInfo: () => tileTextInfo(),
   userZoom: () => G.scene.userZoom(),
   setUserZoom: (z) => G.scene.setUserZoom(z),
+  // rotation de la vue en radians (et inclinaison optionnelle, bornée 40°–80°) ; userRotation : valeurs courantes
+  setRotation: (r, tilt) => G.scene.setRotation(r, tilt),
+  rotateQuarter: (dir = 1) => G.scene.rotateQuarter(dir),
+  userRotation: () => G.scene.userRotation(),
   autoplay: async (n = 10) => {
     let done = 0;
     while (done < n && G.state && !G.state.over) {
