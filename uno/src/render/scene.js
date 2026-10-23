@@ -1,10 +1,15 @@
 import * as THREE from 'three';
-import { createAvatars } from './avatars.js';
+import { createAvatars, EDGE, EDGE_COMPACT } from './avatars.js';
+import { fitCamera } from '../logic/framing.js';
 import { faceCanvas, backCanvas, cardKey, COLOR_HEX } from './cardart.js';
 
 const CW = 0.9, CH = 1.35, CT = 0.025;
 const cardGeo = new THREE.BoxGeometry(CW, CT, CH);
 const SEATS = { 1: [[0, -3.4]], 2: [[-3.3, -0.7], [3.3, -0.7]], 3: [[-3.4, 0.1], [0, -3.4], [3.4, 0.1]] };
+// petits écrans : places rapprochées (les éventails latéraux restent hors de la défausse grossie)
+const SEATS_COMPACT = { 1: [[0, -3.0]], 2: [[-3.2, -0.7], [3.2, -0.7]], 3: [[-3.25, 0.1], [0, -3.0], [3.25, 0.1]] };
+export const CENTER = 1.5;   // échelle des cartes du centre (pioche, défausse)
+const DISC_K = 1.22;         // échelle du disque de couleur (rayon 1.4 : ne touche pas la pioche)
 export const HUMAN_POS = new THREE.Vector3(0, 0.6, 4.4);
 export const DISCARD_POS = new THREE.Vector3(1.1, 0, 0);
 export const DRAW_POS = new THREE.Vector3(-1.1, 0, 0);
@@ -101,6 +106,7 @@ export function createScene(stage, canvas) {
 
   // couleur courante (disque sous la défausse)
   const colorDisc = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.03, 40), new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.5, emissive: 0x000000 }));
+  colorDisc.scale.set(DISC_K, 1, DISC_K);
   colorDisc.position.set(DISCARD_POS.x, 0.0, DISCARD_POS.z); colorDisc.receiveShadow = true; scene.add(colorDisc);
 
   // pioche
@@ -108,14 +114,14 @@ export function createScene(stage, canvas) {
   drawPile.castShadow = true; scene.add(drawPile);
   function setDrawCount(n) {
     const h = Math.max(0.02, Math.min(0.7, n * 0.007));
-    drawPile.scale.y = h / CT; drawPile.position.set(DRAW_POS.x, h / 2 + 0.02, DRAW_POS.z);
+    drawPile.scale.set(CENTER, h / CT, CENTER); drawPile.position.set(DRAW_POS.x, h / 2 + 0.02, DRAW_POS.z);
     drawPile.visible = n > 0;
   }
 
   // défausse
   let discardMeshes = [];
   function setDiscard(card, color, immediate = false) {
-    const m = cardMesh(card);
+    const m = cardMesh(card); m.scale.setScalar(CENTER);
     m.rotation.y = (Math.random() - 0.5) * 0.7;
     m.position.set(DISCARD_POS.x + (Math.random() - 0.5) * 0.12, 0.05 + discardMeshes.length * 0.03, DISCARD_POS.z + (Math.random() - 0.5) * 0.12);
     scene.add(m); discardMeshes.push(m);
@@ -132,22 +138,36 @@ export function createScene(stage, canvas) {
   // sièges des robots
   const avatars = createAvatars(scene);
   let seats = [];
+  let compact = false;
+  const seatTable = () => (compact ? SEATS_COMPACT : SEATS);
+  function placeSeat(s, i, n) {
+    const [x, z] = seatTable()[n][i];
+    s.group.position.set(x, 0, z); s.group.rotation.y = Math.atan2(-x, -z); // le +z local regarde le centre
+    s.world.set(x, 0.3, z);
+  }
+  function setCompact(c) {
+    if (c === compact) return;
+    compact = c;
+    seats.forEach((s, i) => placeSeat(s, i, seats.length));
+    avatars.relayout(compact ? EDGE_COMPACT : EDGE);
+  }
   function clearSeats() { seats.forEach((s) => scene.remove(s.group)); seats = []; }
   function setupSeats(players) {
     clearSeats();
     const bots = players.length - 1;
-    SEATS[bots].forEach(([x, z], i) => {
+    for (let i = 0; i < bots; i++) {
       const pl = players[i + 1];
-      const group = new THREE.Group(); group.position.set(x, 0, z);
-      group.rotation.y = Math.atan2(-x, -z); // le +z local regarde le centre
+      const group = new THREE.Group();
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.06, 8, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 }));
       ring.rotation.x = Math.PI / 2; ring.position.y = 0.02; group.add(ring);
       const fan = new THREE.Group(); fan.position.z = 0.45; group.add(fan);
       const label = labelSprite(); group.add(label);
       scene.add(group);
-      seats.push({ group, fan, ring, label, pl, count: -1, active: false, world: new THREE.Vector3(x, 0.3, z) });
-    });
-    avatars.setup(seats, players);
+      const s = { group, fan, ring, label, pl, count: -1, active: false, world: new THREE.Vector3() };
+      placeSeat(s, i, bots); seats.push(s);
+    }
+    avatars.setup(seats, players, compact ? EDGE_COMPACT : EDGE);
+    resize();
   }
   function setBotCount(i, n, active) {
     const s = seats[i]; if (!s) return;
@@ -175,7 +195,11 @@ export function createScene(stage, canvas) {
       if (duration <= 0) { resolve(); return; }
       const m = cardMesh(card); scene.add(m);
       m.userData.hex = card && card.color ? COLOR_HEX[card.color] : '#ffd23f';
-      flights.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, land, t0: performance.now(), resolve });
+      // taille : celle des cartes du centre au départ / à l'arrivée sur la pioche ou la défausse
+      const near = (v) => Math.hypot(v.x - DISCARD_POS.x, v.z - DISCARD_POS.z) < 0.6 || Math.hypot(v.x - DRAW_POS.x, v.z - DRAW_POS.z) < 0.6;
+      const s0 = near(from) ? CENTER : 1, s1 = land || near(to) ? CENTER : 1;
+      m.scale.setScalar(s0);
+      flights.push({ m, from: from.clone(), to: to.clone(), duration, spin, arc, land, s0, s1, t0: performance.now(), resolve });
     });
   }
   function updateFlights(now) {
@@ -185,6 +209,7 @@ export function createScene(stage, canvas) {
       f.m.position.lerpVectors(f.from, f.to, e);
       f.m.position.y += Math.sin(k * Math.PI) * f.arc;
       f.m.rotation.y = f.spin * e;
+      f.m.scale.setScalar(f.s0 + (f.s1 - f.s0) * e);
       f.m.rotation.x = Math.sin(k * Math.PI) * 0.4;
       if (k >= 1) {
         scene.remove(f.m); flights.splice(i, 1);
@@ -227,15 +252,15 @@ export function createScene(stage, canvas) {
     }
     if (shockT0 >= 0) {
       const k = Math.min(1, (now - shockT0) / 800);
-      shock.scale.setScalar(0.6 + 8 * ease(k)); shock.material.opacity = 0.85 * (1 - k);
+      shock.scale.setScalar(CENTER * (0.6 + 8 * ease(k))); shock.material.opacity = 0.85 * (1 - k);
       if (k >= 1) { shockT0 = -1; shock.visible = false; }
     }
     const top = discardMeshes[discardMeshes.length - 1];
     if (landFx && top) {
       const k = Math.min(1, (now - landFx.t0) / 260);
       const q = Math.sin(k * Math.PI) * (1 - k);
-      top.scale.set(1 + 0.22 * q, 1 + 3 * q, 1 + 0.22 * q);
-      if (k >= 1) { top.scale.set(1, 1, 1); landFx = null; }
+      top.scale.set(CENTER * (1 + 0.22 * q), CENTER * (1 + 3 * q), CENTER * (1 + 0.22 * q));
+      if (k >= 1) { top.scale.setScalar(CENTER); landFx = null; }
     }
   }
 
@@ -259,18 +284,47 @@ export function createScene(stage, canvas) {
     feltMat.map = t; feltMat.color.set(0xffffff); feltMat.needsUpdate = true;
   }
 
-  // cadrage selon le ratio
+  // cadrage : la boîte utile (cartes du centre, éventails, avatars, bulles, prénoms) remplit la scène,
+  // hors pastille de message et boutons posés sur la scène ; le rebord de la table peut être coupé
+  const V = new THREE.Vector3();
+  function framePoints() {
+    const P = [];
+    const hw = (CW / 2) * CENTER, hh = (CH / 2) * CENTER, R = 1.15 * DISC_K;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.push([DRAW_POS.x + sx * hw, 0.3, DRAW_POS.z + sz * hh]);
+    P.push([DISCARD_POS.x + R, 0, DISCARD_POS.z], [DISCARD_POS.x - R, 0, DISCARD_POS.z], [DISCARD_POS.x, 0, DISCARD_POS.z - R], [DISCARD_POS.x, 0, DISCARD_POS.z + R]);
+    // anneau de sens (toujours visible : il indique à qui le tour)
+    for (let i = 0; i < 16; i++) P.push([Math.cos((i * Math.PI) / 8) * 2.9, 0.05, Math.sin((i * Math.PI) / 8) * 2.9]);
+    if (!seats.length) { // pas encore de partie : cadre le bord de la table
+      const r = compact ? EDGE_COMPACT : EDGE;
+      for (let i = 0; i < 8; i++) P.push([Math.cos((i * Math.PI) / 4) * r, 0, Math.sin((i * Math.PI) / 4) * r]);
+    }
+    seats.forEach((s) => {
+      s.group.updateMatrixWorld(true);
+      for (const x of [-1.35, 1.35]) for (const z of [0, 0.9]) { V.set(x, 0.1, z); s.group.localToWorld(V); P.push([V.x, V.y, V.z]); }
+    });
+    return P.concat(avatars.framePoints());
+  }
+  function stageMargins(w, h) {
+    const m = { top: 6, bottom: 6, left: 6, right: 6 };
+    const sr = stage.getBoundingClientRect();
+    const toast = stage.querySelector('#toast');
+    if (toast && getComputedStyle(toast).position !== 'fixed') m.top = Math.max(m.top, toast.offsetTop + Math.max(toast.offsetHeight, 30) + 6);
+    const bar = document.getElementById('bar');
+    if (bar) {
+      const b = bar.getBoundingClientRect();
+      if (b.width && b.top < sr.bottom && b.bottom > sr.top + h / 2 && b.left < sr.right && b.right > sr.left) m.bottom = Math.max(m.bottom, sr.bottom - b.top + 6);
+    }
+    return m;
+  }
   function resize() {
     const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    const elev = (camera.aspect < 0.9 ? 78 : 62) * Math.PI / 180;
-    const t = Math.tan((camera.fov * Math.PI) / 360);
-    const needH = 5.3 / (t * camera.aspect) ;
-    const needV = (5.3 * Math.sin(elev) + 1.0) / t;
-    const d = Math.max(needH, needV);
-    camera.position.set(0, Math.sin(elev) * d, Math.cos(elev) * d + 0.4);
-    camera.lookAt(0, 0, 0.4);
+    setCompact(w < 820 || camera.aspect < 0.9);
+    const elevDeg = camera.aspect < 0.9 ? 78 : 62;
+    const r = fitCamera({ points: framePoints(), width: w, height: h, fovDeg: camera.fov, elevDeg, margins: stageMargins(w, h), alignY: 'center' });
+    camera.position.set(...r.position);
+    camera.lookAt(...r.target);
     camera.updateProjectionMatrix();
   }
 
@@ -299,6 +353,6 @@ export function createScene(stage, canvas) {
 
   return {
     renderer, scene, camera, resize, render, fly, worldFromScreen, boostDir, shockwave, centerPos: () => new THREE.Vector3(0, 0, 0), setTable, react: avatars.react, setAvatarImages: avatars.setImages, seatPos, setupSeats, setBotCount, setDiscard, clearDiscard, setColor, setDrawCount,
-    setDir, screenOf, drawPos: DRAW_POS, discardPos: DISCARD_POS,
+    setDir, screenOf, drawPos: DRAW_POS, discardPos: DISCARD_POS, centerScale: CENTER,
   };
 }

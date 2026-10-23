@@ -342,6 +342,7 @@ scene.resize();
 const until = async (fn) => { while (!fn()) await new Promise((r) => setTimeout(r, 10)); };
 window.__uno = {
   get game() { return g; },
+  get scene() { return scene; },
   settings,
   start: (o) => { startGame(o); return window.__uno.state(); },
   setFast: (b = true) => { fast = !!b; setHandFast(fast); },

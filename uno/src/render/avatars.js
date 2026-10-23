@@ -3,7 +3,8 @@ import * as THREE from 'three';
 
 export const AVATAR_KEYS = { '🦊': 'av-renard', '🐼': 'av-panda', '🐨': 'av-koala', '🦉': 'av-hibou' };
 const BASE = 1.95;       // hauteur du sprite (unités monde)
-const EDGE = 4.15;       // rayon du bord de la table où se tiennent les avatars
+export const EDGE = 4.15;        // rayon du bord de la table où se tiennent les avatars
+export const EDGE_COMPACT = 3.8; // petits écrans : avatars rapprochés du centre
 
 function avatarCanvas(img, emoji) {
   const cv = document.createElement('canvas'); cv.width = cv.height = 256;
@@ -33,6 +34,7 @@ const canvasTex = (cv) => { const t = new THREE.CanvasTexture(cv); t.colorSpace 
 export function createAvatars(root) {
   let list = [];       // une entrée par place 1..n-1
   let images = {};     // emoji -> Image
+  let edge = EDGE;
 
   function build(entry) {
     entry.sprite.material.map?.dispose();
@@ -40,26 +42,47 @@ export function createAvatars(root) {
     entry.sprite.material.needsUpdate = true;
   }
 
-  function setup(seats, players) {
+  function place(e, s) {
+    const len = Math.hypot(s.world.x, s.world.z) || 1;
+    e.pos.set((s.world.x / len) * edge, 0.05, (s.world.z / len) * edge);
+    e.sprite.position.copy(e.pos); e.label.position.copy(e.pos);
+    e.side = e.pos.x > 0.5 ? -1 : 1; // bulle à côté de l'avatar, du côté du centre de la table (jamais hors écran)
+    e.bubble.center.set(e.side > 0 ? 0 : 1, 0.5);
+  }
+
+  function setup(seats, players, edgeR = edge) {
+    edge = edgeR;
     list.forEach((e) => { root.remove(e.sprite, e.bubble, e.label); e.sprite.material.map?.dispose(); e.bubble.material.map?.dispose(); });
     list = seats.map((s, i) => {
       const pl = players[i + 1];
-      const len = Math.hypot(s.world.x, s.world.z) || 1;
-      const pos = new THREE.Vector3((s.world.x / len) * EDGE, 0.05, (s.world.z / len) * EDGE);
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
       sprite.center.set(0.5, 0); sprite.renderOrder = 8;
-      sprite.position.copy(pos); sprite.scale.set(BASE, BASE, 1);
+      sprite.scale.set(BASE, BASE, 1);
       const bubble = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
       bubble.renderOrder = 9; bubble.scale.set(0.8, 0.8, 1);
-      const side = pos.x > 0.5 ? -1 : 1; // bulle à côté de l'avatar, du côté du centre de la table (jamais hors écran)
-      bubble.center.set(side > 0 ? 0 : 1, 0.5);
       const label = s.label; label.removeFromParent();
-      label.center.set(0.5, 1); label.position.copy(pos); label.renderOrder = 10;
+      label.center.set(0.5, 1); label.renderOrder = 10;
       root.add(sprite, bubble, label);
-      const e = { pos, side, sprite, bubble, label, emoji: pl.emoji, count: -1, active: false, anim: null, seed: i * 1.7 };
-      build(e);
+      const e = { pos: new THREE.Vector3(), side: 1, seat: s, sprite, bubble, label, emoji: pl.emoji, count: -1, active: false, anim: null, seed: i * 1.7 };
+      place(e, s); build(e);
       return e;
     });
+  }
+
+  // nouveau rayon (petit écran / grand écran) : les places ont déjà été déplacées (s.world)
+  function relayout(edgeR) { edge = edgeR; list.forEach((e) => place(e, e.seat)); }
+
+  // points à garder à l'écran pour le cadrage : [x, y, z, bx, by] (bx, by : décalage dans le plan de la caméra)
+  function framePoints() {
+    const out = [];
+    for (const e of list) {
+      const { x, y, z } = e.pos, hb = BASE / 2;
+      out.push([x, y, z, -hb, 0], [x, y, z, hb, 0], [x, y, z, -hb, BASE * 1.08], [x, y, z, hb, BASE * 1.08]);
+      const bx = x + e.side * BASE * 0.42, by = y + BASE * 0.55;
+      out.push([bx, by, z, 0, -0.42], [bx, by, z, e.side * 0.82, 0.42]);
+      out.push([x, y, z, -0.9, 0], [x, y, z, 0.9, -0.55]); // prénom sous l'avatar
+    }
+    return out;
   }
 
   function setImages(map) {
@@ -110,5 +133,5 @@ export function createAvatars(root) {
     }
   }
 
-  return { setup, setImages, setCount, react, update };
+  return { setup, relayout, framePoints, setImages, setCount, react, update };
 }
