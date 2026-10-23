@@ -84,7 +84,7 @@ export function pieceGeometries(type) {
 
 export const MATERIALS = {
   w: new THREE.MeshStandardMaterial({ color: 0xf8f8f4, roughness: 0.4, metalness: 0.04 }),
-  b: new THREE.MeshStandardMaterial({ color: 0x26262c, roughness: 0.3, metalness: 0.1 }),
+  b: new THREE.MeshStandardMaterial({ color: 0x24242a, roughness: 0.22, metalness: 0.2, emissive: 0x18181e }),
 };
 
 // Crée une pièce (Group) ; le cavalier est vu de profil (blanc vers la droite, noir vers la gauche).

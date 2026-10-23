@@ -59,7 +59,7 @@ function squareLabels(side) {
     const sc = side > 0 ? f : 7 - f, sr = side > 0 ? 7 - r : r; // colonne / rangée à l'écran
     if (sr !== 7 && sc !== 0) continue;
     const x0 = f * S, y0 = (7 - r) * S;
-    g.fillStyle = ((f + r) & 1) === 0 ? 'rgba(240,226,190,0.95)' : 'rgba(47,96,100,0.95)';
+    g.fillStyle = ((f + r) & 1) === 0 ? 'rgba(240,226,190,0.95)' : 'rgba(120,78,44,0.95)';
     const draw = (txt, ax, ay, alignX, alignY) => {
       g.save(); g.translate(ax, ay); if (side < 0) g.rotate(Math.PI);
       g.textAlign = alignX; g.textBaseline = alignY; g.fillText(txt, 0, 0); g.restore();
@@ -103,8 +103,8 @@ export function createScene(canvas) {
   let size = 8 + 2 * vp.frame;
   let board = null, labelW = null, labelB = null;
   const sqGeo = new THREE.BoxGeometry(1, TOP, 1);
-  const matL = new THREE.MeshStandardMaterial({ color: 0xe0cba0, roughness: 0.55 });
-  const matD = new THREE.MeshStandardMaterial({ color: 0x3f7276, roughness: 0.55 });
+  const matL = new THREE.MeshStandardMaterial({ color: 0xf0dfbd, roughness: 0.55 });
+  const matD = new THREE.MeshStandardMaterial({ color: 0xb98a5e, roughness: 0.55 });
   function buildBoard() {
     if (board) {
       scene.remove(board);
