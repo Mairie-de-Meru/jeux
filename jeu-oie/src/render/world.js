@@ -22,14 +22,16 @@ function tileTexture(c, n) {
   g.textAlign = 'center'; g.textBaseline = 'middle';
   const emoji = TILE_EMOJI[c.type];
   if (emoji) {
-    g.font = `58px ${EMOJI_FONT}`;
+    const solo = c.type === 'depart';
+    g.font = `${solo ? 58 : 46}px ${EMOJI_FONT}`;
     g.fillStyle = '#000';
-    g.fillText(emoji, S / 2, c.type === 'depart' ? S / 2 : 50);
+    g.fillText(emoji, S / 2, solo ? S / 2 : 38);
   }
   if (c.type !== 'depart') {
     g.fillStyle = '#26264d';
-    g.font = `bold ${emoji ? 40 : 64}px system-ui,sans-serif`;
-    g.fillText(String(c.n), S / 2, emoji ? 100 : S / 2 + 3);
+    g.font = `bold ${emoji ? 54 : 70}px system-ui,sans-serif`;
+    if (emoji) { g.lineWidth = 6; g.strokeStyle = col; g.strokeText(String(c.n), S / 2, 90); }
+    g.fillText(String(c.n), S / 2, emoji ? 90 : S / 2 + 3);
   }
   const t = new THREE.CanvasTexture(cv);
   t.colorSpace = THREE.SRGBColorSpace;
@@ -66,6 +68,7 @@ export function createWorld(canvas) {
   const fitV = new THREE.Vector3(), fitPts = [], fitCenter = new THREE.Vector3();
   const FIT_OFF = [[0, 0], [0.6, 0], [-0.6, 0], [0, 0.6], [0, -0.6]];
   const TILT = THREE.MathUtils.degToRad(62);
+  const FOLLOW_NEAR_BIG = 0.42, FOLLOW_NEAR_SMALL = 0.55, AHEAD = 4;
   // true si tous les points (avec un rayon de case) sont dans |ndc| <= lim pour une caméra au centre c à la distance d
   function fitsView(c, d, pts, n, lim) {
     fitCam.fov = camera.fov; fitCam.aspect = camera.aspect;
@@ -189,22 +192,28 @@ export function createWorld(canvas) {
       const v = THREE.MathUtils.degToRad(camera.fov);
       const hf = 2 * Math.atan(Math.tan(v / 2) * aspect);
       const fit = (R * 0.95) / Math.sin(Math.min(v, hf) / 2);
-      const f = overview || follow == null ? 1 : bigBoard ? 0.85 : 0.92;
-      let wantD = fit * f;
-      const want = fitCenter.set(0, 0, 0);
       const tracking = !(overview || follow == null);
+      // suivi : on part de près (cases lisibles sur téléphone) et fitsView recule jusqu'à tout cadrer
+      let wantD = tracking ? fit * (bigBoard ? FOLLOW_NEAR_BIG : FOLLOW_NEAR_SMALL) : fit;
+      const want = fitCenter.set(0, 0, 0);
       let n = 0;
       if (tracking) {
         const pp = pawns[follow].position;
-        let x0 = pp.x, x1 = pp.x, z0 = pp.z, z1 = pp.z;
         fitPts[n++] = pp;
-        if (focus) for (const i of focus) {
-          const q = P[i]; if (!q) continue;
-          fitPts[n++] = q;
+        if (focus && focus.length) { for (const i of focus) if (P[i]) fitPts[n++] = P[i]; }
+        else {
+          // sans focus : la case d'avant, le pion et les cases devant lui (pion moins collé au bord)
+          const idx = pawns[follow].userData.index | 0;
+          if (idx > 0) fitPts[n++] = P[idx - 1];
+          for (let k = 1; k <= AHEAD; k++) fitPts[n++] = P[Math.min(idx + k, P.length - 1)];
+        }
+        let x0 = pp.x, x1 = pp.x, z0 = pp.z, z1 = pp.z;
+        for (let i = 1; i < n; i++) {
+          const q = fitPts[i];
           if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x;
           if (q.z < z0) z0 = q.z; if (q.z > z1) z1 = q.z;
         }
-        want.set((x0 + x1) / 2, 0, (z0 + z1) / 2).clampLength(0, R * (1 - f) * 1.05);
+        want.set((x0 + x1) / 2, 0, (z0 + z1) / 2).clampLength(0, R);
       } else {
         // bord du plateau : 8 points sur le cercle de rayon R - 0.6 (le décalage d'une case ramène au bord)
         for (let o = 0; o < 8; o++) {
@@ -213,7 +222,7 @@ export function createWorld(canvas) {
           fitPts[n++] = fitCorner[o];
         }
       }
-      for (let it = 0; it < 20 && !fitsView(want, wantD, fitPts, n, 0.82); it++) wantD *= 1.08;
+      for (let it = 0; it < 30 && !fitsView(want, wantD, fitPts, n, tracking ? 0.8 : 0.82); it++) wantD *= 1.08;
       if (!camInit) { camTarget.copy(want); camDist.v = wantD; camInit = true; }
       const k = 1 - Math.exp(-dt * 3.5);
       camTarget.lerp(want, k);

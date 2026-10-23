@@ -40,6 +40,8 @@ function resize() {
 }
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+// barre d'adresse mobile / dvh : la taille de #app change sans toujours émettre 'resize'
+if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(app);
 resize();
 const rel = (el) => {
   const a = app.getBoundingClientRect(), r = el.getBoundingClientRect();

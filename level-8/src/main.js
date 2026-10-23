@@ -695,6 +695,7 @@ function startGame(o = {}) {
   for (const id of ['setup', 'round', 'end', 'rules', 'goalcard', 'skippick']) $(id).classList.add('hidden');
   S.noGoalCard = o.goalCard === false;
   flow();
+  S.view.resize(); // recadrage une fois #chips rempli (bande réservée en haut)
 }
 
 function continueRound() {
@@ -837,6 +838,8 @@ window.__level8 = {
   // passage d'appareil : appuie sur « Je suis prêt » (renvoie le prénom du joueur qui prend la main, ou null)
   ready() { const who = S.gateFor; return onReady() ? S.g.players[who].name : null; },
   get viewer() { return S.viewer; },
+  // mesures de la table 3D en px CSS : {stage, pilePx, discPx, botHandPx, pitch, dist, cz}
+  metrics() { return S.view.metrics(); },
   get gate() { return S.gateFor; },
   speakObjective,
   // joue le tour complet du joueur avec le planificateur des bots, puis laisse les bots jouer

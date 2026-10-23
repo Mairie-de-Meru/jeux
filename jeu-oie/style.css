@@ -63,9 +63,16 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 @keyframes fall { to { transform: translateY(110dvh) rotate(540deg); } }
 #fatal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 20px; background: #fff; font-size: 22px; text-align: center; }
 
+@media (orientation: portrait) {
+  /* téléphone debout : moins de place sous le plateau, plus pour les cases */
+  #side { gap: 2px; padding: 0 8px 6px; }
+  #dieZone { height: clamp(84px, 15vh, 120px); }
+  #msg { min-height: 2.4em; font-size: clamp(14px, 4vw, 19px); line-height: 1.15; }
+  #btn-roll { min-height: 64px; }
+}
 @media (orientation: landscape) {
   #main { flex-direction: row; }
-  #side { width: clamp(180px, 31vw, 250px); padding: 0 8px 8px 0; }
+  #side { width: clamp(170px, 28vw, 230px); padding: 0 8px 8px 0; }
   #dieZone { height: auto; flex: 1 1 auto; min-height: 80px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {

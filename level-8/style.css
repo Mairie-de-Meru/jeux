@@ -396,3 +396,11 @@ button { font: inherit; cursor: pointer; touch-action: manipulation; }
   #hand { flex-wrap: nowrap; gap: 0; justify-content: center; }
   #hand .card:not(:first-child) { margin-left: calc(var(--hcw, 30px) * -0.16); }
 }
+
+/* paysage (2026-10-23) : groupes posés dans la colonne droite sous la main, le plateau garde toute la hauteur à gauche */
+@media (orientation: landscape) {
+  #app { grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "top top" "stage side" "stage groups" "goal groups"; }
+  #side { overflow-y: visible; }
+  #groups { grid-area: groups; min-height: 0; max-height: none; display: flex; flex-wrap: wrap; align-content: flex-start; overflow-x: hidden; overflow-y: auto; }
+  #groups .group { max-width: 100%; }
+}

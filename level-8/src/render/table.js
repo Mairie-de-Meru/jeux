@@ -3,7 +3,10 @@ import * as THREE from 'three';
 import { avatarImage } from '../avatarimg.js';
 import { backTexture, faceTexture, makeTag, drawTag } from './cardtex.js';
 
-const CW = 0.62, CH = 0.88, TH = 0.03;
+const CW = 0.71, CH = 1.01, TH = 0.03; // cartes 3D (x1.15 depuis le 2026-10-23)
+// Disposition rapprochée (2026-10-23) : mains à SEAT_R du centre, défausses à DISC_R + décalage DISC_SIDE.
+const SEAT_R = 1.95, DISC_R = 0.9, DISC_SIDE = 0.9, SKIP_R = 0.98, FELT_R = 2.85;
+const HAND_HALF = 0.85; // demi-largeur max de l'éventail (pas 1.7 / nombre de cartes)
 const PILE = new THREE.Vector3(0, 0, 0);
 const ease = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
@@ -20,10 +23,10 @@ export class TableView {
     sun.position.set(3, 8, 4);
     this.scene.add(sun);
 
-    const felt = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 0.1, 64), new THREE.MeshStandardMaterial({ color: 0x1f9a66, roughness: 0.95 }));
+    const felt = new THREE.Mesh(new THREE.CylinderGeometry(FELT_R, FELT_R, 0.1, 64), new THREE.MeshStandardMaterial({ color: 0x1f9a66, roughness: 0.95 }));
     felt.position.y = -0.05;
     this.scene.add(felt);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(3.4, 0.16, 16, 80), new THREE.MeshStandardMaterial({ color: 0x9a5b2e, roughness: 0.6 }));
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(FELT_R, 0.16, 16, 80), new THREE.MeshStandardMaterial({ color: 0x9a5b2e, roughness: 0.6 }));
     rim.rotation.x = Math.PI / 2;
     this.scene.add(rim);
 
@@ -50,17 +53,29 @@ export class TableView {
     return m;
   }
 
-  // pile de défausse personnelle : devant le joueur, un peu de côté
+  // pile de défausse personnelle : entre la pioche et la main du joueur, décalée de côté
+  // (à 4 joueurs les 4 défausses forment un carré de ±0.9 autour de la pioche, sans chevauchement)
   discPos(i, n = this.n) {
     const th = (i * Math.PI * 2) / n;
     const d = new THREE.Vector3(Math.sin(th), 0, Math.cos(th));
     const side = new THREE.Vector3(Math.cos(th), 0, -Math.sin(th));
-    return d.multiplyScalar(1.5).add(side.multiplyScalar(i === 0 ? 0.8 : 0.9));
+    return d.multiplyScalar(DISC_R).add(side.multiplyScalar(DISC_SIDE));
   }
 
   seatPos(i, n = this.n) {
     const th = (i * Math.PI * 2) / n;
-    return new THREE.Vector3(Math.sin(th) * 2.35, 0, Math.cos(th) * 2.35);
+    return new THREE.Vector3(Math.sin(th) * SEAT_R, 0, Math.cos(th) * SEAT_R);
+  }
+
+  // étiquette (avatar + nombre de cartes) posée sur la main du joueur, au centre de l'éventail
+  tagPos(i, n = this.n) {
+    return this.seatPos(i, n).multiplyScalar(i === 0 ? 1.27 : 1.0);
+  }
+
+  // carte Passe posée devant le joueur : dans l'axe du siège, couchée en travers, entre pioche et main
+  skipPos(i, n = this.n) {
+    const th = (i * Math.PI * 2) / n;
+    return new THREE.Vector3(Math.sin(th) * SKIP_R, 0.05, Math.cos(th) * SKIP_R);
   }
 
   setPlayers(players) {
@@ -74,7 +89,7 @@ export class TableView {
       this.scene.add(group);
       const tag = makeTag();
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tag.t, depthTest: false, transparent: true }));
-      const pos = this.seatPos(i).multiplyScalar(i === 0 ? 1.27 : 1.12);
+      const pos = this.tagPos(i);
       sprite.position.set(pos.x, 0.5, pos.z);
       sprite.scale.set(1.1, 0.64, 1);
       sprite.visible = i > 0;
@@ -90,10 +105,8 @@ export class TableView {
       const skipTop = new THREE.MeshStandardMaterial({ map: backTexture() });
       const skipMesh = new THREE.Mesh(new THREE.BoxGeometry(CW, TH, CH), [this.sideMat, this.sideMat, skipTop, this.backMat, this.sideMat, this.sideMat]);
       skipMesh.userData.top = skipTop;
-      const dpos = this.discPos(i);
-      const dd = new THREE.Vector3(Math.sin(th), 0, Math.cos(th));
-      skipMesh.position.set(dpos.x - dd.z * 0.0 + (Math.cos(th)) * -1.0, 0.05, dpos.z + (-Math.sin(th)) * -1.0);
-      skipMesh.rotation.y = -0.25;
+      skipMesh.position.copy(this.skipPos(i));
+      skipMesh.rotation.y = th + Math.PI / 2;
       skipMesh.visible = false;
       this.scene.add(disc, slot, skipMesh);
       return { group, sprite, tag, cards: [], disc, slot, skipMesh };
@@ -129,7 +142,7 @@ export class TableView {
         }
         s.cards.forEach((m, k) => {
           m.visible = k < count;
-          const step = Math.min(0.2, 1.7 / Math.max(count, 1));
+          const step = Math.min(0.2, (2 * HAND_HALF) / Math.max(count, 1));
           m.position.set((k - (count - 1) / 2) * step, 0.03 + k * 0.004, 0);
           m.rotation.y = (k - (count - 1) / 2) * 0.03;
         });
@@ -168,31 +181,129 @@ export class TableView {
     this.renderer.render(this.scene, this.camera);
   }
 
+  // Points utiles à garder à l'écran : pioche, défausses, mains des robots (siège 0 exclu, face à l'écran),
+  // étiquettes, cartes Passe. Le tapis peut être coupé par les bords.
+  usefulPoints(pitch = Math.PI / 3) {
+    const pts = [];
+    const card = (c, rotY, y, w = CW, h = CH) => {
+      const cs = Math.cos(rotY), sn = Math.sin(rotY);
+      for (const [x, z] of [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]) {
+        pts.push(new THREE.Vector3(c.x + x * cs + z * sn, y, c.z - x * sn + z * cs));
+      }
+    };
+    card(PILE, 0, 0.3);
+    for (let i = 0; i < this.n; i++) {
+      const th = (i * Math.PI * 2) / this.n;
+      card(this.discPos(i), 0.12, 0.2);
+      card(this.skipPos(i), th + Math.PI / 2, 0.06);
+      if (i === 0) continue;
+      card(this.seatPos(i), th, 0.1, 2 * HAND_HALF + CW, CH);
+      // étiquette (sprite face caméra, 1.1 x 0.64) : droite caméra = axe x du monde (pas de lacet),
+      // haut caméra = (0, cos pitch, -sin pitch)
+      const t = this.tagPos(i);
+      const ux = 0, uy = Math.cos(pitch), uz = -Math.sin(pitch);
+      for (const [dx, du] of [[-0.55, -0.32], [0.55, -0.32], [-0.55, 0.32], [0.55, 0.32]]) {
+        pts.push(new THREE.Vector3(t.x + dx + ux * du, 0.5 + uy * du, t.z + uz * du));
+      }
+    }
+    return pts;
+  }
+
+  place(pitch, d, cz) {
+    this.camera.position.set(0, Math.sin(pitch) * d, Math.cos(pitch) * d + cz);
+    this.camera.lookAt(0, 0, cz);
+    this.camera.updateMatrixWorld(true);
+  }
+
+  // Taille projetée (px CSS) d'une carte posée à plat en c (rotation rotY).
+  cardPx(c, rotY = 0, y = 0.1, w = CW, h = CH) {
+    const W = Math.max(1, this.stage.clientWidth), H = Math.max(1, this.stage.clientHeight);
+    const cs = Math.cos(rotY), sn = Math.sin(rotY);
+    const xs = [], ys = [];
+    for (const [x, z] of [[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]) {
+      const q = new THREE.Vector3(c.x + x * cs + z * sn, y, c.z - x * sn + z * cs).project(this.camera);
+      xs.push(((q.x + 1) / 2) * W); ys.push(((1 - q.y) / 2) * H);
+    }
+    return [Math.round(Math.max(...xs) - Math.min(...xs)), Math.round(Math.max(...ys) - Math.min(...ys))];
+  }
+
   resize() {
     const w = Math.max(1, this.stage.clientWidth);
     const h = Math.max(1, this.stage.clientHeight);
     this.renderer.setSize(w, h, false);
-    const asp = w / h;
-    this.camera.aspect = asp;
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    // la table (bord compris) et les mains des bots doivent remplir le stage, avec ~6 % de marge
-    const pitch = ((asp < 0.9 ? 64 : 58) * Math.PI) / 180;
-    const pts = [];
-    for (let k = 0; k < 32; k++) {
-      const a = (k / 32) * Math.PI * 2;
-      pts.push(new THREE.Vector3(Math.sin(a) * 3.56, 0, Math.cos(a) * 3.56));
-      pts.push(new THREE.Vector3(Math.sin(a) * 2.75, 0.5, Math.cos(a) * 2.75));
-    }
-    const fits = (d) => {
-      this.camera.position.set(0, Math.sin(pitch) * d, Math.cos(pitch) * d + 0.2);
-      this.camera.lookAt(0, 0, 0.2);
-      this.camera.updateMatrixWorld(true);
-      return pts.every((p) => { const q = p.clone().project(this.camera); return Math.abs(q.x) <= 0.94 && Math.abs(q.y) <= 0.94; });
+    // Cadrage sur l'utile (marge 3 %, un peu plus en haut pour les pastilles #chips) :
+    // pitch dans [42°, 72°], centre décalé en z, distance par dichotomie ; on garde la plus grande pioche à l'écran.
+    // bande réservée en haut du stage pour #chips (pas #msg) : borne NDC = 1 - 2 * réserve / hauteur, marge 2 %
+    const top = this.stage.getBoundingClientRect().top;
+    const chips = document.getElementById('chips');
+    const reserve = chips ? chips.getBoundingClientRect().bottom + 12 - top : 0;
+    const yMax = Math.max(0.3, 1 - (2 * Math.max(0, reserve)) / h - 0.02);
+    let pts = [];
+    const fits = (pitch, d, cz) => {
+      this.place(pitch, d, cz);
+      return pts.every((p) => { const q = p.clone().project(this.camera); return q.z < 1 && Math.abs(q.x) <= 0.97 && q.y <= yMax && q.y >= -0.97; });
     };
-    let lo = 2;
-    let hi = 60;
-    for (let it = 0; it < 24; it++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
-    fits(hi);
+    let best = null;
+    for (let deg = 42; deg <= 72; deg += 2) {
+      const pitch = (deg * Math.PI) / 180;
+      pts = this.usefulPoints(pitch);
+      for (let cz = -0.4; cz <= 0.61; cz += 0.2) {
+        let lo = 1.5, hi = 40;
+        if (!fits(pitch, hi, cz)) continue;
+        for (let it = 0; it < 20; it++) { const mid = (lo + hi) / 2; if (fits(pitch, mid, cz)) hi = mid; else lo = mid; }
+        this.place(pitch, hi, cz);
+        const score = this.cardPx(PILE, 0, 0.3)[1];
+        if (!best || score > best.score) best = { score, pitch, d: hi, cz };
+      }
+    }
+    if (!best) best = { pitch: (60 * Math.PI) / 180, d: 12, cz: 0 };
+    this.place(best.pitch, best.d, best.cz);
+    this.fit = { ...best, yMax };
+    this.dodgeMsg();
+  }
+
+  // Étiquette du siège tout en haut de l'écran (z le plus négatif) : si #msg la recouvre, on la rapproche du centre (x0.85).
+  dodgeMsg() {
+    if (!this.seats.length) return;
+    let far = -1;
+    for (let i = 1; i < this.n; i++) if (far < 0 || this.seatPos(i).z < this.seatPos(far).z) far = i;
+    if (far < 0) return;
+    const s = this.seats[far];
+    const base = this.tagPos(far);
+    s.sprite.position.set(base.x, 0.5, base.z);
+    const msg = document.getElementById('msg');
+    const chips = document.getElementById('chips');
+    // bas de #msg ; s'il est vide pour l'instant, estimation sûre : bas de #chips + 36 px
+    const msgBottom = msg && msg.offsetHeight ? msg.getBoundingClientRect().bottom : chips ? chips.getBoundingClientRect().bottom + 36 : 0;
+    const up = (Math.cos(this.fit.pitch) * 0.32);
+    const tagTop = this.toScreen(new THREE.Vector3(base.x, 0.5 + up, base.z - Math.sin(this.fit.pitch) * 0.32)).y;
+    if (tagTop < msgBottom) {
+      const p = this.seatPos(far).multiplyScalar(0.85);
+      s.sprite.position.set(p.x, 0.5, p.z);
+    }
+  }
+
+  // Mesures en pixels CSS du stage (crochet __level8.metrics).
+  metrics() {
+    const disc = this.seats.map((_, i) => this.cardPx(this.discPos(i), 0.12, 0.2));
+    const hands = this.seats.map((s, i) => {
+      const count = s.cards.filter((m) => m.visible).length;
+      if (!count) return [0, 0];
+      const th = (i * Math.PI * 2) / this.n;
+      const step = Math.min(0.2, (2 * HAND_HALF) / count);
+      return this.cardPx(this.seatPos(i), th, 0.1, (count - 1) * step + CW, CH);
+    });
+    return {
+      stage: [this.stage.clientWidth, this.stage.clientHeight],
+      pilePx: this.cardPx(PILE, 0, 0.3),
+      discPx: disc,
+      botHandPx: hands,
+      pitch: this.fit ? Math.round((this.fit.pitch * 180) / Math.PI) : null,
+      dist: this.fit ? +this.fit.d.toFixed(2) : null,
+      cz: this.fit ? +this.fit.cz.toFixed(2) : null,
+    };
   }
 
   toScreen(v) {
